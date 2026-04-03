@@ -294,9 +294,16 @@
 
 .mode-toggle {
   display: inline-flex;
-  gap: 0.25rem;
+  flex-direction: column;
+  gap: 0.15rem;
   flex: 0 0 auto;
-  white-space: nowrap;
+  white-space: normal;
+}
+
+.mode-toggle .btn {
+  width: 100%;
+  min-width: 2.4rem;
+  text-align: center;
 }
 
 .btn-xs {
