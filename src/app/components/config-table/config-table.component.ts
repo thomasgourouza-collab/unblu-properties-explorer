@@ -87,6 +87,11 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   private copyResetTimerId?: ReturnType<typeof globalThis.setTimeout>;
   private textFilterDebounceTimerId?: ReturnType<typeof globalThis.setTimeout>;
   private readonly textFilterDebounceMs = 200;
+  isCellHoverTooltipOpen = false;
+  cellHoverTooltipText = '';
+  cellHoverTooltipColumnKey: ConfigColumnKey | null = null;
+  cellHoverTooltipLeft = 0;
+  cellHoverTooltipTop = 0;
 
   private readonly stateStorageKey = 'csv-explorer-table-state-v1';
   private restoredState = false;
@@ -300,6 +305,49 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   setGlobalFilterScope(scope: string): void {
     this.globalFilterScope = scope === 'visible' ? 'visible' : 'all';
     this.onFiltersChanged();
+  }
+
+  onCellHoverEnter(event: MouseEvent, value: string, columnKey: ConfigColumnKey): void {
+    if (!this.isHoverTooltipModifierPressed(event)) {
+      this.onCellHoverLeave();
+      return;
+    }
+
+    const text = value?.trim() ?? '';
+    if (!text) {
+      this.onCellHoverLeave();
+      return;
+    }
+    this.cellHoverTooltipText = text;
+    this.cellHoverTooltipColumnKey = columnKey;
+    this.isCellHoverTooltipOpen = true;
+    this.positionCellHoverTooltip(event);
+  }
+
+  onCellHoverMove(event: MouseEvent, value: string, columnKey: ConfigColumnKey): void {
+    if (!this.isHoverTooltipModifierPressed(event)) {
+      this.onCellHoverLeave();
+      return;
+    }
+
+    if (!this.isCellHoverTooltipOpen) {
+      this.onCellHoverEnter(event, value, columnKey);
+      return;
+    }
+
+    this.positionCellHoverTooltip(event);
+  }
+
+  onCellHoverLeave(): void {
+    this.isCellHoverTooltipOpen = false;
+    this.cellHoverTooltipColumnKey = null;
+  }
+
+  getColumnLabel(columnKey: ConfigColumnKey | null): string {
+    if (!columnKey) {
+      return 'Value';
+    }
+    return this.columns.find((column) => column.key === columnKey)?.label ?? 'Value';
   }
 
   getValueFilter(key: ConfigColumnKey): string[] {
@@ -926,5 +974,28 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   private isEditableElement(target: HTMLElement): boolean {
     const tagName = target.tagName.toLowerCase();
     return tagName === 'input' || tagName === 'textarea' || target.isContentEditable;
+  }
+
+  private isHoverTooltipModifierPressed(event: MouseEvent): boolean {
+    return event.ctrlKey || event.metaKey;
+  }
+
+  private positionCellHoverTooltip(event: MouseEvent): void {
+    const offset = 14;
+    const maxWidth = 420;
+    const margin = 12;
+    let left = event.clientX + offset;
+    let top = event.clientY + offset;
+
+    if (left + maxWidth > globalThis.innerWidth - margin) {
+      left = Math.max(margin, event.clientX - maxWidth - offset);
+    }
+    const estimatedHeight = 120;
+    if (top + estimatedHeight > globalThis.innerHeight - margin) {
+      top = Math.max(margin, event.clientY - estimatedHeight - offset);
+    }
+
+    this.cellHoverTooltipLeft = left;
+    this.cellHoverTooltipTop = top;
   }
 }

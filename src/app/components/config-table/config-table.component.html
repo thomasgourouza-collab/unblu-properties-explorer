@@ -222,7 +222,14 @@
       </ng-template>
       <ng-template pTemplate="body" let-row let-columns="columns">
         <tr>
-          <td *ngFor="let column of columns" class="body-cell" [style.width.%]="getColumnWidthPercent(column.key)">
+          <td
+            *ngFor="let column of columns"
+            class="body-cell"
+            [style.width.%]="getColumnWidthPercent(column.key)"
+            (mouseenter)="onCellHoverEnter($event, row[column.key], column.key)"
+            (mousemove)="onCellHoverMove($event, row[column.key], column.key)"
+            (mouseleave)="onCellHoverLeave()"
+          >
             <ng-container *ngIf="column.key === 'defaultValue'; else plainCell">
               <div class="cell-x-scroll">
                 <ng-container *ngFor="let valuePart of getDefaultValueParts(row[column.key]); let isLast = last">
@@ -320,5 +327,15 @@
         </div>
       </ng-template>
     </p-table>
+
+    <div
+      class="cell-hover-tooltip"
+      *ngIf="isCellHoverTooltipOpen"
+      [style.left.px]="cellHoverTooltipLeft"
+      [style.top.px]="cellHoverTooltipTop"
+    >
+      <div class="cell-hover-tooltip-title">{{ getColumnLabel(cellHoverTooltipColumnKey) }}</div>
+      <div class="cell-hover-tooltip-content">{{ cellHoverTooltipText }}</div>
+    </div>
   </div>
 </section>
