@@ -154,7 +154,10 @@
           <td *ngFor="let column of columns">
             <ng-container *ngIf="column.key === 'defaultValue'; else plainCell">
               <ng-container *ngFor="let valuePart of getDefaultValueParts(row[column.key]); let isLast = last">
-                <span>{{ valuePart }}</span>
+                <ng-container *ngFor="let part of getHighlightedParts(valuePart)">
+                  <mark *ngIf="part.match" class="global-filter-highlight">{{ part.text }}</mark>
+                  <span *ngIf="!part.match">{{ part.text }}</span>
+                </ng-container>
                 <span
                   class="color-swatch"
                   *ngIf="getColorSwatchForPart(row, valuePart) as swatchColor"
@@ -166,7 +169,10 @@
               </ng-container>
             </ng-container>
             <ng-template #plainCell>
-              {{ row[column.key] }}
+              <ng-container *ngFor="let part of getHighlightedParts(row[column.key])">
+                <mark *ngIf="part.match" class="global-filter-highlight">{{ part.text }}</mark>
+                <span *ngIf="!part.match">{{ part.text }}</span>
+              </ng-container>
             </ng-template>
           </td>
         </tr>

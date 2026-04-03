@@ -11,6 +11,11 @@ interface SelectOption {
   value: string;
 }
 
+interface HighlightPart {
+  text: string;
+  match: boolean;
+}
+
 interface ActiveFilterChip {
   id: string;
   label: string;
@@ -487,6 +492,37 @@ export class ConfigTableComponent implements OnChanges {
       return null;
     }
     return this.getColorSwatchColor(valuePart);
+  }
+
+  getHighlightedParts(value = ''): HighlightPart[] {
+    const source = value;
+    const needle = this.globalFilter.trim();
+    if (!needle) {
+      return [{ text: source, match: false }];
+    }
+
+    const sourceLower = source.toLowerCase();
+    const needleLower = needle.toLowerCase();
+    const parts: HighlightPart[] = [];
+
+    let cursor = 0;
+    while (cursor < source.length) {
+      const matchIndex = sourceLower.indexOf(needleLower, cursor);
+      if (matchIndex < 0) {
+        parts.push({ text: source.slice(cursor), match: false });
+        break;
+      }
+
+      if (matchIndex > cursor) {
+        parts.push({ text: source.slice(cursor, matchIndex), match: false });
+      }
+
+      const matchEnd = matchIndex + needle.length;
+      parts.push({ text: source.slice(matchIndex, matchEnd), match: true });
+      cursor = matchEnd;
+    }
+
+    return parts.length > 0 ? parts : [{ text: source, match: false }];
   }
 
   private unwrapColorToken(value: string): string {

@@ -116,6 +116,13 @@
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--surface-elevated) 70%, transparent);
 }
 
+.global-filter-highlight {
+  background: color-mix(in srgb, #2ecc71 42%, transparent);
+  color: var(--text-primary);
+  border-radius: 0.2rem;
+  padding: 0 0.08rem;
+}
+
 .header-cell {
   white-space: nowrap;
   background: var(--surface-raised);
