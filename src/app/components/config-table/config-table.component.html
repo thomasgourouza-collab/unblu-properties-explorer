@@ -157,7 +157,7 @@
                 <span>{{ valuePart }}</span>
                 <span
                   class="color-swatch"
-                  *ngIf="getColorSwatchColor(valuePart) as swatchColor"
+                  *ngIf="getColorSwatchForPart(row, valuePart) as swatchColor"
                   [style.backgroundColor]="swatchColor"
                   [title]="swatchColor"
                   aria-label="Detected color"

@@ -386,8 +386,35 @@ export class ConfigTableComponent implements OnChanges {
     return value.split(/,(?![^(]*\))/).map((part) => part.trim());
   }
 
+  isColorType(typeValue: string): boolean {
+    const normalized = typeValue.toLowerCase();
+    return normalized.includes('color') || normalized.includes('colors');
+  }
+
+  getColorSwatchForPart(row: ConfigRow, valuePart: string): string | null {
+    if (!this.isColorType(row.type)) {
+      return null;
+    }
+    return this.getColorSwatchColor(valuePart);
+  }
+
+  private unwrapColorToken(value: string): string {
+    let unwrapped = value.trim();
+    const wrappers: Array<[string, string]> = [
+      ['`', '`'],
+      ['"', '"'],
+      ["'", "'"]
+    ];
+    for (const [start, end] of wrappers) {
+      if (unwrapped.startsWith(start) && unwrapped.endsWith(end) && unwrapped.length >= 2) {
+        unwrapped = unwrapped.slice(1, -1).trim();
+      }
+    }
+    return unwrapped;
+  }
+
   getColorSwatchColor(value: string): string | null {
-    const trimmedValue = value.trim();
+    const trimmedValue = this.unwrapColorToken(value);
 
     const hexPattern = /^#(?:[0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
     if (hexPattern.test(trimmedValue)) {
