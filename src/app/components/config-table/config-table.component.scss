@@ -123,6 +123,16 @@
   padding: 0 0.08rem;
 }
 
+.property-code-cell {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.78rem;
+  background: color-mix(in srgb, var(--surface-soft) 75%, transparent);
+  color: var(--text-primary);
+  border: 1px solid var(--surface-border);
+  border-radius: 0.28rem;
+  padding: 0.08rem 0.3rem;
+}
+
 .header-cell {
   white-space: nowrap;
   background: var(--surface-raised);
