@@ -153,14 +153,17 @@
         <tr>
           <td *ngFor="let column of columns">
             <ng-container *ngIf="column.key === 'defaultValue'; else plainCell">
-              <span>{{ row[column.key] }}</span>
-              <span
-                class="color-swatch"
-                *ngIf="getRgbaColor(row[column.key]) as rgbaColor"
-                [style.backgroundColor]="rgbaColor"
-                [title]="rgbaColor"
-                aria-label="Detected RGBA color"
-              ></span>
+              <ng-container *ngFor="let valuePart of getDefaultValueParts(row[column.key]); let isLast = last">
+                <span>{{ valuePart }}</span>
+                <span
+                  class="color-swatch"
+                  *ngIf="getColorSwatchColor(valuePart) as swatchColor"
+                  [style.backgroundColor]="swatchColor"
+                  [title]="swatchColor"
+                  aria-label="Detected color"
+                ></span>
+                <span *ngIf="!isLast">,</span>
+              </ng-container>
             </ng-container>
             <ng-template #plainCell>
               {{ row[column.key] }}

@@ -382,16 +382,27 @@ export class ConfigTableComponent implements OnChanges {
     return row[key] ?? '';
   }
 
-  getRgbaColor(value: string): string | null {
+  getDefaultValueParts(value = ''): string[] {
+    return value.split(/,(?![^(]*\))/).map((part) => part.trim());
+  }
+
+  getColorSwatchColor(value: string): string | null {
+    const trimmedValue = value.trim();
+
+    const hexPattern = /^#(?:[0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+    if (hexPattern.test(trimmedValue)) {
+      return trimmedValue;
+    }
+
     const rgbaWithAlphaPattern =
-      /rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(0|1|0?\.\d+)\s*\)/i;
-    const rgbaWithAlphaMatch = rgbaWithAlphaPattern.exec(value);
+      /^rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(0|1|0?\.\d+)\s*\)$/i;
+    const rgbaWithAlphaMatch = rgbaWithAlphaPattern.exec(trimmedValue);
     if (rgbaWithAlphaMatch) {
       return rgbaWithAlphaMatch[0];
     }
 
-    const rgbLikePattern = /(rgba?)\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)/i;
-    const rgbLikeMatch = rgbLikePattern.exec(value);
+    const rgbLikePattern = /^(rgba?)\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/i;
+    const rgbLikeMatch = rgbLikePattern.exec(trimmedValue);
     if (!rgbLikeMatch) {
       return null;
     }
