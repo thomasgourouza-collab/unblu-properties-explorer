@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, HostListener, Input, OnChanges, OnDestroy, SimpleChanges, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { TableColumnReorderEvent, TableModule } from 'primeng/table';
@@ -9,6 +9,7 @@ import { ColumnDefinition, ConfigColumnKey, ConfigRow, FilterMode } from '../../
 interface SelectOption {
   label: string;
   value: string;
+  disabled?: boolean;
 }
 
 interface HighlightPart {
@@ -46,10 +47,11 @@ interface TableState {
   templateUrl: './config-table.component.html',
   styleUrl: './config-table.component.scss'
 })
-export class ConfigTableComponent implements OnChanges {
+export class ConfigTableComponent implements OnChanges, OnDestroy {
   constructor(private readonly cdr: ChangeDetectorRef) {}
 
   @Input({ required: true }) rows: ConfigRow[] = [];
+  @ViewChild('globalFilterInputRef') globalFilterInputRef?: ElementRef<HTMLInputElement>;
   rowsPerPage = 25;
   readonly rowsPerPageOptions = [10, 25, 50, 100];
 
@@ -83,6 +85,8 @@ export class ConfigTableComponent implements OnChanges {
   private readonly emptyFilterValues: string[] = [];
   copiedPropertyValue: string | null = null;
   private copyResetTimerId?: ReturnType<typeof globalThis.setTimeout>;
+  private textFilterDebounceTimerId?: ReturnType<typeof globalThis.setTimeout>;
+  private readonly textFilterDebounceMs = 200;
 
   private readonly stateStorageKey = 'csv-explorer-table-state-v1';
   private restoredState = false;
@@ -107,7 +111,8 @@ export class ConfigTableComponent implements OnChanges {
       const column = this.columns.find((entry) => entry.key === key);
       return {
         label: column?.label ?? key,
-        value: key
+        value: key,
+        disabled: key === 'property'
       };
       });
   }
@@ -206,8 +211,17 @@ export class ConfigTableComponent implements OnChanges {
     this.applyFilters();
   }
 
+  ngOnDestroy(): void {
+    if (this.copyResetTimerId !== undefined) {
+      globalThis.clearTimeout(this.copyResetTimerId);
+    }
+    if (this.textFilterDebounceTimerId !== undefined) {
+      globalThis.clearTimeout(this.textFilterDebounceTimerId);
+    }
+  }
+
   onColumnVisibilityChange(): void {
-    const selectedSet = new Set(this.visibleColumnKeys);
+    const selectedSet = new Set(this.ensurePropertyVisible(this.visibleColumnKeys));
     this.visibleColumnKeys = this.columnOrderKeys.filter((key) => selectedSet.has(key));
 
     if (this.visibleColumnKeys.length === 0 && this.columnOrderKeys.length > 0) {
@@ -222,11 +236,13 @@ export class ConfigTableComponent implements OnChanges {
       return;
     }
 
-    this.visibleColumnKeys = event.columns
+    this.visibleColumnKeys = this.ensurePropertyVisible(
+      event.columns
       .map((column) => column.key)
       .filter((key: unknown): key is ConfigColumnKey =>
         this.columns.some((column) => column.key === key)
-      );
+      )
+    );
 
     this.syncColumnOrderFromVisibleOrder(this.visibleColumnKeys);
     this.persistState();
@@ -237,13 +253,18 @@ export class ConfigTableComponent implements OnChanges {
     this.persistState();
   }
 
+  onGlobalFilterInputChange(value: string): void {
+    this.globalFilter = value;
+    this.scheduleTextFilterRecompute();
+  }
+
   getTextFilter(key: ConfigColumnKey): string {
     return this.textFilters[key] ?? '';
   }
 
   setTextFilter(key: ConfigColumnKey, value: string): void {
     this.textFilters[key] = value;
-    this.onFiltersChanged();
+    this.scheduleTextFilterRecompute();
   }
 
   getTextMode(key: ConfigColumnKey): FilterMode {
@@ -258,6 +279,22 @@ export class ConfigTableComponent implements OnChanges {
   setGlobalFilterMode(mode: string): void {
     this.globalFilterMode = mode === 'and' ? 'and' : 'or';
     this.onFiltersChanged();
+  }
+
+  clearGlobalFilterInput(): void {
+    if (!this.globalFilter) {
+      return;
+    }
+    this.globalFilter = '';
+    this.scheduleTextFilterRecompute();
+  }
+
+  clearTextFilterInput(key: ConfigColumnKey): void {
+    if (!this.textFilters[key]) {
+      return;
+    }
+    this.textFilters[key] = '';
+    this.scheduleTextFilterRecompute();
   }
 
   setGlobalFilterScope(scope: string): void {
@@ -305,8 +342,8 @@ export class ConfigTableComponent implements OnChanges {
       allowedScopes: 'or',
       editableBy: 'or'
     };
-    this.applyFilters();
-    this.persistState();
+    this.cancelTextFilterRecompute();
+    this.onFiltersChanged();
   }
 
   clearAllFilters(): void {
@@ -739,19 +776,35 @@ export class ConfigTableComponent implements OnChanges {
     return key === 'allowedScopes' ? 'allowedScopes' : 'editableBy';
   }
 
+  @HostListener('document:keydown', ['$event'])
+  onDocumentKeydown(event: KeyboardEvent): void {
+    if (event.defaultPrevented || event.key !== '/' || event.ctrlKey || event.metaKey || event.altKey) {
+      return;
+    }
+
+    const target = event.target as HTMLElement | null;
+    if (target && this.isEditableElement(target)) {
+      return;
+    }
+
+    event.preventDefault();
+    this.globalFilterInputRef?.nativeElement.focus();
+  }
+
   private syncColumnOrderFromVisibleOrder(orderedVisibleKeys: ConfigColumnKey[]): void {
-    const visibleSet = new Set(orderedVisibleKeys);
+    const normalizedVisibleKeys = this.ensurePropertyVisible(orderedVisibleKeys);
+    const visibleSet = new Set(normalizedVisibleKeys);
     const visibleSlotIndexes = this.columnOrderKeys
       .map((key, index) => (visibleSet.has(key) ? index : -1))
       .filter((index) => index >= 0);
 
-    if (visibleSlotIndexes.length !== orderedVisibleKeys.length) {
+    if (visibleSlotIndexes.length !== normalizedVisibleKeys.length) {
       return;
     }
 
     const nextOrder = [...this.columnOrderKeys];
     for (let index = 0; index < visibleSlotIndexes.length; index += 1) {
-      nextOrder[visibleSlotIndexes[index]] = orderedVisibleKeys[index];
+      nextOrder[visibleSlotIndexes[index]] = normalizedVisibleKeys[index];
     }
 
     this.columnOrderKeys = this.normalizeColumnOrderKeys(nextOrder);
@@ -806,8 +859,10 @@ export class ConfigTableComponent implements OnChanges {
       );
       const selectedSet = new Set(validColumns);
       this.visibleColumnKeys = this.columnOrderKeys.filter((key) => selectedSet.has(key));
+      this.visibleColumnKeys = this.ensurePropertyVisible(this.visibleColumnKeys);
       if (this.visibleColumnKeys.length === 0) {
         this.visibleColumnKeys = [...this.columnOrderKeys];
+        this.visibleColumnKeys = this.ensurePropertyVisible(this.visibleColumnKeys);
       }
     } catch {
       this.columnOrderKeys = this.columns.map((column) => column.key);
@@ -829,5 +884,47 @@ export class ConfigTableComponent implements OnChanges {
     };
 
     localStorage.setItem(this.stateStorageKey, JSON.stringify(state));
+  }
+
+  private scheduleTextFilterRecompute(): void {
+    this.cancelTextFilterRecompute();
+    this.textFilterDebounceTimerId = globalThis.setTimeout(() => {
+      this.textFilterDebounceTimerId = undefined;
+      this.onFiltersChanged();
+    }, this.textFilterDebounceMs);
+  }
+
+  private cancelTextFilterRecompute(): void {
+    if (this.textFilterDebounceTimerId !== undefined) {
+      globalThis.clearTimeout(this.textFilterDebounceTimerId);
+      this.textFilterDebounceTimerId = undefined;
+    }
+  }
+
+  private ensurePropertyVisible(keys: ConfigColumnKey[]): ConfigColumnKey[] {
+    if (keys.includes('property')) {
+      return keys;
+    }
+
+    const propertyIndex = this.columnOrderKeys.indexOf('property');
+    if (propertyIndex < 0) {
+      return ['property', ...keys];
+    }
+
+    const current = [...keys];
+    let insertAt = 0;
+    for (let index = 0; index < current.length; index += 1) {
+      const currentIndex = this.columnOrderKeys.indexOf(current[index]);
+      if (currentIndex >= 0 && currentIndex < propertyIndex) {
+        insertAt = index + 1;
+      }
+    }
+    current.splice(insertAt, 0, 'property');
+    return current;
+  }
+
+  private isEditableElement(target: HTMLElement): boolean {
+    const tagName = target.tagName.toLowerCase();
+    return tagName === 'input' || tagName === 'textarea' || target.isContentEditable;
   }
 }

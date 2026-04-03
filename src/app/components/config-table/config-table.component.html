@@ -3,6 +3,7 @@
     <p-multiselect
       inputId="columnVisibility"
       [options]="columnVisibilityOptions"
+      optionDisabled="disabled"
       [showToggleAll]="true"
       [filter]="true"
       [appendTo]="'body'"
@@ -27,12 +28,14 @@
     <div class="toolbar-global-third">
       <div class="global-filter-inline">
         <input
+          #globalFilterInputRef
           id="globalFilterInput"
           type="text"
           class="form-control form-control-sm"
-          placeholder="Global filter..."
-          [(ngModel)]="globalFilter"
-          (ngModelChange)="onFiltersChanged()"
+          placeholder="Global filter. Use commas for multiple tokens."
+          [ngModel]="globalFilter"
+          (ngModelChange)="onGlobalFilterInputChange($event)"
+          (keydown.escape)="clearGlobalFilterInput()"
         />
         <div class="mode-toggle">
           <input
@@ -133,8 +136,10 @@
                     type="text"
                     class="form-control form-control-sm header-filter-input"
                     placeholder="Contains..."
+                    title="Use commas for multiple tokens. OR/AND controls token matching."
                     [ngModel]="getTextFilter(column.key)"
                     (ngModelChange)="setTextFilter(column.key, $event)"
+                    (keydown.escape)="clearTextFilterInput(column.key)"
                   />
                   <div class="mode-toggle">
                     <input
