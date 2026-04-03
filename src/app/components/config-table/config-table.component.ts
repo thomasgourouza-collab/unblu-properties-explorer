@@ -117,6 +117,10 @@ export class ConfigTableComponent implements OnChanges {
     return this.columns.filter((column) => column.key !== 'allowedValues' || this.hasAllowedValuesColumn).length;
   }
 
+  get uniformColumnWidthPercent(): number {
+    return 100 / Math.max(this.visibleColumns.length, 1);
+  }
+
   get activeFilterChips(): ActiveFilterChip[] {
     const chips: ActiveFilterChip[] = [];
 

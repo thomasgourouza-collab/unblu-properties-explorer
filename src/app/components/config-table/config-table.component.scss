@@ -124,6 +124,9 @@
 }
 
 .property-code-cell {
+  display: inline-block;
+  min-width: max-content;
+  white-space: nowrap;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   font-size: 0.78rem;
   background: color-mix(in srgb, var(--surface-soft) 75%, transparent);
@@ -134,10 +137,19 @@
 }
 
 .property-code-wrap {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 0.28rem;
   min-width: 0;
+  width: 100%;
+}
+
+.property-code-scroll {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
 }
 
 .property-copy-btn {
@@ -179,6 +191,8 @@
   white-space: nowrap;
   background: var(--surface-raised);
   border-bottom: 1px solid var(--surface-border);
+  min-width: 0;
+  overflow: hidden;
 }
 
 .columns-row .header-content {
@@ -192,8 +206,9 @@
 .filters-row .filter-header-cell {
   background: var(--surface-soft);
   vertical-align: top;
-  min-width: 180px;
+  min-width: 0;
   padding: 0.4rem 0.5rem;
+  overflow: hidden;
 }
 
 .header-filter-input {
@@ -234,6 +249,30 @@
 :host ::ng-deep .header-filter-select .p-multiselect {
   width: 100%;
   min-height: 2rem;
+}
+
+:host ::ng-deep .fixed-columns-table .p-datatable-wrapper {
+  overflow-x: hidden !important;
+}
+
+:host ::ng-deep .fixed-columns-table .p-datatable-table,
+:host ::ng-deep .fixed-columns-table .p-datatable-scrollable-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.body-cell {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.cell-x-scroll {
+  display: block;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
 }
 
 :host ::ng-deep .p-datatable {
@@ -343,7 +382,7 @@
   }
 
   .filters-row .filter-header-cell {
-    min-width: 150px;
+    min-width: 0;
   }
 
   :host ::ng-deep .p-paginator {

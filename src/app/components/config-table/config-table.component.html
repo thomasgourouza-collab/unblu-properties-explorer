@@ -66,6 +66,7 @@
       [scrollable]="true"
       [showCurrentPageReport]="false"
       scrollHeight="70vh"
+      styleClass="fixed-columns-table"
       (onColReorder)="onColumnReorder($event)"
     >
       <ng-template pTemplate="header" let-columns>
@@ -76,6 +77,7 @@
             [pSortableColumn]="column.key"
             pReorderableColumn
             class="header-cell"
+            [style.width.%]="uniformColumnWidthPercent"
           >
             <div class="header-content">
               <span>{{ column.label }}</span>
@@ -84,7 +86,7 @@
           </th>
         </tr>
         <tr class="filters-row">
-          <th *ngFor="let column of columns" scope="col" class="filter-header-cell">
+          <th *ngFor="let column of columns" scope="col" class="filter-header-cell" [style.width.%]="uniformColumnWidthPercent">
             <ng-container [ngSwitch]="column.filterType">
               <input
                 *ngSwitchCase="'text'"
@@ -151,36 +153,40 @@
       </ng-template>
       <ng-template pTemplate="body" let-row let-columns="columns">
         <tr>
-          <td *ngFor="let column of columns">
+          <td *ngFor="let column of columns" class="body-cell" [style.width.%]="uniformColumnWidthPercent">
             <ng-container *ngIf="column.key === 'defaultValue'; else plainCell">
-              <ng-container *ngFor="let valuePart of getDefaultValueParts(row[column.key]); let isLast = last">
-                <ng-container *ngFor="let part of getHighlightedParts(valuePart)">
-                  <mark *ngIf="part.match" class="global-filter-highlight">{{ part.text }}</mark>
-                  <span *ngIf="!part.match">{{ part.text }}</span>
+              <div class="cell-x-scroll">
+                <ng-container *ngFor="let valuePart of getDefaultValueParts(row[column.key]); let isLast = last">
+                  <ng-container *ngFor="let part of getHighlightedParts(valuePart)">
+                    <mark *ngIf="part.match" class="global-filter-highlight">{{ part.text }}</mark>
+                    <span *ngIf="!part.match">{{ part.text }}</span>
+                  </ng-container>
+                  <span
+                    class="color-swatch"
+                    *ngIf="getColorSwatchForPart(row, valuePart) as swatchColor"
+                    [style.backgroundColor]="swatchColor"
+                    [title]="swatchColor"
+                    aria-label="Detected color"
+                  ></span>
+                  <span *ngIf="!isLast">,</span>
                 </ng-container>
-                <span
-                  class="color-swatch"
-                  *ngIf="getColorSwatchForPart(row, valuePart) as swatchColor"
-                  [style.backgroundColor]="swatchColor"
-                  [title]="swatchColor"
-                  aria-label="Detected color"
-                ></span>
-                <span *ngIf="!isLast">,</span>
-              </ng-container>
+              </div>
             </ng-container>
             <ng-template #plainCell>
               <ng-container *ngIf="column.key === 'property'; else standardTextCell">
                 <span class="property-code-wrap">
-                  <code class="property-code-cell">
-                    <ng-container *ngFor="let part of getHighlightedParts(row[column.key])">
-                      <mark *ngIf="part.match" class="global-filter-highlight">{{ part.text }}</mark>
-                      <span *ngIf="!part.match">{{ part.text }}</span>
-                    </ng-container>
-                  </code>
+                  <span class="property-code-scroll">
+                    <code class="property-code-cell">
+                      <ng-container *ngFor="let part of getHighlightedParts(row[column.key])">
+                        <mark *ngIf="part.match" class="global-filter-highlight">{{ part.text }}</mark>
+                        <span *ngIf="!part.match">{{ part.text }}</span>
+                      </ng-container>
+                    </code>
+                  </span>
                   <button
                     type="button"
                     class="property-copy-btn"
-                    (click)="copyPropertyValue(row[column.key])"
+                    (click)="$event.stopPropagation(); copyPropertyValue(row[column.key])"
                     [title]="isCopiedProperty(row[column.key]) ? 'Copied' : 'Copy property'"
                     [attr.aria-label]="isCopiedProperty(row[column.key]) ? 'Copied' : 'Copy property value'"
                   >
@@ -190,10 +196,12 @@
                 </span>
               </ng-container>
               <ng-template #standardTextCell>
-                <ng-container *ngFor="let part of getHighlightedParts(row[column.key])">
-                  <mark *ngIf="part.match" class="global-filter-highlight">{{ part.text }}</mark>
-                  <span *ngIf="!part.match">{{ part.text }}</span>
-                </ng-container>
+                <div class="cell-x-scroll">
+                  <ng-container *ngFor="let part of getHighlightedParts(row[column.key])">
+                    <mark *ngIf="part.match" class="global-filter-highlight">{{ part.text }}</mark>
+                    <span *ngIf="!part.match">{{ part.text }}</span>
+                  </ng-container>
+                </div>
               </ng-template>
             </ng-template>
           </td>
