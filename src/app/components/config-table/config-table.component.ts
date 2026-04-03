@@ -27,13 +27,14 @@ interface ActiveFilterChip {
 
 type ListColumnKey = 'allowedScopes' | 'editableBy';
 type GlobalFilterScope = 'all' | 'visible';
+type TextMatchMode = 'or' | 'and' | 'regex';
 
 interface TableState {
   globalFilter: string;
-  globalFilterMode?: FilterMode;
+  globalFilterMode?: TextMatchMode;
   globalFilterScope?: GlobalFilterScope;
   textFilters: Partial<Record<ConfigColumnKey, string>>;
-  textModes?: Partial<Record<ConfigColumnKey, FilterMode>>;
+  textModes?: Partial<Record<ConfigColumnKey, TextMatchMode>>;
   valueFilters: Partial<Record<ConfigColumnKey, string[]>>;
   listModes: Record<ListColumnKey, FilterMode>;
   visibleColumnKeys: ConfigColumnKey[];
@@ -70,10 +71,10 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
   filteredRows: ConfigRow[] = [];
   globalFilter = '';
-  globalFilterMode: FilterMode = 'or';
+  globalFilterMode: TextMatchMode = 'or';
   globalFilterScope: GlobalFilterScope = 'all';
   textFilters: Partial<Record<ConfigColumnKey, string>> = {};
-  textModes: Partial<Record<ConfigColumnKey, FilterMode>> = {};
+  textModes: Partial<Record<ConfigColumnKey, TextMatchMode>> = {};
   valueFilters: Partial<Record<ConfigColumnKey, string[]>> = {};
   listModes: Record<ListColumnKey, FilterMode> = {
     allowedScopes: 'or',
@@ -267,7 +268,11 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     return this.textFilters[key] ?? '';
   }
 
-  getFilterTokensDisplay(input: string): string[] {
+  getFilterTokensDisplay(input: string, mode: TextMatchMode = 'or'): string[] {
+    if (mode === 'regex') {
+      const trimmed = input.trim();
+      return trimmed ? [trimmed] : [];
+    }
     return input
       .split(',')
       .map((token) => token.trim())
@@ -279,17 +284,18 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.scheduleTextFilterRecompute();
   }
 
-  getTextMode(key: ConfigColumnKey): FilterMode {
-    return this.textModes[key] === 'and' ? 'and' : 'or';
+  getTextMode(key: ConfigColumnKey): TextMatchMode {
+    const mode = this.textModes[key];
+    return mode === 'and' || mode === 'regex' ? mode : 'or';
   }
 
   setTextMode(key: ConfigColumnKey, mode: string): void {
-    this.textModes[key] = mode === 'and' ? 'and' : 'or';
+    this.textModes[key] = mode === 'and' || mode === 'regex' ? mode : 'or';
     this.onFiltersChanged();
   }
 
   setGlobalFilterMode(mode: string): void {
-    this.globalFilterMode = mode === 'and' ? 'and' : 'or';
+    this.globalFilterMode = mode === 'and' || mode === 'regex' ? mode : 'or';
     this.onFiltersChanged();
   }
 
@@ -486,10 +492,11 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   }
 
   private applyFilters(): void {
-    const globalTokens = this.splitFilterTokens(this.globalFilter);
+    const globalTokens = this.splitFilterTokens(this.globalFilter, this.globalFilterMode);
+    const globalRegex = this.globalFilterMode === 'regex' ? this.tryParseRegexInput(this.globalFilter) : null;
 
     this.filteredRows = this.rows.filter((row) => {
-      if (globalTokens.length > 0 && !this.rowMatchesGlobalFilter(row, globalTokens)) {
+      if ((globalTokens.length > 0 || globalRegex) && !this.rowMatchesGlobalFilter(row, globalTokens, globalRegex)) {
         return false;
       }
 
@@ -503,9 +510,17 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     });
   }
 
-  private rowMatchesGlobalFilter(row: ConfigRow, tokens: string[]): boolean {
+  private rowMatchesGlobalFilter(row: ConfigRow, tokens: string[], regex: RegExp | null): boolean {
     const columnsToSearch = this.globalFilterScope === 'visible' ? this.visibleColumns : this.columns;
-    const rowValues = columnsToSearch.map((column) => this.normalize(this.getCellValue(row, column.key)));
+    const rawValues = columnsToSearch.map((column) => this.getCellValue(row, column.key));
+    if (this.globalFilterMode === 'regex') {
+      if (!regex) {
+        return false;
+      }
+      return rawValues.some((value) => this.matchesRegex(value, regex));
+    }
+
+    const rowValues = rawValues.map((value) => this.normalize(value));
     if (this.globalFilterMode === 'and') {
       return tokens.every((token) => rowValues.some((value) => value.includes(token)));
     }
@@ -513,10 +528,12 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   }
 
   private rowMatchesColumnFilter(row: ConfigRow, column: ColumnDefinition): boolean {
-    const textTokens = this.splitFilterTokens(this.textFilters[column.key] ?? '');
-    if (textTokens.length > 0) {
-      const value = this.normalize(this.getCellValue(row, column.key));
-      if (!this.matchesTokens(value, textTokens, this.getTextMode(column.key))) {
+    const textMode = this.getTextMode(column.key);
+    const textTokens = this.splitFilterTokens(this.textFilters[column.key] ?? '', textMode);
+    const textRegex = textMode === 'regex' ? this.tryParseRegexInput(this.textFilters[column.key] ?? '') : null;
+    if (textTokens.length > 0 || textRegex) {
+      const value = this.getCellValue(row, column.key);
+      if (!this.matchesTokens(value, textTokens, textMode, textRegex)) {
         return false;
       }
     }
@@ -695,21 +712,28 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       return [{ text: '', kind: 'none' }];
     }
 
-    const globalTokens = this.splitFilterTokens(this.globalFilter);
+    const globalTokens = this.splitFilterTokens(this.globalFilter, this.globalFilterMode);
+    const globalRegex = this.globalFilterMode === 'regex' ? this.tryParseRegexInput(this.globalFilter) : null;
     const columnTokens =
       columnKey && this.columns.some((column) => column.key === columnKey && column.filterType === 'text')
-        ? this.splitFilterTokens(this.textFilters[columnKey] ?? '')
+        ? this.splitFilterTokens(this.textFilters[columnKey] ?? '', this.getTextMode(columnKey))
         : [];
+    const columnRegex =
+      columnKey &&
+      this.columns.some((column) => column.key === columnKey && column.filterType === 'text') &&
+      this.getTextMode(columnKey) === 'regex'
+        ? this.tryParseRegexInput(this.textFilters[columnKey] ?? '')
+        : null;
 
-    if (globalTokens.length === 0 && columnTokens.length === 0) {
+    if (globalTokens.length === 0 && columnTokens.length === 0 && !globalRegex && !columnRegex) {
       return [{ text: source, kind: 'none' }];
     }
 
     const sourceLower = source.toLowerCase();
     const levels = new Array<number>(source.length).fill(0);
 
-    this.applyTokenHighlights(sourceLower, globalTokens, levels, 1);
-    this.applyTokenHighlights(sourceLower, columnTokens, levels, 2);
+    this.applyTokenHighlights(source, sourceLower, globalTokens, globalRegex, levels, 1);
+    this.applyTokenHighlights(source, sourceLower, columnTokens, columnRegex, levels, 2);
 
     const parts: HighlightPart[] = [];
     let buffer = '';
@@ -732,7 +756,35 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     return parts.length > 0 ? parts : [{ text: source, kind: 'none' }];
   }
 
-  private applyTokenHighlights(sourceLower: string, tokens: string[], levels: number[], level: number): void {
+  private applyTokenHighlights(
+    source: string,
+    sourceLower: string,
+    tokens: string[],
+    regex: RegExp | null,
+    levels: number[],
+    level: number
+  ): void {
+    if (regex) {
+      const workingRegex = this.toGlobalRegex(regex);
+      if (workingRegex) {
+        let match = workingRegex.exec(source);
+        while (match) {
+          const start = match.index;
+          const length = match[0]?.length ?? 0;
+          const end = start + length;
+          if (end > start) {
+            for (let index = start; index < end && index < levels.length; index += 1) {
+              levels[index] = Math.max(levels[index], level);
+            }
+          }
+          if (length === 0) {
+            workingRegex.lastIndex += 1;
+          }
+          match = workingRegex.exec(source);
+        }
+      }
+    }
+
     for (const token of tokens) {
       if (!token) {
         continue;
@@ -850,14 +902,21 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     return value.toLowerCase().trim();
   }
 
-  private splitFilterTokens(input: string): string[] {
+  private splitFilterTokens(input: string, mode: TextMatchMode): string[] {
+    if (mode === 'regex') {
+      return [];
+    }
     return input
       .split(',')
       .map((token) => this.normalize(token))
       .filter((token) => token.length > 0);
   }
 
-  private matchesTokens(value: string, tokens: string[], mode: FilterMode): boolean {
+  private matchesTokens(value: string, tokens: string[], mode: TextMatchMode, regex: RegExp | null): boolean {
+    if (mode === 'regex') {
+      return this.matchesRegex(value, regex);
+    }
+
     if (tokens.length === 0) {
       return true;
     }
@@ -865,6 +924,55 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       return tokens.every((token) => value.includes(token));
     }
     return tokens.some((token) => value.includes(token));
+  }
+
+  private tryParseRegexInput(input: string): RegExp | null {
+    const trimmed = input.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    if (trimmed.startsWith('/')) {
+      const lastSlash = trimmed.lastIndexOf('/');
+      if (lastSlash > 0) {
+        const pattern = trimmed.slice(1, lastSlash);
+        const flags = trimmed.slice(lastSlash + 1);
+        if (/^[dgimsuy]*$/.test(flags)) {
+          try {
+            return new RegExp(pattern, flags);
+          } catch {
+            return null;
+          }
+        }
+      }
+    }
+
+    try {
+      return new RegExp(trimmed, 'i');
+    } catch {
+      return null;
+    }
+  }
+
+  private toGlobalRegex(regex: RegExp): RegExp | null {
+    try {
+      const flags = regex.flags.includes('g') ? regex.flags : `${regex.flags}g`;
+      return new RegExp(regex.source, flags);
+    } catch {
+      return null;
+    }
+  }
+
+  private matchesRegex(value: string, regex: RegExp | null): boolean {
+    if (!regex) {
+      return false;
+    }
+    try {
+      const flags = regex.flags.replaceAll('g', '');
+      return new RegExp(regex.source, flags).test(value);
+    } catch {
+      return false;
+    }
   }
 
   private safeMarkForCheck(): void {
@@ -947,10 +1055,23 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
       const parsedState = JSON.parse(rawState) as TableState;
       this.globalFilter = parsedState.globalFilter ?? '';
-      this.globalFilterMode = parsedState.globalFilterMode === 'and' ? 'and' : 'or';
+      this.globalFilterMode =
+        parsedState.globalFilterMode === 'and' || parsedState.globalFilterMode === 'regex'
+          ? parsedState.globalFilterMode
+          : 'or';
       this.globalFilterScope = parsedState.globalFilterScope === 'visible' ? 'visible' : 'all';
       this.textFilters = parsedState.textFilters ?? {};
-      this.textModes = parsedState.textModes ?? {};
+      this.textModes = Object.entries(parsedState.textModes ?? {}).reduce(
+        (acc, [key, mode]) => {
+          if (mode === 'and' || mode === 'regex') {
+            acc[key as ConfigColumnKey] = mode;
+          } else {
+            acc[key as ConfigColumnKey] = 'or';
+          }
+          return acc;
+        },
+        {} as Partial<Record<ConfigColumnKey, TextMatchMode>>
+      );
       this.valueFilters = parsedState.valueFilters ?? {};
       this.listModes = {
         allowedScopes: parsedState.listModes?.allowedScopes === 'and' ? 'and' : 'or',

@@ -58,6 +58,16 @@
             (ngModelChange)="setGlobalFilterMode($event)"
           />
           <label class="btn btn-outline-secondary btn-xs" for="global-filter-and">AND</label>
+          <input
+            class="btn-check"
+            type="radio"
+            id="global-filter-regex"
+            name="global-filter-mode"
+            value="regex"
+            [ngModel]="globalFilterMode"
+            (ngModelChange)="setGlobalFilterMode($event)"
+          />
+          <label class="btn btn-outline-secondary btn-xs" for="global-filter-regex">Regex</label>
         </div>
         <select
           class="form-select form-select-sm global-filter-scope-select"
@@ -70,7 +80,7 @@
           <option value="visible">In visible columns</option>
         </select>
       </div>
-      <div class="token-pills-preview global-token-pills" *ngIf="getFilterTokensDisplay(globalFilter) as tokens">
+      <div class="token-pills-preview global-token-pills" *ngIf="getFilterTokensDisplay(globalFilter, globalFilterMode) as tokens">
         <button
           type="button"
           class="token-pill token-pill-removable"
@@ -150,12 +160,12 @@
                       type="text"
                       class="form-control form-control-sm header-filter-input"
                       placeholder="Contains..."
-                      title="Use commas for multiple tokens. OR/AND controls token matching."
+                      title="Use commas for multiple tokens in OR/AND mode, or switch to Regex mode."
                       [ngModel]="getTextFilter(column.key)"
                       (ngModelChange)="setTextFilter(column.key, $event)"
                       (keydown.escape)="clearTextFilterInput(column.key)"
                     />
-                    <div class="token-pills-preview token-pills-inline" *ngIf="getFilterTokensDisplay(getTextFilter(column.key)) as tokens">
+                    <div class="token-pills-preview token-pills-inline" *ngIf="getFilterTokensDisplay(getTextFilter(column.key), getTextMode(column.key)) as tokens">
                       <button
                         type="button"
                         class="token-pill token-pill-small token-pill-removable"
@@ -190,6 +200,16 @@
                       (ngModelChange)="setTextMode(column.key, $event)"
                     />
                     <label class="btn btn-outline-secondary btn-xs" [for]="column.key + '-text-and'">AND</label>
+                    <input
+                      class="btn-check"
+                      type="radio"
+                      [id]="column.key + '-text-regex'"
+                      [name]="column.key + '-text-mode'"
+                      value="regex"
+                      [ngModel]="getTextMode(column.key)"
+                      (ngModelChange)="setTextMode(column.key, $event)"
+                    />
+                    <label class="btn btn-outline-secondary btn-xs" [for]="column.key + '-text-regex'">Regex</label>
                   </div>
                 </div>
               </ng-container>
