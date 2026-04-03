@@ -72,6 +72,8 @@ export class ConfigTableComponent implements OnChanges {
   columnOrderKeys: ConfigColumnKey[] = this.columns.map((column) => column.key);
   filterOptions: Partial<Record<ConfigColumnKey, SelectOption[]>> = {};
   private readonly emptyFilterValues: string[] = [];
+  copiedPropertyValue: string | null = null;
+  private copyResetTimerId?: ReturnType<typeof globalThis.setTimeout>;
 
   private readonly stateStorageKey = 'csv-explorer-table-state-v1';
   private restoredState = false;
@@ -567,6 +569,32 @@ export class ConfigTableComponent implements OnChanges {
     const b = rgbLikeMatch[4];
 
     return fn === 'rgba' ? `rgb(${r},${g},${b})` : rgbLikeMatch[0];
+  }
+
+  async copyPropertyValue(value: string): Promise<void> {
+    const text = value.trim();
+    if (!text) {
+      return;
+    }
+
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        return;
+      }
+    } catch {
+      return;
+    }
+
+    this.copiedPropertyValue = text;
+    if (this.copyResetTimerId !== undefined) {
+      globalThis.clearTimeout(this.copyResetTimerId);
+    }
+    this.copyResetTimerId = globalThis.setTimeout(() => {
+      this.copiedPropertyValue = null;
+      this.copyResetTimerId = undefined;
+    }, 1400);
   }
 
   private normalize(value: string): string {

@@ -170,12 +170,23 @@
             </ng-container>
             <ng-template #plainCell>
               <ng-container *ngIf="column.key === 'property'; else standardTextCell">
-                <code class="property-code-cell">
-                  <ng-container *ngFor="let part of getHighlightedParts(row[column.key])">
-                    <mark *ngIf="part.match" class="global-filter-highlight">{{ part.text }}</mark>
-                    <span *ngIf="!part.match">{{ part.text }}</span>
-                  </ng-container>
-                </code>
+                <span class="property-code-wrap">
+                  <code class="property-code-cell">
+                    <ng-container *ngFor="let part of getHighlightedParts(row[column.key])">
+                      <mark *ngIf="part.match" class="global-filter-highlight">{{ part.text }}</mark>
+                      <span *ngIf="!part.match">{{ part.text }}</span>
+                    </ng-container>
+                  </code>
+                  <button
+                    type="button"
+                    class="property-copy-btn"
+                    (click)="copyPropertyValue(row[column.key])"
+                    [title]="copiedPropertyValue === row[column.key] ? 'Copied' : 'Copy property'"
+                    [attr.aria-label]="copiedPropertyValue === row[column.key] ? 'Copied' : 'Copy property value'"
+                  >
+                    <i class="pi" [ngClass]="copiedPropertyValue === row[column.key] ? 'pi-check' : 'pi-copy'"></i>
+                  </button>
+                </span>
               </ng-container>
               <ng-template #standardTextCell>
                 <ng-container *ngFor="let part of getHighlightedParts(row[column.key])">

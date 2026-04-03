@@ -133,6 +133,35 @@
   padding: 0.08rem 0.3rem;
 }
 
+.property-code-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  min-width: 0;
+}
+
+.property-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  border: 1px solid var(--surface-border);
+  border-radius: 0.28rem;
+  background: var(--surface-elevated);
+  color: var(--text-muted);
+  padding: 0;
+}
+
+.property-copy-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--accent);
+}
+
+.property-copy-btn .pi {
+  font-size: 0.7rem;
+}
+
 .header-cell {
   white-space: nowrap;
   background: var(--surface-raised);
