@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
 
 import { ConfigTableComponent } from './components/config-table/config-table.component';
 import { ConfigRow } from './models/config-row.model';
@@ -20,7 +20,10 @@ export class App {
   isParsing = false;
   isDragging = false;
 
-  constructor(private readonly csvParserService: CsvParserService) {}
+  constructor(
+    private readonly csvParserService: CsvParserService,
+    private readonly cdr: ChangeDetectorRef
+  ) {}
 
   async onFileSelected(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
@@ -65,19 +68,23 @@ export class App {
   private async loadFile(file: File): Promise<void> {
     this.isParsing = true;
     this.parseError = '';
+    this.cdr.detectChanges();
 
     try {
       const result = await this.csvParserService.parse(file);
       this.rows = result.rows;
       this.parseWarnings = result.warnings;
       this.currentFileName = file.name;
+      this.cdr.detectChanges();
     } catch (error) {
       this.rows = [];
       this.parseWarnings = [];
       this.currentFileName = '';
       this.parseError = error instanceof Error ? error.message : 'The CSV file could not be parsed.';
+      this.cdr.detectChanges();
     } finally {
       this.isParsing = false;
+      this.cdr.detectChanges();
     }
   }
 }
