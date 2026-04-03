@@ -11,6 +11,14 @@ interface SelectOption {
   value: string;
 }
 
+interface ActiveFilterChip {
+  id: string;
+  label: string;
+  kind: 'global' | 'text' | 'value' | 'listMode';
+  columnKey?: ConfigColumnKey;
+  value?: string;
+}
+
 type ListColumnKey = 'allowedScopes' | 'editableBy';
 
 interface TableState {
@@ -74,6 +82,57 @@ export class ConfigTableComponent implements OnChanges {
       label: column.label,
       value: column.key
     }));
+  }
+
+  get activeFilterChips(): ActiveFilterChip[] {
+    const chips: ActiveFilterChip[] = [];
+
+    if (this.globalFilter.trim()) {
+      chips.push({
+        id: 'global',
+        label: `Global: ${this.globalFilter.trim()}`,
+        kind: 'global'
+      });
+    }
+
+    for (const column of this.columns) {
+      const textValue = this.textFilters[column.key]?.trim();
+      if (textValue) {
+        chips.push({
+          id: `text:${column.key}`,
+          label: `${column.label}: ${textValue}`,
+          kind: 'text',
+          columnKey: column.key
+        });
+      }
+
+      const selectedValues = this.valueFilters[column.key] ?? [];
+      for (const value of selectedValues) {
+        chips.push({
+          id: `value:${column.key}:${value}`,
+          label: `${column.label}: ${value}`,
+          kind: 'value',
+          columnKey: column.key,
+          value
+        });
+      }
+
+      if (column.filterType === 'list' && selectedValues.length > 0) {
+        const mode = this.getListMode(column.key).toUpperCase();
+        chips.push({
+          id: `listMode:${column.key}`,
+          label: `${column.label} mode: ${mode}`,
+          kind: 'listMode',
+          columnKey: column.key
+        });
+      }
+    }
+
+    return chips;
+  }
+
+  get hasActiveFilters(): boolean {
+    return this.activeFilterChips.length > 0;
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -158,6 +217,41 @@ export class ConfigTableComponent implements OnChanges {
     };
     this.applyFilters();
     this.persistState();
+  }
+
+  clearAllFilters(): void {
+    this.clearFilters();
+  }
+
+  removeFilterChip(chip: ActiveFilterChip): void {
+    if (chip.kind === 'global') {
+      this.globalFilter = '';
+      this.onFiltersChanged();
+      return;
+    }
+
+    if (!chip.columnKey) {
+      return;
+    }
+
+    if (chip.kind === 'text') {
+      this.textFilters[chip.columnKey] = '';
+      this.onFiltersChanged();
+      return;
+    }
+
+    if (chip.kind === 'value' && chip.value !== undefined) {
+      const values = this.valueFilters[chip.columnKey] ?? [];
+      this.valueFilters[chip.columnKey] = values.filter((value) => value !== chip.value);
+      this.onFiltersChanged();
+      return;
+    }
+
+    if (chip.kind === 'listMode') {
+      const listKey = this.toListColumnKey(chip.columnKey);
+      this.listModes[listKey] = 'or';
+      this.onFiltersChanged();
+    }
   }
 
   private applyFilters(): void {

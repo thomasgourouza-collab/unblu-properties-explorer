@@ -30,6 +30,22 @@
   </div>
 </section>
 
+<section class="chips-row mb-2" *ngIf="hasActiveFilters">
+  <button
+    type="button"
+    class="filter-chip"
+    *ngFor="let chip of activeFilterChips"
+    (click)="removeFilterChip(chip)"
+    [title]="'Remove ' + chip.label"
+  >
+    <span>{{ chip.label }}</span>
+    <i class="pi pi-times" aria-hidden="true"></i>
+  </button>
+  <button type="button" class="btn btn-sm btn-outline-secondary chips-clear-btn" (click)="clearAllFilters()">
+    Clear all
+  </button>
+</section>
+
 <section class="card shadow-sm">
   <div class="card-body p-0">
     <p-table

@@ -9,6 +9,39 @@
   padding: 0.5rem;
 }
 
+.chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid var(--surface-border);
+  border-radius: 999px;
+  padding: 0.18rem 0.55rem;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  background: var(--surface-soft);
+  transition: border-color 0.15s ease, transform 0.1s ease;
+}
+
+.filter-chip:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.filter-chip i {
+  font-size: 0.65rem;
+}
+
+.chips-clear-btn {
+  margin-left: 0.2rem;
+}
+
 .toolbar-row {
   display: grid;
   grid-template-columns: minmax(180px, 2fr) minmax(220px, 2fr) auto;
