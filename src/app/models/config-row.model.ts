@@ -4,6 +4,7 @@ export type ConfigColumnKey =
   | 'property'
   | 'defaultValue'
   | 'type'
+  | 'allowedValues'
   | 'allowedScopes'
   | 'visibility'
   | 'editableBy'
@@ -17,12 +18,14 @@ export interface ConfigRow {
   property: string;
   defaultValue: string;
   type: string;
+  allowedValues: string;
   allowedScopes: string;
   visibility: string;
   editableBy: string;
   description: string;
   allowedScopesTokens: string[];
   editableByTokens: string[];
+  hasAllowedValuesColumn: boolean;
 }
 
 export interface ColumnDefinition {

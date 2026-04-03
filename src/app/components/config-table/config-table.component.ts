@@ -48,6 +48,7 @@ export class ConfigTableComponent implements OnChanges {
     { key: 'property', label: 'Property', filterType: 'text' },
     { key: 'defaultValue', label: 'Default value', filterType: 'text' },
     { key: 'type', label: 'Type', filterType: 'select' },
+    { key: 'allowedValues', label: 'Allowed values', filterType: 'text' },
     { key: 'allowedScopes', label: 'Allowed scopes', filterType: 'list' },
     { key: 'visibility', label: 'Visibility', filterType: 'select' },
     { key: 'editableBy', label: 'Editable by', filterType: 'list' },
@@ -79,17 +80,24 @@ export class ConfigTableComponent implements OnChanges {
   get visibleColumns(): ColumnDefinition[] {
     return this.visibleColumnKeys
       .map((key) => this.columns.find((column) => column.key === key))
+      .filter((column) => column?.key !== 'allowedValues' || this.hasAllowedValuesColumn)
       .filter((column): column is ColumnDefinition => Boolean(column));
   }
 
   get columnVisibilityOptions(): SelectOption[] {
-    return this.columnOrderKeys.map((key) => {
+    return this.columnOrderKeys
+      .filter((key) => key !== 'allowedValues' || this.hasAllowedValuesColumn)
+      .map((key) => {
       const column = this.columns.find((entry) => entry.key === key);
       return {
         label: column?.label ?? key,
         value: key
       };
-    });
+      });
+  }
+
+  get hasAllowedValuesColumn(): boolean {
+    return this.rows.some((row) => row.hasAllowedValuesColumn);
   }
 
   get activeFilterChips(): ActiveFilterChip[] {

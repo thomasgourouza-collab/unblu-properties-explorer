@@ -4,6 +4,8 @@
  * and download as CSV.
  */
 (function extractPropertiesToCsv() {
+  const TYPE_ALLOWED_VALUES_SEPARATOR = /\s+with allowed values:\s+/i;
+
   function cleanText(value) {
     return (value || "").replace(/\s+/g, " ").trim();
   }
@@ -25,6 +27,7 @@
   function getFieldMap(propertyBlock) {
     const map = {
       type: "",
+      allowedValues: "",
       default: "",
       allowedScopes: "",
       visibility: "",
@@ -48,10 +51,13 @@
           .map((node) => cleanText(node.textContent))
           .filter(Boolean);
 
-        if (nestedValues.length > 0) {
-          text = `${text} ${nestedValues.join(", ")}`.trim();
+        if (nestedValues.length > 0 && !TYPE_ALLOWED_VALUES_SEPARATOR.test(text)) {
+          text = `${text} with allowed values: ${nestedValues.join(", ")}`.trim();
         }
-        map.type = text;
+
+        const splitType = splitTypeAndAllowedValues(text);
+        map.type = splitType.type;
+        map.allowedValues = splitType.allowedValues;
         return;
       }
 
@@ -76,6 +82,23 @@
     });
 
     return map;
+  }
+
+  function splitTypeAndAllowedValues(typeText) {
+    const value = cleanText(typeText);
+    if (!TYPE_ALLOWED_VALUES_SEPARATOR.test(value)) {
+      return {
+        type: value,
+        allowedValues: ""
+      };
+    }
+
+    const parts = value.split(TYPE_ALLOWED_VALUES_SEPARATOR);
+    const [rawType, ...allowedValuesParts] = parts;
+    return {
+      type: cleanText(rawType),
+      allowedValues: cleanText(allowedValuesParts.join(", "))
+    };
   }
 
   function getDescription(propertyBlock) {
@@ -106,6 +129,7 @@
         property: propertyName,
         defaultValue: fields.default,
         type: fields.type,
+        allowedValues: fields.allowedValues,
         allowedScopes: fields.allowedScopes,
         visibility: fields.visibility,
         editableBy: fields.editableBy,
@@ -120,6 +144,7 @@
     "property",
     "default value",
     "type",
+    "allowed values",
     "allowed scopes",
     "visibility",
     "editable by",
@@ -135,6 +160,7 @@
         row.property,
         row.defaultValue,
         row.type,
+        row.allowedValues,
         row.allowedScopes,
         row.visibility,
         row.editableBy,

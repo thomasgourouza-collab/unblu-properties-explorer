@@ -4,17 +4,19 @@ import Papa from 'papaparse';
 import { ConfigRow, CsvParseResult } from '../models/config-row.model';
 
 type RawCsvRow = Record<string, string | undefined>;
+type CsvMappedKey = keyof Omit<ConfigRow, 'allowedScopesTokens' | 'editableByTokens' | 'hasAllowedValuesColumn'>;
 
 @Injectable({
   providedIn: 'root'
 })
 export class CsvParserService {
-  private readonly headerKeyMap: Record<string, keyof Omit<ConfigRow, 'allowedScopesTokens' | 'editableByTokens'>> = {
+  private readonly headerKeyMap: Record<string, CsvMappedKey> = {
     category: 'category',
     propertytitle: 'propertyTitle',
     property: 'property',
     defaultvalue: 'defaultValue',
     type: 'type',
+    allowedvalues: 'allowedValues',
     allowedscopes: 'allowedScopes',
     visibility: 'visibility',
     editableby: 'editableBy',
@@ -43,7 +45,9 @@ export class CsvParserService {
 
           const rows = data
             .map((row) => this.mapRow(row, headerMap))
-            .filter((row) => Object.values(row).some((value) => value !== '' && !Array.isArray(value)));
+            .filter((row) =>
+              Object.values(row).some((value) => typeof value === 'string' && value !== '')
+            );
 
           resolve({
             rows,
@@ -55,8 +59,8 @@ export class CsvParserService {
     });
   }
 
-  private buildHeaderMap(headers: string[]): Map<keyof Omit<ConfigRow, 'allowedScopesTokens' | 'editableByTokens'>, string> {
-    const mappedHeaders = new Map<keyof Omit<ConfigRow, 'allowedScopesTokens' | 'editableByTokens'>, string>();
+  private buildHeaderMap(headers: string[]): Map<CsvMappedKey, string> {
+    const mappedHeaders = new Map<CsvMappedKey, string>();
 
     for (const header of headers) {
       const normalizedHeader = this.normalizeHeader(header);
@@ -71,9 +75,9 @@ export class CsvParserService {
   }
 
   private getMissingHeaders(
-    headerMap: Map<keyof Omit<ConfigRow, 'allowedScopesTokens' | 'editableByTokens'>, string>
+    headerMap: Map<CsvMappedKey, string>
   ): string[] {
-    const requiredHeaders: Array<keyof Omit<ConfigRow, 'allowedScopesTokens' | 'editableByTokens'>> = [
+    const requiredHeaders: CsvMappedKey[] = [
       'category',
       'propertyTitle',
       'property',
@@ -90,9 +94,9 @@ export class CsvParserService {
 
   private mapRow(
     row: RawCsvRow,
-    headerMap: Map<keyof Omit<ConfigRow, 'allowedScopesTokens' | 'editableByTokens'>, string>
+    headerMap: Map<CsvMappedKey, string>
   ): ConfigRow {
-    const getValue = (key: keyof Omit<ConfigRow, 'allowedScopesTokens' | 'editableByTokens'>): string => {
+    const getValue = (key: CsvMappedKey): string => {
       const header = headerMap.get(key);
       if (!header) {
         return '';
@@ -103,6 +107,7 @@ export class CsvParserService {
 
     const allowedScopes = getValue('allowedScopes');
     const editableBy = getValue('editableBy');
+    const hasAllowedValuesColumn = headerMap.has('allowedValues');
 
     return {
       category: getValue('category'),
@@ -110,12 +115,14 @@ export class CsvParserService {
       property: getValue('property'),
       defaultValue: getValue('defaultValue'),
       type: getValue('type'),
+      allowedValues: hasAllowedValuesColumn ? getValue('allowedValues') : '',
       allowedScopes,
       visibility: getValue('visibility'),
       editableBy,
       description: getValue('description'),
       allowedScopesTokens: this.tokenizeCommaSeparatedValues(allowedScopes),
-      editableByTokens: this.tokenizeCommaSeparatedValues(editableBy)
+      editableByTokens: this.tokenizeCommaSeparatedValues(editableBy),
+      hasAllowedValuesColumn
     };
   }
 
@@ -129,6 +136,6 @@ export class CsvParserService {
   private normalizeHeader(header: string): string {
     return header
       .toLowerCase()
-      .replace(/[^a-z0-9]/g, '');
+      .replaceAll(/[^a-z0-9]/g, '');
   }
 }
