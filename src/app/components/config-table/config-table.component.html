@@ -116,7 +116,7 @@
             [pSortableColumn]="column.key"
             pReorderableColumn
             class="header-cell"
-            [style.width.%]="uniformColumnWidthPercent"
+            [style.width.%]="getColumnWidthPercent(column.key)"
           >
             <div class="header-content">
               <span>{{ column.label }}</span>
@@ -125,7 +125,7 @@
           </th>
         </tr>
         <tr class="filters-row">
-          <th *ngFor="let column of columns" scope="col" class="filter-header-cell" [style.width.%]="uniformColumnWidthPercent">
+          <th *ngFor="let column of columns" scope="col" class="filter-header-cell" [style.width.%]="getColumnWidthPercent(column.key)">
             <ng-container [ngSwitch]="column.filterType">
               <ng-container *ngSwitchCase="'text'">
                 <div class="text-header-filter">
@@ -217,7 +217,7 @@
       </ng-template>
       <ng-template pTemplate="body" let-row let-columns="columns">
         <tr>
-          <td *ngFor="let column of columns" class="body-cell" [style.width.%]="uniformColumnWidthPercent">
+          <td *ngFor="let column of columns" class="body-cell" [style.width.%]="getColumnWidthPercent(column.key)">
             <ng-container *ngIf="column.key === 'defaultValue'; else plainCell">
               <div class="cell-x-scroll">
                 <ng-container *ngFor="let valuePart of getDefaultValueParts(row[column.key]); let isLast = last">
