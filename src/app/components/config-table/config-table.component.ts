@@ -130,13 +130,14 @@ export class ConfigTableComponent implements OnChanges {
 
   getColumnWidthPercent(columnKey: ConfigColumnKey): number {
     const hasPropertyColumn = this.visibleColumns.some((column) => column.key === 'property');
-    const totalUnits = this.visibleColumns.length + (hasPropertyColumn ? 1 : 0);
+    const propertyWidthUnits = 2.5;
+    const totalUnits = this.visibleColumns.length + (hasPropertyColumn ? propertyWidthUnits - 1 : 0);
     if (totalUnits <= 0) {
       return 100;
     }
 
     const unit = 100 / totalUnits;
-    return columnKey === 'property' && hasPropertyColumn ? unit * 2 : unit;
+    return columnKey === 'property' && hasPropertyColumn ? unit * propertyWidthUnits : unit;
   }
 
   get activeFilterChips(): ActiveFilterChip[] {
