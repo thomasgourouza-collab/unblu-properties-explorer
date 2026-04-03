@@ -15,9 +15,10 @@
       (onChange)="onColumnVisibilityChange()"
     >
       <ng-template pTemplate="selectedItems">
-        <span>Visible columns ({{ visibleDisplayableColumnsCount }} / {{ totalDisplayableColumnsCount }})</span>
+        <span>Visible columns</span>
       </ng-template>
     </p-multiselect>
+    <span class="visible-columns-info">{{ visibleDisplayableColumnsCount }} / {{ totalDisplayableColumnsCount }}</span>
   </div>
 </section>
 
