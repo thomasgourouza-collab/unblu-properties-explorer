@@ -162,6 +162,19 @@
   font-size: 0.7rem;
 }
 
+.property-copy-hint {
+  font-size: 0.68rem;
+  color: #6fd08f;
+  white-space: nowrap;
+  opacity: 0;
+  min-width: 3.1rem;
+  transition: opacity 0.12s ease;
+}
+
+.property-copy-hint.visible {
+  opacity: 1;
+}
+
 .header-cell {
   white-space: nowrap;
   background: var(--surface-raised);

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { TableColumnReorderEvent, TableModule } from 'primeng/table';
@@ -43,6 +43,8 @@ interface TableState {
   styleUrl: './config-table.component.scss'
 })
 export class ConfigTableComponent implements OnChanges {
+  constructor(private readonly cdr: ChangeDetectorRef) {}
+
   @Input({ required: true }) rows: ConfigRow[] = [];
   rowsPerPage = 25;
   readonly rowsPerPageOptions = [10, 25, 50, 100];
@@ -571,34 +573,57 @@ export class ConfigTableComponent implements OnChanges {
     return fn === 'rgba' ? `rgb(${r},${g},${b})` : rgbLikeMatch[0];
   }
 
+  isCopiedProperty(value: string): boolean {
+    return this.copiedPropertyValue === value.trim();
+  }
+
   async copyPropertyValue(value: string): Promise<void> {
     const text = value.trim();
     if (!text) {
       return;
     }
 
-    try {
-      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(text);
-      } else {
-        return;
-      }
-    } catch {
+    const copied = await this.tryCopyToClipboard(text);
+    if (!copied) {
       return;
     }
 
     this.copiedPropertyValue = text;
+    this.safeMarkForCheck();
     if (this.copyResetTimerId !== undefined) {
       globalThis.clearTimeout(this.copyResetTimerId);
     }
     this.copyResetTimerId = globalThis.setTimeout(() => {
       this.copiedPropertyValue = null;
       this.copyResetTimerId = undefined;
-    }, 1400);
+      this.safeMarkForCheck();
+    }, 700);
+  }
+
+  private async tryCopyToClipboard(text: string): Promise<boolean> {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+    } catch {
+      return false;
+    }
+
+    return false;
   }
 
   private normalize(value: string): string {
     return value.toLowerCase().trim();
+  }
+
+  private safeMarkForCheck(): void {
+    try {
+      this.cdr.markForCheck();
+      this.cdr.detectChanges();
+    } catch {
+      // Ignore edge cases during view teardown.
+    }
   }
 
   private toListColumnKey(key: ConfigColumnKey): ListColumnKey {

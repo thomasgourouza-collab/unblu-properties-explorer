@@ -181,11 +181,12 @@
                     type="button"
                     class="property-copy-btn"
                     (click)="copyPropertyValue(row[column.key])"
-                    [title]="copiedPropertyValue === row[column.key] ? 'Copied' : 'Copy property'"
-                    [attr.aria-label]="copiedPropertyValue === row[column.key] ? 'Copied' : 'Copy property value'"
+                    [title]="isCopiedProperty(row[column.key]) ? 'Copied' : 'Copy property'"
+                    [attr.aria-label]="isCopiedProperty(row[column.key]) ? 'Copied' : 'Copy property value'"
                   >
-                    <i class="pi" [ngClass]="copiedPropertyValue === row[column.key] ? 'pi-check' : 'pi-copy'"></i>
+                    <i class="pi" [ngClass]="isCopiedProperty(row[column.key]) ? 'pi-check' : 'pi-copy'"></i>
                   </button>
+                  <span class="property-copy-hint" [class.visible]="isCopiedProperty(row[column.key])">Copied</span>
                 </span>
               </ng-container>
               <ng-template #standardTextCell>
