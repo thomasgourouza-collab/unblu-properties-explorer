@@ -383,7 +383,82 @@ export class ConfigTableComponent implements OnChanges {
   }
 
   getDefaultValueParts(value = ''): string[] {
-    return value.split(/,(?![^(]*\))/).map((part) => part.trim());
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return [''];
+    }
+
+    // Handle JSON-like color lists such as ["#c01160","#766554"].
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+      try {
+        const parsed = JSON.parse(trimmed) as unknown;
+        if (Array.isArray(parsed)) {
+          return parsed.map((entry) => String(entry ?? '').trim());
+        }
+      } catch {
+        // Fall through to generic splitting when the value is not valid JSON.
+      }
+    }
+
+    return this.splitTopLevelValues(trimmed);
+  }
+
+  private splitTopLevelValues(input: string): string[] {
+    const parts: string[] = [];
+    let current = '';
+    let parenDepth = 0;
+    let bracketDepth = 0;
+    let inSingleQuote = false;
+    let inDoubleQuote = false;
+
+    for (const char of input) {
+      if (char === '\'' && !inDoubleQuote) {
+        inSingleQuote = !inSingleQuote;
+        current += char;
+        continue;
+      }
+      if (char === '"' && !inSingleQuote) {
+        inDoubleQuote = !inDoubleQuote;
+        current += char;
+        continue;
+      }
+
+      if (!inSingleQuote && !inDoubleQuote) {
+        if (char === '(') {
+          parenDepth += 1;
+          current += char;
+          continue;
+        }
+        if (char === ')' && parenDepth > 0) {
+          parenDepth -= 1;
+          current += char;
+          continue;
+        }
+        if (char === '[') {
+          bracketDepth += 1;
+          current += char;
+          continue;
+        }
+        if (char === ']' && bracketDepth > 0) {
+          bracketDepth -= 1;
+          current += char;
+          continue;
+        }
+        if (char === ',' && parenDepth === 0 && bracketDepth === 0) {
+          parts.push(current.trim());
+          current = '';
+          continue;
+        }
+      }
+
+      current += char;
+    }
+
+    if (current.trim() || input.endsWith(',')) {
+      parts.push(current.trim());
+    }
+
+    return parts.length > 0 ? parts : [''];
   }
 
   isColorType(typeValue: string): boolean {
