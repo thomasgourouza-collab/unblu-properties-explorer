@@ -38,6 +38,8 @@ interface TableState {
 })
 export class ConfigTableComponent implements OnChanges {
   @Input({ required: true }) rows: ConfigRow[] = [];
+  rowsPerPage = 25;
+  readonly rowsPerPageOptions = [10, 25, 50, 100];
 
   readonly columns: ColumnDefinition[] = [
     { key: 'category', label: 'Category', filterType: 'select' },
@@ -205,6 +207,13 @@ export class ConfigTableComponent implements OnChanges {
   setListMode(key: ConfigColumnKey, mode: string): void {
     this.listModes[this.toListColumnKey(key)] = mode === 'and' ? 'and' : 'or';
     this.onFiltersChanged();
+  }
+
+  onRowsPerPageChange(value: string | number): void {
+    const parsed = Number(value);
+    if (!Number.isNaN(parsed) && parsed > 0) {
+      this.rowsPerPage = parsed;
+    }
   }
 
   clearFilters(): void {

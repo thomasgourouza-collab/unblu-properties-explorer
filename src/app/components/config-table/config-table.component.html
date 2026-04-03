@@ -52,13 +52,11 @@
       [value]="filteredRows"
       [columns]="visibleColumns"
       [paginator]="true"
-      [rows]="25"
-      [rowsPerPageOptions]="[10, 25, 50, 100]"
+      [rows]="rowsPerPage"
       [sortMode]="'multiple'"
       [reorderableColumns]="true"
       [scrollable]="true"
-      [showCurrentPageReport]="true"
-      currentPageReportTemplate="Showing {first} to {last} of {totalRecords} rows"
+      [showCurrentPageReport]="false"
       scrollHeight="70vh"
       (onColReorder)="onColumnReorder($event)"
     >
@@ -168,6 +166,22 @@
             No rows match your current filters.
           </td>
         </tr>
+      </ng-template>
+      <ng-template pTemplate="paginatorleft" let-state>
+        <div class="paginator-left-report">
+          Showing {{ state.first + 1 }} to {{ state.first + state.rows > state.totalRecords ? state.totalRecords : state.first + state.rows }} of {{ state.totalRecords }} rows
+        </div>
+      </ng-template>
+      <ng-template pTemplate="paginatorright">
+        <div class="paginator-right-select">
+          <select
+            class="form-select form-select-sm rows-select"
+            [ngModel]="rowsPerPage"
+            (ngModelChange)="onRowsPerPageChange($event)"
+          >
+            <option *ngFor="let option of rowsPerPageOptions" [value]="option">{{ option }}</option>
+          </select>
+        </div>
       </ng-template>
     </p-table>
   </div>

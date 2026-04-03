@@ -140,6 +140,64 @@
 :host ::ng-deep .p-paginator {
   background: var(--surface-raised);
   border-top: 1px solid var(--surface-border);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.6rem;
+}
+
+:host ::ng-deep .p-paginator-content-start {
+  order: 1;
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+}
+
+:host ::ng-deep .p-paginator-content-end {
+  order: 7;
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+}
+
+:host ::ng-deep .p-paginator-first {
+  order: 2;
+}
+
+:host ::ng-deep .p-paginator-prev {
+  order: 3;
+}
+
+:host ::ng-deep .p-paginator-pages {
+  order: 4;
+}
+
+:host ::ng-deep .p-paginator-next {
+  order: 5;
+}
+
+:host ::ng-deep .p-paginator-last {
+  order: 6;
+}
+
+.paginator-left-report {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.paginator-right-select {
+  display: inline-flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.rows-select {
+  min-width: 4.2rem;
+  width: auto;
 }
 
 :host ::ng-deep .p-inputtext,
@@ -164,5 +222,16 @@
 
   .filters-row .filter-header-cell {
     min-width: 150px;
+  }
+
+  :host ::ng-deep .p-paginator {
+    flex-wrap: wrap;
+    row-gap: 0.35rem;
+  }
+
+  :host ::ng-deep .p-paginator-content-start,
+  :host ::ng-deep .p-paginator-content-end {
+    flex-basis: 100%;
+    justify-content: flex-start;
   }
 }
