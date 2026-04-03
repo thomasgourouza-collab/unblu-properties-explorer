@@ -1,24 +1,28 @@
+<section class="table-toolbar toolbar-eye-card mb-2">
+  <div class="toolbar-eye-section">
+    <p-multiselect
+      inputId="columnVisibility"
+      [options]="columnVisibilityOptions"
+      [showToggleAll]="true"
+      [filter]="true"
+      [appendTo]="'body'"
+      [maxSelectedLabels]="0"
+      defaultLabel="Visible columns"
+      selectedItemsLabel="Visible columns"
+      styleClass="column-visibility-select"
+      [title]="'Select visible columns'"
+      [(ngModel)]="visibleColumnKeys"
+      (onChange)="onColumnVisibilityChange()"
+    >
+      <ng-template pTemplate="selectedItems">
+        <span>Visible columns ({{ visibleDisplayableColumnsCount }} / {{ totalDisplayableColumnsCount }})</span>
+      </ng-template>
+    </p-multiselect>
+  </div>
+</section>
+
 <section class="table-toolbar mb-2">
   <div class="toolbar-single-row">
-    <div class="toolbar-eye-section">
-      <p-multiselect
-        inputId="columnVisibility"
-        [options]="columnVisibilityOptions"
-        [showToggleAll]="true"
-        [display]="'chip'"
-        [filter]="true"
-        [appendTo]="'body'"
-        [maxSelectedLabels]="2"
-        styleClass="column-visibility-eye"
-        [title]="'Select visible columns'"
-        [(ngModel)]="visibleColumnKeys"
-        (onChange)="onColumnVisibilityChange()"
-      >
-        <ng-template pTemplate="dropdownicon">
-          <i class="pi pi-eye" aria-hidden="true"></i>
-        </ng-template>
-      </p-multiselect>
-    </div>
     <div class="toolbar-global-third">
       <input
         id="globalFilterInput"
@@ -218,9 +222,6 @@
         <div class="paginator-left-report">
           <span>
             Showing {{ state.first + 1 }} to {{ state.first + state.rows > state.totalRecords ? state.totalRecords : state.first + state.rows }} of {{ state.totalRecords }} rows
-          </span>
-          <span class="paginator-columns-report">
-            Visible columns: {{ visibleDisplayableColumnsCount }} / {{ totalDisplayableColumnsCount }}
           </span>
         </div>
       </ng-template>
