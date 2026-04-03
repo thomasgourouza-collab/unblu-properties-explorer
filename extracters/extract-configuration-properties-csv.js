@@ -88,7 +88,7 @@
     const value = cleanText(typeText);
     if (!TYPE_ALLOWED_VALUES_SEPARATOR.test(value)) {
       return {
-        type: value,
+        type: normalizeTypeLabel(value),
         allowedValues: ""
       };
     }
@@ -96,9 +96,13 @@
     const parts = value.split(TYPE_ALLOWED_VALUES_SEPARATOR);
     const [rawType, ...allowedValuesParts] = parts;
     return {
-      type: cleanText(rawType),
+      type: normalizeTypeLabel(cleanText(rawType)),
       allowedValues: cleanText(allowedValuesParts.join(", "))
     };
+  }
+
+  function normalizeTypeLabel(typeValue) {
+    return typeValue === "List of string" ? "List of strings" : typeValue;
   }
 
   function getDescription(propertyBlock) {

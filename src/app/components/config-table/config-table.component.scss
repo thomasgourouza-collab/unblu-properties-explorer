@@ -244,8 +244,16 @@
 .paginator-left-report {
   color: var(--text-muted);
   font-size: 0.78rem;
-  white-space: nowrap;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
   text-align: left;
+}
+
+.paginator-columns-report {
+  font-size: 0.72rem;
+  white-space: nowrap;
 }
 
 .paginator-right-select {

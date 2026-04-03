@@ -180,7 +180,12 @@
       </ng-template>
       <ng-template pTemplate="paginatorleft" let-state>
         <div class="paginator-left-report">
-          Showing {{ state.first + 1 }} to {{ state.first + state.rows > state.totalRecords ? state.totalRecords : state.first + state.rows }} of {{ state.totalRecords }} rows
+          <span>
+            Showing {{ state.first + 1 }} to {{ state.first + state.rows > state.totalRecords ? state.totalRecords : state.first + state.rows }} of {{ state.totalRecords }} rows
+          </span>
+          <span class="paginator-columns-report">
+            Visible columns: {{ visibleDisplayableColumnsCount }} / {{ totalDisplayableColumnsCount }}
+          </span>
         </div>
       </ng-template>
       <ng-template pTemplate="paginatorright">

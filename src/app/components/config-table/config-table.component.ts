@@ -100,6 +100,14 @@ export class ConfigTableComponent implements OnChanges {
     return this.rows.some((row) => row.hasAllowedValuesColumn);
   }
 
+  get visibleDisplayableColumnsCount(): number {
+    return this.visibleColumns.length;
+  }
+
+  get totalDisplayableColumnsCount(): number {
+    return this.columns.filter((column) => column.key !== 'allowedValues' || this.hasAllowedValuesColumn).length;
+  }
+
   get activeFilterChips(): ActiveFilterChip[] {
     const chips: ActiveFilterChip[] = [];
 
