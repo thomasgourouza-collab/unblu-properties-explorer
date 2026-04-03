@@ -56,6 +56,16 @@
           />
           <label class="btn btn-outline-secondary btn-xs" for="global-filter-and">AND</label>
         </div>
+        <select
+          class="form-select form-select-sm global-filter-scope-select"
+          [ngModel]="globalFilterScope"
+          (ngModelChange)="setGlobalFilterScope($event)"
+          aria-label="Global filter scope"
+          title="Search scope"
+        >
+          <option value="all">all columns</option>
+          <option value="visible">visible columns</option>
+        </select>
       </div>
     </div>
     <div class="toolbar-chips-two-thirds">

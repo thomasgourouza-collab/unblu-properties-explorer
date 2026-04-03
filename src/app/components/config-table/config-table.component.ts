@@ -25,10 +25,12 @@ interface ActiveFilterChip {
 }
 
 type ListColumnKey = 'allowedScopes' | 'editableBy';
+type GlobalFilterScope = 'all' | 'visible';
 
 interface TableState {
   globalFilter: string;
   globalFilterMode?: FilterMode;
+  globalFilterScope?: GlobalFilterScope;
   textFilters: Partial<Record<ConfigColumnKey, string>>;
   textModes?: Partial<Record<ConfigColumnKey, FilterMode>>;
   valueFilters: Partial<Record<ConfigColumnKey, string[]>>;
@@ -67,6 +69,7 @@ export class ConfigTableComponent implements OnChanges {
   filteredRows: ConfigRow[] = [];
   globalFilter = '';
   globalFilterMode: FilterMode = 'or';
+  globalFilterScope: GlobalFilterScope = 'all';
   textFilters: Partial<Record<ConfigColumnKey, string>> = {};
   textModes: Partial<Record<ConfigColumnKey, FilterMode>> = {};
   valueFilters: Partial<Record<ConfigColumnKey, string[]>> = {};
@@ -199,7 +202,7 @@ export class ConfigTableComponent implements OnChanges {
       this.visibleColumnKeys = [this.columnOrderKeys[0]];
     }
 
-    this.persistState();
+    this.onFiltersChanged();
   }
 
   onColumnReorder(event: TableColumnReorderEvent): void {
@@ -245,6 +248,11 @@ export class ConfigTableComponent implements OnChanges {
     this.onFiltersChanged();
   }
 
+  setGlobalFilterScope(scope: string): void {
+    this.globalFilterScope = scope === 'visible' ? 'visible' : 'all';
+    this.onFiltersChanged();
+  }
+
   getValueFilter(key: ConfigColumnKey): string[] {
     return this.valueFilters[key] ?? this.emptyFilterValues;
   }
@@ -277,6 +285,7 @@ export class ConfigTableComponent implements OnChanges {
   clearFilters(): void {
     this.globalFilter = '';
     this.globalFilterMode = 'or';
+    this.globalFilterScope = 'all';
     this.textFilters = {};
     this.textModes = {};
     this.valueFilters = {};
@@ -342,7 +351,8 @@ export class ConfigTableComponent implements OnChanges {
   }
 
   private rowMatchesGlobalFilter(row: ConfigRow, tokens: string[]): boolean {
-    const rowValues = this.columns.map((column) => this.normalize(this.getCellValue(row, column.key)));
+    const columnsToSearch = this.globalFilterScope === 'visible' ? this.visibleColumns : this.columns;
+    const rowValues = columnsToSearch.map((column) => this.normalize(this.getCellValue(row, column.key)));
     if (this.globalFilterMode === 'and') {
       return tokens.every((token) => rowValues.some((value) => value.includes(token)));
     }
@@ -769,6 +779,7 @@ export class ConfigTableComponent implements OnChanges {
       const parsedState = JSON.parse(rawState) as TableState;
       this.globalFilter = parsedState.globalFilter ?? '';
       this.globalFilterMode = parsedState.globalFilterMode === 'and' ? 'and' : 'or';
+      this.globalFilterScope = parsedState.globalFilterScope === 'visible' ? 'visible' : 'all';
       this.textFilters = parsedState.textFilters ?? {};
       this.textModes = parsedState.textModes ?? {};
       this.valueFilters = parsedState.valueFilters ?? {};
@@ -795,6 +806,7 @@ export class ConfigTableComponent implements OnChanges {
   private persistState(): void {
     const state: TableState = {
       globalFilter: this.globalFilter,
+      globalFilterScope: this.globalFilterScope,
       textFilters: this.textFilters,
       globalFilterMode: this.globalFilterMode,
       textModes: this.textModes,
