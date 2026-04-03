@@ -117,11 +117,33 @@ export class ConfigTableComponent implements OnChanges {
     this.persistState();
   }
 
+  getTextFilter(key: ConfigColumnKey): string {
+    return this.textFilters[key] ?? '';
+  }
+
+  setTextFilter(key: ConfigColumnKey, value: string): void {
+    this.textFilters[key] = value;
+    this.onFiltersChanged();
+  }
+
+  getValueFilter(key: ConfigColumnKey): string[] {
+    return this.valueFilters[key] ?? [];
+  }
+
+  setValueFilter(key: ConfigColumnKey, values: string[] | undefined): void {
+    this.valueFilters[key] = values ?? [];
+    this.onFiltersChanged();
+  }
+
+  getFilterOptions(key: ConfigColumnKey): SelectOption[] {
+    return this.filterOptions[key] ?? [];
+  }
+
   getListMode(key: ConfigColumnKey): FilterMode {
     return this.listModes[this.toListColumnKey(key)];
   }
 
-  setListMode(key: ConfigColumnKey, mode: FilterMode | string): void {
+  setListMode(key: ConfigColumnKey, mode: string): void {
     this.listModes[this.toListColumnKey(key)] = mode === 'and' ? 'and' : 'or';
     this.onFiltersChanged();
   }
@@ -177,15 +199,15 @@ export class ConfigTableComponent implements OnChanges {
     if (column.filterType === 'list') {
         const listKey = this.toListColumnKey(column.key);
       const selectedNormalized = selectedValues.map((value) => this.normalize(value));
-        const tokens = (listKey === 'allowedScopes' ? row.allowedScopesTokens : row.editableByTokens).map((value) =>
+      const tokens = new Set((listKey === 'allowedScopes' ? row.allowedScopesTokens : row.editableByTokens).map((value) =>
         this.normalize(value)
-      );
+      ));
 
         if (this.listModes[listKey] === 'and') {
-        return selectedNormalized.every((selected) => tokens.includes(selected));
+        return selectedNormalized.every((selected) => tokens.has(selected));
       }
 
-      return selectedNormalized.some((selected) => tokens.includes(selected));
+      return selectedNormalized.some((selected) => tokens.has(selected));
     }
 
     if (this.textFilterColumns.has(column.key)) {

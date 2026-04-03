@@ -1,105 +1,31 @@
-<section class="table-toolbar card shadow-sm mb-3">
-  <div class="card-body">
-    <div class="toolbar-grid">
-      <div class="toolbar-field">
-        <label for="globalFilterInput" class="form-label">Global filter</label>
-        <input
-          id="globalFilterInput"
-          type="text"
-          class="form-control"
-          placeholder="Search in all columns (case-insensitive)"
-          [(ngModel)]="globalFilter"
-          (ngModelChange)="onFiltersChanged()"
-        />
-      </div>
-      <div class="toolbar-field">
-        <label for="columnVisibility" class="form-label">Visible columns</label>
-        <p-multiselect
-          inputId="columnVisibility"
-          [options]="columnVisibilityOptions"
-          [showToggleAll]="true"
-          [display]="'chip'"
-          [filter]="true"
-          [appendTo]="'body'"
-          placeholder="Choose columns"
-          [(ngModel)]="visibleColumnKeys"
-          (onChange)="onColumnVisibilityChange()"
-        />
-      </div>
-      <div class="toolbar-actions">
-        <button type="button" class="btn btn-outline-secondary" (click)="clearFilters()">Reset filters</button>
-      </div>
+<section class="table-toolbar mb-2">
+  <div class="toolbar-row">
+    <div class="toolbar-item toolbar-global">
+      <input
+        id="globalFilterInput"
+        type="text"
+        class="form-control form-control-sm"
+        placeholder="Global filter..."
+        [(ngModel)]="globalFilter"
+        (ngModelChange)="onFiltersChanged()"
+      />
     </div>
-  </div>
-</section>
-
-<section class="filters card shadow-sm mb-3">
-  <div class="card-body">
-    <div class="filters-grid">
-      <div class="filter-item" *ngFor="let column of columns">
-        <label class="form-label">{{ column.label }}</label>
-
-        <ng-container [ngSwitch]="column.filterType">
-          <input
-            *ngSwitchCase="'text'"
-            type="text"
-            class="form-control form-control-sm"
-            placeholder="Contains..."
-            [(ngModel)]="textFilters[column.key]"
-            (ngModelChange)="onFiltersChanged()"
-          />
-
-          <p-multiselect
-            *ngSwitchCase="'select'"
-            [options]="filterOptions[column.key] ?? []"
-            [filter]="true"
-            [showToggleAll]="true"
-            [appendTo]="'body'"
-            [display]="'chip'"
-            [maxSelectedLabels]="2"
-            defaultLabel="All"
-            [(ngModel)]="valueFilters[column.key]"
-            (onChange)="onFiltersChanged()"
-          />
-
-          <div *ngSwitchCase="'list'" class="list-filter">
-            <p-multiselect
-              [options]="filterOptions[column.key] ?? []"
-              [filter]="true"
-              [showToggleAll]="true"
-              [appendTo]="'body'"
-              [display]="'chip'"
-              [maxSelectedLabels]="2"
-              defaultLabel="All"
-              [(ngModel)]="valueFilters[column.key]"
-              (onChange)="onFiltersChanged()"
-            />
-            <div class="btn-group btn-group-sm mt-2">
-              <input
-                class="btn-check"
-                type="radio"
-                [id]="column.key + '-or'"
-                [name]="column.key + '-mode'"
-                value="or"
-                [ngModel]="getListMode(column.key)"
-                (ngModelChange)="setListMode(column.key, $event)"
-              />
-              <label class="btn btn-outline-secondary" [for]="column.key + '-or'">OR</label>
-
-              <input
-                class="btn-check"
-                type="radio"
-                [id]="column.key + '-and'"
-                [name]="column.key + '-mode'"
-                value="and"
-                [ngModel]="getListMode(column.key)"
-                (ngModelChange)="setListMode(column.key, $event)"
-              />
-              <label class="btn btn-outline-secondary" [for]="column.key + '-and'">AND</label>
-            </div>
-          </div>
-        </ng-container>
-      </div>
+    <div class="toolbar-item toolbar-visibility">
+      <p-multiselect
+        inputId="columnVisibility"
+        [options]="columnVisibilityOptions"
+        [showToggleAll]="true"
+        [display]="'chip'"
+        [filter]="true"
+        [appendTo]="'body'"
+        [maxSelectedLabels]="2"
+        placeholder="Columns"
+        [(ngModel)]="visibleColumnKeys"
+        (onChange)="onColumnVisibilityChange()"
+      />
+    </div>
+    <div class="toolbar-item toolbar-actions">
+      <button type="button" class="btn btn-sm btn-outline-secondary" (click)="clearFilters()">Reset</button>
     </div>
   </div>
 </section>
@@ -121,9 +47,10 @@
       (onColReorder)="onColumnReorder($event)"
     >
       <ng-template pTemplate="header" let-columns>
-        <tr>
+        <tr class="columns-row">
           <th
             *ngFor="let column of columns"
+            scope="col"
             [pSortableColumn]="column.key"
             pReorderableColumn
             class="header-cell"
@@ -132,6 +59,71 @@
               <span>{{ column.label }}</span>
               <p-sortIcon [field]="column.key" />
             </div>
+          </th>
+        </tr>
+        <tr class="filters-row">
+          <th *ngFor="let column of columns" scope="col" class="filter-header-cell">
+            <ng-container [ngSwitch]="column.filterType">
+              <input
+                *ngSwitchCase="'text'"
+                type="text"
+                class="form-control form-control-sm header-filter-input"
+                placeholder="Contains..."
+                [ngModel]="getTextFilter(column.key)"
+                (ngModelChange)="setTextFilter(column.key, $event)"
+              />
+
+              <p-multiselect
+                *ngSwitchCase="'select'"
+                [options]="getFilterOptions(column.key)"
+                [filter]="true"
+                [showToggleAll]="true"
+                [appendTo]="'body'"
+                [display]="'chip'"
+                [maxSelectedLabels]="1"
+                defaultLabel="All"
+                styleClass="header-filter-select"
+                [ngModel]="getValueFilter(column.key)"
+                (ngModelChange)="setValueFilter(column.key, $event)"
+              />
+
+              <div *ngSwitchCase="'list'" class="list-header-filter">
+                <p-multiselect
+                  [options]="getFilterOptions(column.key)"
+                  [filter]="true"
+                  [showToggleAll]="true"
+                  [appendTo]="'body'"
+                  [display]="'chip'"
+                  [maxSelectedLabels]="1"
+                  defaultLabel="All"
+                  styleClass="header-filter-select"
+                  [ngModel]="getValueFilter(column.key)"
+                  (ngModelChange)="setValueFilter(column.key, $event)"
+                />
+                <div class="mode-toggle">
+                  <input
+                    class="btn-check"
+                    type="radio"
+                    [id]="column.key + '-or'"
+                    [name]="column.key + '-mode'"
+                    value="or"
+                    [ngModel]="getListMode(column.key)"
+                    (ngModelChange)="setListMode(column.key, $event)"
+                  />
+                  <label class="btn btn-outline-secondary btn-xs" [for]="column.key + '-or'">OR</label>
+                  <input
+                    class="btn-check"
+                    type="radio"
+                    [id]="column.key + '-and'"
+                    [name]="column.key + '-mode'"
+                    value="and"
+                    [ngModel]="getListMode(column.key)"
+                    (ngModelChange)="setListMode(column.key, $event)"
+                  />
+                  <label class="btn btn-outline-secondary btn-xs" [for]="column.key + '-and'">AND</label>
+                </div>
+              </div>
+            </ng-container>
           </th>
         </tr>
       </ng-template>

@@ -1,6 +1,20 @@
 @use "bootstrap/scss/bootstrap";
 @import "primeicons/primeicons.css";
 
+:root {
+  --bg-main: #131822;
+  --bg-gradient-top: #1a2130;
+  --surface-raised: #1b2332;
+  --surface-elevated: #222c3d;
+  --surface-soft: #1f2838;
+  --surface-border: #334156;
+  --text-primary: #f1f5fb;
+  --text-secondary: #c3cede;
+  --text-muted: #96a6bc;
+  --accent: #6ea8fe;
+  --accent-soft: #2f4d7a;
+}
+
 html,
 body {
   margin: 0;
@@ -8,11 +22,54 @@ body {
 }
 
 body {
-  background: #f5f7fb;
+  background: linear-gradient(180deg, var(--bg-gradient-top) 0%, var(--bg-main) 60%);
   font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
-  color: #212529;
+  color: var(--text-primary);
 }
 
 .p-component {
   font-size: 0.92rem;
+}
+
+.card {
+  background: var(--surface-raised);
+  color: var(--text-secondary);
+  border: 1px solid var(--surface-border);
+}
+
+.text-muted {
+  color: var(--text-muted) !important;
+}
+
+.form-control,
+.form-select {
+  background: var(--surface-elevated);
+  border-color: var(--surface-border);
+  color: var(--text-secondary);
+}
+
+.form-control::placeholder {
+  color: color-mix(in srgb, var(--text-muted) 75%, transparent);
+}
+
+.form-control:focus,
+.form-select:focus,
+.btn:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 0.18rem color-mix(in srgb, var(--accent-soft) 60%, transparent);
+}
+
+.btn-outline-secondary {
+  --bs-btn-color: var(--text-secondary);
+  --bs-btn-border-color: var(--surface-border);
+  --bs-btn-hover-color: var(--text-primary);
+  --bs-btn-hover-bg: var(--surface-elevated);
+  --bs-btn-hover-border-color: var(--accent-soft);
+  --bs-btn-active-bg: var(--surface-elevated);
+  --bs-btn-active-border-color: var(--accent-soft);
+}
+
+.badge.text-bg-primary {
+  background: color-mix(in srgb, var(--accent) 25%, var(--surface-elevated)) !important;
+  color: var(--text-primary) !important;
 }

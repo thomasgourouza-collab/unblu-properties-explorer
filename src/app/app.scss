@@ -1,3 +1,11 @@
+.app-shell {
+  max-width: 100%;
+}
+
+.app-header .subtitle {
+  margin-top: 0.2rem;
+}
+
 .title-row {
   display: inline-flex;
   align-items: center;
@@ -10,20 +18,28 @@
   object-fit: contain;
 }
 
+.upload-card {
+  border: 1px solid var(--surface-border);
+}
+
 .upload-zone {
-  border: 2px dashed #ced4da;
+  border: 1px dashed var(--surface-border);
   border-radius: 0.75rem;
-  padding: 1rem;
-  transition: border-color 0.2s ease;
+  padding: 0.75rem;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
 }
 
 .upload-zone.dragging {
-  border-color: #0d6efd;
-  background-color: #f8fbff;
+  border-color: var(--accent);
+  background-color: var(--surface-soft);
 }
 
 .loading-alert {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.loaded-meta .badge {
+  font-weight: 500;
 }
