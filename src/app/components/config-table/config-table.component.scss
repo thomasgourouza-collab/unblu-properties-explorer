@@ -108,13 +108,26 @@
 
 .list-header-filter {
   display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+:host ::ng-deep .list-header-filter .header-filter-select {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+:host ::ng-deep .list-header-filter .header-filter-select .p-multiselect {
+  width: 100%;
 }
 
 .mode-toggle {
   display: inline-flex;
   gap: 0.25rem;
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 .btn-xs {
