@@ -27,6 +27,7 @@ interface TableState {
   valueFilters: Partial<Record<ConfigColumnKey, string[]>>;
   listModes: Record<ListColumnKey, FilterMode>;
   visibleColumnKeys: ConfigColumnKey[];
+  columnOrderKeys?: ConfigColumnKey[];
 }
 
 @Component({
@@ -62,6 +63,7 @@ export class ConfigTableComponent implements OnChanges {
     editableBy: 'or'
   };
   visibleColumnKeys: ConfigColumnKey[] = this.columns.map((column) => column.key);
+  columnOrderKeys: ConfigColumnKey[] = this.columns.map((column) => column.key);
   filterOptions: Partial<Record<ConfigColumnKey, SelectOption[]>> = {};
 
   private readonly stateStorageKey = 'csv-explorer-table-state-v1';
@@ -80,10 +82,13 @@ export class ConfigTableComponent implements OnChanges {
   }
 
   get columnVisibilityOptions(): SelectOption[] {
-    return this.columns.map((column) => ({
-      label: column.label,
-      value: column.key
-    }));
+    return this.columnOrderKeys.map((key) => {
+      const column = this.columns.find((entry) => entry.key === key);
+      return {
+        label: column?.label ?? key,
+        value: key
+      };
+    });
   }
 
   get activeFilterChips(): ActiveFilterChip[] {
@@ -153,8 +158,11 @@ export class ConfigTableComponent implements OnChanges {
   }
 
   onColumnVisibilityChange(): void {
-    if (this.visibleColumnKeys.length === 0) {
-      this.visibleColumnKeys = [this.columns[0].key];
+    const selectedSet = new Set(this.visibleColumnKeys);
+    this.visibleColumnKeys = this.columnOrderKeys.filter((key) => selectedSet.has(key));
+
+    if (this.visibleColumnKeys.length === 0 && this.columnOrderKeys.length > 0) {
+      this.visibleColumnKeys = [this.columnOrderKeys[0]];
     }
 
     this.persistState();
@@ -170,6 +178,8 @@ export class ConfigTableComponent implements OnChanges {
       .filter((key: unknown): key is ConfigColumnKey =>
         this.columns.some((column) => column.key === key)
       );
+
+    this.syncColumnOrderFromVisibleOrder(this.visibleColumnKeys);
     this.persistState();
   }
 
@@ -401,6 +411,48 @@ export class ConfigTableComponent implements OnChanges {
     return key === 'allowedScopes' ? 'allowedScopes' : 'editableBy';
   }
 
+  private syncColumnOrderFromVisibleOrder(orderedVisibleKeys: ConfigColumnKey[]): void {
+    const visibleSet = new Set(orderedVisibleKeys);
+    const visibleSlotIndexes = this.columnOrderKeys
+      .map((key, index) => (visibleSet.has(key) ? index : -1))
+      .filter((index) => index >= 0);
+
+    if (visibleSlotIndexes.length !== orderedVisibleKeys.length) {
+      return;
+    }
+
+    const nextOrder = [...this.columnOrderKeys];
+    for (let index = 0; index < visibleSlotIndexes.length; index += 1) {
+      nextOrder[visibleSlotIndexes[index]] = orderedVisibleKeys[index];
+    }
+
+    this.columnOrderKeys = this.normalizeColumnOrderKeys(nextOrder);
+    this.visibleColumnKeys = this.columnOrderKeys.filter((key) => visibleSet.has(key));
+  }
+
+  private normalizeColumnOrderKeys(keys: ConfigColumnKey[] | undefined): ConfigColumnKey[] {
+    const defaultOrder = this.columns.map((column) => column.key);
+    if (!keys || keys.length === 0) {
+      return defaultOrder;
+    }
+
+    const validKeys = new Set(defaultOrder);
+    const uniqueOrdered: ConfigColumnKey[] = [];
+    for (const key of keys) {
+      if (validKeys.has(key) && !uniqueOrdered.includes(key)) {
+        uniqueOrdered.push(key);
+      }
+    }
+
+    for (const key of defaultOrder) {
+      if (!uniqueOrdered.includes(key)) {
+        uniqueOrdered.push(key);
+      }
+    }
+
+    return uniqueOrdered;
+  }
+
   private restoreState(): void {
     try {
       const rawState = localStorage.getItem(this.stateStorageKey);
@@ -416,13 +468,19 @@ export class ConfigTableComponent implements OnChanges {
         allowedScopes: parsedState.listModes?.allowedScopes === 'and' ? 'and' : 'or',
         editableBy: parsedState.listModes?.editableBy === 'and' ? 'and' : 'or'
       };
+      this.columnOrderKeys = this.normalizeColumnOrderKeys(parsedState.columnOrderKeys);
 
       const validColumns = (parsedState.visibleColumnKeys ?? []).filter((key) =>
         this.columns.some((column) => column.key === key)
       );
-      this.visibleColumnKeys = validColumns.length > 0 ? validColumns : this.columns.map((column) => column.key);
+      const selectedSet = new Set(validColumns);
+      this.visibleColumnKeys = this.columnOrderKeys.filter((key) => selectedSet.has(key));
+      if (this.visibleColumnKeys.length === 0) {
+        this.visibleColumnKeys = [...this.columnOrderKeys];
+      }
     } catch {
-      this.visibleColumnKeys = this.columns.map((column) => column.key);
+      this.columnOrderKeys = this.columns.map((column) => column.key);
+      this.visibleColumnKeys = [...this.columnOrderKeys];
     }
   }
 
@@ -432,7 +490,8 @@ export class ConfigTableComponent implements OnChanges {
       textFilters: this.textFilters,
       valueFilters: this.valueFilters,
       listModes: this.listModes,
-      visibleColumnKeys: this.visibleColumnKeys
+      visibleColumnKeys: this.visibleColumnKeys,
+      columnOrderKeys: this.columnOrderKeys
     };
 
     localStorage.setItem(this.stateStorageKey, JSON.stringify(state));
