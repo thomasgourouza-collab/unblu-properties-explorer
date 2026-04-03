@@ -25,14 +25,38 @@
 <section class="table-toolbar mb-2">
   <div class="toolbar-single-row">
     <div class="toolbar-global-third">
-      <input
-        id="globalFilterInput"
-        type="text"
-        class="form-control form-control-sm"
-        placeholder="Global filter..."
-        [(ngModel)]="globalFilter"
-        (ngModelChange)="onFiltersChanged()"
-      />
+      <div class="global-filter-inline">
+        <input
+          id="globalFilterInput"
+          type="text"
+          class="form-control form-control-sm"
+          placeholder="Global filter..."
+          [(ngModel)]="globalFilter"
+          (ngModelChange)="onFiltersChanged()"
+        />
+        <div class="mode-toggle">
+          <input
+            class="btn-check"
+            type="radio"
+            id="global-filter-or"
+            name="global-filter-mode"
+            value="or"
+            [ngModel]="globalFilterMode"
+            (ngModelChange)="setGlobalFilterMode($event)"
+          />
+          <label class="btn btn-outline-secondary btn-xs" for="global-filter-or">OR</label>
+          <input
+            class="btn-check"
+            type="radio"
+            id="global-filter-and"
+            name="global-filter-mode"
+            value="and"
+            [ngModel]="globalFilterMode"
+            (ngModelChange)="setGlobalFilterMode($event)"
+          />
+          <label class="btn btn-outline-secondary btn-xs" for="global-filter-and">AND</label>
+        </div>
+      </div>
     </div>
     <div class="toolbar-chips-two-thirds">
       <ng-container *ngIf="hasActiveFilters; else noFiltersTemplate">
@@ -93,14 +117,39 @@
         <tr class="filters-row">
           <th *ngFor="let column of columns" scope="col" class="filter-header-cell" [style.width.%]="uniformColumnWidthPercent">
             <ng-container [ngSwitch]="column.filterType">
-              <input
-                *ngSwitchCase="'text'"
-                type="text"
-                class="form-control form-control-sm header-filter-input"
-                placeholder="Contains..."
-                [ngModel]="getTextFilter(column.key)"
-                (ngModelChange)="setTextFilter(column.key, $event)"
-              />
+              <ng-container *ngSwitchCase="'text'">
+                <div class="text-header-filter">
+                  <input
+                    type="text"
+                    class="form-control form-control-sm header-filter-input"
+                    placeholder="Contains..."
+                    [ngModel]="getTextFilter(column.key)"
+                    (ngModelChange)="setTextFilter(column.key, $event)"
+                  />
+                  <div class="mode-toggle">
+                    <input
+                      class="btn-check"
+                      type="radio"
+                      [id]="column.key + '-text-or'"
+                      [name]="column.key + '-text-mode'"
+                      value="or"
+                      [ngModel]="getTextMode(column.key)"
+                      (ngModelChange)="setTextMode(column.key, $event)"
+                    />
+                    <label class="btn btn-outline-secondary btn-xs" [for]="column.key + '-text-or'">OR</label>
+                    <input
+                      class="btn-check"
+                      type="radio"
+                      [id]="column.key + '-text-and'"
+                      [name]="column.key + '-text-mode'"
+                      value="and"
+                      [ngModel]="getTextMode(column.key)"
+                      (ngModelChange)="setTextMode(column.key, $event)"
+                    />
+                    <label class="btn btn-outline-secondary btn-xs" [for]="column.key + '-text-and'">AND</label>
+                  </div>
+                </div>
+              </ng-container>
 
               <p-multiselect
                 *ngSwitchCase="'select'"
@@ -162,9 +211,15 @@
             <ng-container *ngIf="column.key === 'defaultValue'; else plainCell">
               <div class="cell-x-scroll">
                 <ng-container *ngFor="let valuePart of getDefaultValueParts(row[column.key]); let isLast = last">
-                  <ng-container *ngFor="let part of getHighlightedParts(valuePart)">
-                    <mark *ngIf="part.match" class="global-filter-highlight">{{ part.text }}</mark>
-                    <span *ngIf="!part.match">{{ part.text }}</span>
+                  <ng-container *ngFor="let part of getHighlightedParts(valuePart, column.key)">
+                    <mark
+                      *ngIf="part.kind !== 'none'"
+                      [class.global-filter-highlight]="part.kind === 'global'"
+                      [class.column-filter-highlight]="part.kind === 'column'"
+                    >
+                      {{ part.text }}
+                    </mark>
+                    <span *ngIf="part.kind === 'none'">{{ part.text }}</span>
                   </ng-container>
                   <span
                     class="color-swatch"
@@ -182,9 +237,15 @@
                 <span class="property-code-wrap">
                   <span class="property-code-scroll">
                     <code class="property-code-cell">
-                      <ng-container *ngFor="let part of getHighlightedParts(row[column.key])">
-                        <mark *ngIf="part.match" class="global-filter-highlight">{{ part.text }}</mark>
-                        <span *ngIf="!part.match">{{ part.text }}</span>
+                      <ng-container *ngFor="let part of getHighlightedParts(row[column.key], column.key)">
+                        <mark
+                          *ngIf="part.kind !== 'none'"
+                          [class.global-filter-highlight]="part.kind === 'global'"
+                          [class.column-filter-highlight]="part.kind === 'column'"
+                        >
+                          {{ part.text }}
+                        </mark>
+                        <span *ngIf="part.kind === 'none'">{{ part.text }}</span>
                       </ng-container>
                     </code>
                   </span>
@@ -202,9 +263,15 @@
               </ng-container>
               <ng-template #standardTextCell>
                 <div class="cell-x-scroll">
-                  <ng-container *ngFor="let part of getHighlightedParts(row[column.key])">
-                    <mark *ngIf="part.match" class="global-filter-highlight">{{ part.text }}</mark>
-                    <span *ngIf="!part.match">{{ part.text }}</span>
+                  <ng-container *ngFor="let part of getHighlightedParts(row[column.key], column.key)">
+                    <mark
+                      *ngIf="part.kind !== 'none'"
+                      [class.global-filter-highlight]="part.kind === 'global'"
+                      [class.column-filter-highlight]="part.kind === 'column'"
+                    >
+                      {{ part.text }}
+                    </mark>
+                    <span *ngIf="part.kind === 'none'">{{ part.text }}</span>
                   </ng-container>
                 </div>
               </ng-template>

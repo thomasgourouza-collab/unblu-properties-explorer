@@ -32,6 +32,16 @@
   min-width: 0;
 }
 
+.global-filter-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+:host ::ng-deep .global-filter-inline .form-control {
+  min-width: 0;
+}
+
 :host ::ng-deep .column-visibility-select .p-multiselect {
   width: auto;
   min-width: 9.6rem;
@@ -137,6 +147,13 @@
   padding: 0 0.08rem;
 }
 
+.column-filter-highlight {
+  background: color-mix(in srgb, #4da3ff 42%, transparent);
+  color: var(--text-primary);
+  border-radius: 0.2rem;
+  padding: 0 0.08rem;
+}
+
 .property-code-cell {
   display: inline-block;
   min-width: max-content;
@@ -227,6 +244,18 @@
 
 .header-filter-input {
   min-width: 120px;
+}
+
+.text-header-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.text-header-filter .header-filter-input {
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .list-header-filter {

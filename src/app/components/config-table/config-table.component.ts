@@ -13,7 +13,7 @@ interface SelectOption {
 
 interface HighlightPart {
   text: string;
-  match: boolean;
+  kind: 'none' | 'global' | 'column';
 }
 
 interface ActiveFilterChip {
@@ -28,7 +28,9 @@ type ListColumnKey = 'allowedScopes' | 'editableBy';
 
 interface TableState {
   globalFilter: string;
+  globalFilterMode?: FilterMode;
   textFilters: Partial<Record<ConfigColumnKey, string>>;
+  textModes?: Partial<Record<ConfigColumnKey, FilterMode>>;
   valueFilters: Partial<Record<ConfigColumnKey, string[]>>;
   listModes: Record<ListColumnKey, FilterMode>;
   visibleColumnKeys: ConfigColumnKey[];
@@ -64,7 +66,9 @@ export class ConfigTableComponent implements OnChanges {
 
   filteredRows: ConfigRow[] = [];
   globalFilter = '';
+  globalFilterMode: FilterMode = 'or';
   textFilters: Partial<Record<ConfigColumnKey, string>> = {};
+  textModes: Partial<Record<ConfigColumnKey, FilterMode>> = {};
   valueFilters: Partial<Record<ConfigColumnKey, string[]>> = {};
   listModes: Record<ListColumnKey, FilterMode> = {
     allowedScopes: 'or',
@@ -227,6 +231,20 @@ export class ConfigTableComponent implements OnChanges {
     this.onFiltersChanged();
   }
 
+  getTextMode(key: ConfigColumnKey): FilterMode {
+    return this.textModes[key] === 'and' ? 'and' : 'or';
+  }
+
+  setTextMode(key: ConfigColumnKey, mode: string): void {
+    this.textModes[key] = mode === 'and' ? 'and' : 'or';
+    this.onFiltersChanged();
+  }
+
+  setGlobalFilterMode(mode: string): void {
+    this.globalFilterMode = mode === 'and' ? 'and' : 'or';
+    this.onFiltersChanged();
+  }
+
   getValueFilter(key: ConfigColumnKey): string[] {
     return this.valueFilters[key] ?? this.emptyFilterValues;
   }
@@ -258,7 +276,9 @@ export class ConfigTableComponent implements OnChanges {
 
   clearFilters(): void {
     this.globalFilter = '';
+    this.globalFilterMode = 'or';
     this.textFilters = {};
+    this.textModes = {};
     this.valueFilters = {};
     this.listModes = {
       allowedScopes: 'or',
@@ -304,10 +324,10 @@ export class ConfigTableComponent implements OnChanges {
   }
 
   private applyFilters(): void {
-    const globalFilter = this.normalize(this.globalFilter);
+    const globalTokens = this.splitFilterTokens(this.globalFilter);
 
     this.filteredRows = this.rows.filter((row) => {
-      if (globalFilter && !this.rowMatchesGlobalFilter(row, globalFilter)) {
+      if (globalTokens.length > 0 && !this.rowMatchesGlobalFilter(row, globalTokens)) {
         return false;
       }
 
@@ -321,15 +341,19 @@ export class ConfigTableComponent implements OnChanges {
     });
   }
 
-  private rowMatchesGlobalFilter(row: ConfigRow, globalFilter: string): boolean {
-    return this.columns.some((column) => this.normalize(this.getCellValue(row, column.key)).includes(globalFilter));
+  private rowMatchesGlobalFilter(row: ConfigRow, tokens: string[]): boolean {
+    const rowValues = this.columns.map((column) => this.normalize(this.getCellValue(row, column.key)));
+    if (this.globalFilterMode === 'and') {
+      return tokens.every((token) => rowValues.some((value) => value.includes(token)));
+    }
+    return tokens.some((token) => rowValues.some((value) => value.includes(token)));
   }
 
   private rowMatchesColumnFilter(row: ConfigRow, column: ColumnDefinition): boolean {
-    const textFilter = this.normalize(this.textFilters[column.key] ?? '');
-    if (textFilter) {
+    const textTokens = this.splitFilterTokens(this.textFilters[column.key] ?? '');
+    if (textTokens.length > 0) {
       const value = this.normalize(this.getCellValue(row, column.key));
-      if (!value.includes(textFilter)) {
+      if (!this.matchesTokens(value, textTokens, this.getTextMode(column.key))) {
         return false;
       }
     }
@@ -502,35 +526,77 @@ export class ConfigTableComponent implements OnChanges {
     return this.getColorSwatchColor(valuePart);
   }
 
-  getHighlightedParts(value = ''): HighlightPart[] {
+  getHighlightedParts(value = '', columnKey?: ConfigColumnKey): HighlightPart[] {
     const source = value;
-    const needle = this.globalFilter.trim();
-    if (!needle) {
-      return [{ text: source, match: false }];
+    if (!source) {
+      return [{ text: '', kind: 'none' }];
+    }
+
+    const globalTokens = this.splitFilterTokens(this.globalFilter);
+    const columnTokens =
+      columnKey && this.columns.some((column) => column.key === columnKey && column.filterType === 'text')
+        ? this.splitFilterTokens(this.textFilters[columnKey] ?? '')
+        : [];
+
+    if (globalTokens.length === 0 && columnTokens.length === 0) {
+      return [{ text: source, kind: 'none' }];
     }
 
     const sourceLower = source.toLowerCase();
-    const needleLower = needle.toLowerCase();
+    const levels = new Array<number>(source.length).fill(0);
+
+    this.applyTokenHighlights(sourceLower, globalTokens, levels, 1);
+    this.applyTokenHighlights(sourceLower, columnTokens, levels, 2);
+
     const parts: HighlightPart[] = [];
+    let buffer = '';
+    let currentLevel = levels[0] ?? 0;
 
-    let cursor = 0;
-    while (cursor < source.length) {
-      const matchIndex = sourceLower.indexOf(needleLower, cursor);
-      if (matchIndex < 0) {
-        parts.push({ text: source.slice(cursor), match: false });
-        break;
+    for (let index = 0; index < source.length; index += 1) {
+      const level = levels[index] ?? 0;
+      if (level !== currentLevel) {
+        parts.push({ text: buffer, kind: this.getHighlightKind(currentLevel) });
+        buffer = '';
+        currentLevel = level;
       }
-
-      if (matchIndex > cursor) {
-        parts.push({ text: source.slice(cursor, matchIndex), match: false });
-      }
-
-      const matchEnd = matchIndex + needle.length;
-      parts.push({ text: source.slice(matchIndex, matchEnd), match: true });
-      cursor = matchEnd;
+      buffer += source[index];
     }
 
-    return parts.length > 0 ? parts : [{ text: source, match: false }];
+    if (buffer) {
+      parts.push({ text: buffer, kind: this.getHighlightKind(currentLevel) });
+    }
+
+    return parts.length > 0 ? parts : [{ text: source, kind: 'none' }];
+  }
+
+  private applyTokenHighlights(sourceLower: string, tokens: string[], levels: number[], level: number): void {
+    for (const token of tokens) {
+      if (!token) {
+        continue;
+      }
+      let cursor = 0;
+      while (cursor < sourceLower.length) {
+        const matchIndex = sourceLower.indexOf(token, cursor);
+        if (matchIndex < 0) {
+          break;
+        }
+        const matchEnd = matchIndex + token.length;
+        for (let index = matchIndex; index < matchEnd && index < levels.length; index += 1) {
+          levels[index] = Math.max(levels[index], level);
+        }
+        cursor = matchIndex + 1;
+      }
+    }
+  }
+
+  private getHighlightKind(level: number): HighlightPart['kind'] {
+    if (level >= 2) {
+      return 'column';
+    }
+    if (level === 1) {
+      return 'global';
+    }
+    return 'none';
   }
 
   private unwrapColorToken(value: string): string {
@@ -621,6 +687,23 @@ export class ConfigTableComponent implements OnChanges {
     return value.toLowerCase().trim();
   }
 
+  private splitFilterTokens(input: string): string[] {
+    return input
+      .split(',')
+      .map((token) => this.normalize(token))
+      .filter((token) => token.length > 0);
+  }
+
+  private matchesTokens(value: string, tokens: string[], mode: FilterMode): boolean {
+    if (tokens.length === 0) {
+      return true;
+    }
+    if (mode === 'and') {
+      return tokens.every((token) => value.includes(token));
+    }
+    return tokens.some((token) => value.includes(token));
+  }
+
   private safeMarkForCheck(): void {
     try {
       this.cdr.markForCheck();
@@ -685,7 +768,9 @@ export class ConfigTableComponent implements OnChanges {
 
       const parsedState = JSON.parse(rawState) as TableState;
       this.globalFilter = parsedState.globalFilter ?? '';
+      this.globalFilterMode = parsedState.globalFilterMode === 'and' ? 'and' : 'or';
       this.textFilters = parsedState.textFilters ?? {};
+      this.textModes = parsedState.textModes ?? {};
       this.valueFilters = parsedState.valueFilters ?? {};
       this.listModes = {
         allowedScopes: parsedState.listModes?.allowedScopes === 'and' ? 'and' : 'or',
@@ -711,6 +796,8 @@ export class ConfigTableComponent implements OnChanges {
     const state: TableState = {
       globalFilter: this.globalFilter,
       textFilters: this.textFilters,
+      globalFilterMode: this.globalFilterMode,
+      textModes: this.textModes,
       valueFilters: this.valueFilters,
       listModes: this.listModes,
       visibleColumnKeys: this.visibleColumnKeys,
