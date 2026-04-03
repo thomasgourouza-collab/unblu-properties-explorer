@@ -145,7 +145,21 @@
       </ng-template>
       <ng-template pTemplate="body" let-row let-columns="columns">
         <tr>
-          <td *ngFor="let column of columns">{{ row[column.key] }}</td>
+          <td *ngFor="let column of columns">
+            <ng-container *ngIf="column.key === 'defaultValue'; else plainCell">
+              <span>{{ row[column.key] }}</span>
+              <span
+                class="color-swatch"
+                *ngIf="getRgbaColor(row[column.key]) as rgbaColor"
+                [style.backgroundColor]="rgbaColor"
+                [title]="rgbaColor"
+                aria-label="Detected RGBA color"
+              ></span>
+            </ng-container>
+            <ng-template #plainCell>
+              {{ row[column.key] }}
+            </ng-template>
+          </td>
         </tr>
       </ng-template>
       <ng-template pTemplate="emptymessage" let-columns>

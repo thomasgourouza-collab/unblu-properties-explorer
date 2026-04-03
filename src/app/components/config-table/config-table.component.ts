@@ -362,6 +362,28 @@ export class ConfigTableComponent implements OnChanges {
     return row[key] ?? '';
   }
 
+  getRgbaColor(value: string): string | null {
+    const rgbaWithAlphaPattern =
+      /rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(0|1|0?\.\d+)\s*\)/i;
+    const rgbaWithAlphaMatch = rgbaWithAlphaPattern.exec(value);
+    if (rgbaWithAlphaMatch) {
+      return rgbaWithAlphaMatch[0];
+    }
+
+    const rgbLikePattern = /(rgba?)\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)/i;
+    const rgbLikeMatch = rgbLikePattern.exec(value);
+    if (!rgbLikeMatch) {
+      return null;
+    }
+
+    const fn = rgbLikeMatch[1].toLowerCase();
+    const r = rgbLikeMatch[2];
+    const g = rgbLikeMatch[3];
+    const b = rgbLikeMatch[4];
+
+    return fn === 'rgba' ? `rgb(${r},${g},${b})` : rgbLikeMatch[0];
+  }
+
   private normalize(value: string): string {
     return value.toLowerCase().trim();
   }
