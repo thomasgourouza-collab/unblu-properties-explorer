@@ -13,6 +13,7 @@
     <div class="card-body">
       <div
         class="upload-zone"
+        *ngIf="!currentFileName"
         [class.dragging]="isDragging"
         (dragover)="onDragOver($event)"
         (dragleave)="onDragLeave($event)"
@@ -35,7 +36,10 @@
         <button type="button" class="btn btn-sm btn-outline-danger" (click)="resetData()">Clear data</button>
       </div>
 
-      <div class="alert alert-info mt-3 mb-0" *ngIf="isParsing">Parsing CSV file...</div>
+      <div class="alert alert-info mt-3 mb-0 loading-alert" *ngIf="isParsing">
+        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+        <span>Parsing CSV file...</span>
+      </div>
       <div class="alert alert-danger mt-3 mb-0" *ngIf="parseError">{{ parseError }}</div>
 
       <div class="alert alert-warning mt-3 mb-0" *ngIf="parseWarnings.length > 0">
