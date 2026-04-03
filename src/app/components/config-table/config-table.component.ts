@@ -65,6 +65,7 @@ export class ConfigTableComponent implements OnChanges {
   visibleColumnKeys: ConfigColumnKey[] = this.columns.map((column) => column.key);
   columnOrderKeys: ConfigColumnKey[] = this.columns.map((column) => column.key);
   filterOptions: Partial<Record<ConfigColumnKey, SelectOption[]>> = {};
+  private readonly emptyFilterValues: string[] = [];
 
   private readonly stateStorageKey = 'csv-explorer-table-state-v1';
   private restoredState = false;
@@ -198,7 +199,7 @@ export class ConfigTableComponent implements OnChanges {
   }
 
   getValueFilter(key: ConfigColumnKey): string[] {
-    return this.valueFilters[key] ?? [];
+    return this.valueFilters[key] ?? this.emptyFilterValues;
   }
 
   setValueFilter(key: ConfigColumnKey, values: string[] | undefined): void {
