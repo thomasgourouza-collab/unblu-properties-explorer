@@ -86,8 +86,6 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   private readonly emptyFilterValues: string[] = [];
   copiedPropertyValue: string | null = null;
   private copyResetTimerId?: ReturnType<typeof globalThis.setTimeout>;
-  private textFilterDebounceTimerId?: ReturnType<typeof globalThis.setTimeout>;
-  private readonly textFilterDebounceMs = 200;
   isCellHoverTooltipOpen = false;
   cellHoverTooltipText = '';
   cellHoverTooltipColumnKey: ConfigColumnKey | null = null;
@@ -221,9 +219,6 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     if (this.copyResetTimerId !== undefined) {
       globalThis.clearTimeout(this.copyResetTimerId);
     }
-    if (this.textFilterDebounceTimerId !== undefined) {
-      globalThis.clearTimeout(this.textFilterDebounceTimerId);
-    }
   }
 
   onColumnVisibilityChange(): void {
@@ -261,7 +256,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
   onGlobalFilterInputChange(value: string): void {
     this.globalFilter = value;
-    this.scheduleTextFilterRecompute();
+    this.onFiltersChanged();
   }
 
   getTextFilter(key: ConfigColumnKey): string {
@@ -281,7 +276,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
   setTextFilter(key: ConfigColumnKey, value: string): void {
     this.textFilters[key] = value;
-    this.scheduleTextFilterRecompute();
+    this.onFiltersChanged();
   }
 
   getTextMode(key: ConfigColumnKey): TextMatchMode {
@@ -304,7 +299,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       return;
     }
     this.globalFilter = '';
-    this.scheduleTextFilterRecompute();
+    this.onFiltersChanged();
   }
 
   removeGlobalFilterToken(token: string): void {
@@ -328,7 +323,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     }
 
     this.globalFilter = nextParts.join(', ');
-    this.scheduleTextFilterRecompute();
+    this.onFiltersChanged();
   }
 
   removeTextFilterToken(columnKey: ConfigColumnKey, token: string): void {
@@ -353,7 +348,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     }
 
     this.textFilters[columnKey] = nextParts.join(', ');
-    this.scheduleTextFilterRecompute();
+    this.onFiltersChanged();
   }
 
   clearTextFilterInput(key: ConfigColumnKey): void {
@@ -361,7 +356,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       return;
     }
     this.textFilters[key] = '';
-    this.scheduleTextFilterRecompute();
+    this.onFiltersChanged();
   }
 
   setGlobalFilterScope(scope: string): void {
@@ -452,7 +447,6 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       allowedScopes: 'or',
       editableBy: 'or'
     };
-    this.cancelTextFilterRecompute();
     this.onFiltersChanged();
   }
 
@@ -1109,21 +1103,6 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     };
 
     localStorage.setItem(this.stateStorageKey, JSON.stringify(state));
-  }
-
-  private scheduleTextFilterRecompute(): void {
-    this.cancelTextFilterRecompute();
-    this.textFilterDebounceTimerId = globalThis.setTimeout(() => {
-      this.textFilterDebounceTimerId = undefined;
-      this.onFiltersChanged();
-    }, this.textFilterDebounceMs);
-  }
-
-  private cancelTextFilterRecompute(): void {
-    if (this.textFilterDebounceTimerId !== undefined) {
-      globalThis.clearTimeout(this.textFilterDebounceTimerId);
-      this.textFilterDebounceTimerId = undefined;
-    }
   }
 
   private ensurePropertyVisible(keys: ConfigColumnKey[]): ConfigColumnKey[] {
