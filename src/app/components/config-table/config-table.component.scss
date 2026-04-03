@@ -53,6 +53,60 @@
   min-width: 8.8rem;
 }
 
+.token-pills-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.global-token-pills {
+  margin-top: 0.2rem;
+}
+
+.token-pill {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 0.08rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--surface-border) 82%, transparent);
+  background: color-mix(in srgb, var(--surface-soft) 80%, transparent);
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.token-pill-removable {
+  cursor: pointer;
+  gap: 0.3rem;
+  padding-right: 0.32rem;
+}
+
+.token-pill-removable:hover {
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--surface-border));
+  color: var(--text-primary);
+}
+
+.token-pill-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.token-pill-remove-icon {
+  font-size: 0.56rem;
+  opacity: 0.86;
+}
+
+.token-pill-small {
+  font-size: 0.62rem;
+  padding: 0.05rem 0.35rem;
+}
+
 .filter-hint {
   color: var(--text-muted);
   font-size: 0.68rem;
@@ -294,6 +348,18 @@
   align-items: center;
   gap: 0.3rem;
   min-width: 0;
+}
+
+.text-filter-input-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.14rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.token-pills-inline {
+  min-height: 0.85rem;
 }
 
 .text-header-filter .header-filter-input {

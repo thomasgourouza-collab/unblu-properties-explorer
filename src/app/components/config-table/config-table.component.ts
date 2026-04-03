@@ -267,6 +267,13 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     return this.textFilters[key] ?? '';
   }
 
+  getFilterTokensDisplay(input: string): string[] {
+    return input
+      .split(',')
+      .map((token) => token.trim())
+      .filter((token) => token.length > 0);
+  }
+
   setTextFilter(key: ConfigColumnKey, value: string): void {
     this.textFilters[key] = value;
     this.scheduleTextFilterRecompute();
@@ -291,6 +298,55 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       return;
     }
     this.globalFilter = '';
+    this.scheduleTextFilterRecompute();
+  }
+
+  removeGlobalFilterToken(token: string): void {
+    const parts = this.globalFilter.split(',');
+    let removed = false;
+    const nextParts: string[] = [];
+
+    for (const part of parts) {
+      const trimmed = part.trim();
+      if (!removed && trimmed === token) {
+        removed = true;
+        continue;
+      }
+      if (trimmed) {
+        nextParts.push(trimmed);
+      }
+    }
+
+    if (!removed) {
+      return;
+    }
+
+    this.globalFilter = nextParts.join(', ');
+    this.scheduleTextFilterRecompute();
+  }
+
+  removeTextFilterToken(columnKey: ConfigColumnKey, token: string): void {
+    const current = this.textFilters[columnKey] ?? '';
+    const parts = current.split(',');
+    let removed = false;
+    const nextParts: string[] = [];
+
+    for (const part of parts) {
+      const trimmed = part.trim();
+      if (!removed && trimmed === token) {
+        removed = true;
+        continue;
+      }
+      if (trimmed) {
+        nextParts.push(trimmed);
+      }
+    }
+
+    if (!removed) {
+      return;
+    }
+
+    this.textFilters[columnKey] = nextParts.join(', ');
     this.scheduleTextFilterRecompute();
   }
 

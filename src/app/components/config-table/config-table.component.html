@@ -70,6 +70,19 @@
           <option value="visible">In visible columns</option>
         </select>
       </div>
+      <div class="token-pills-preview global-token-pills" *ngIf="getFilterTokensDisplay(globalFilter) as tokens">
+        <button
+          type="button"
+          class="token-pill token-pill-removable"
+          *ngFor="let token of tokens"
+          (click)="removeGlobalFilterToken(token)"
+          [attr.aria-label]="'Remove token ' + token"
+          [title]="'Remove token: ' + token"
+        >
+          <span class="token-pill-text">{{ token }}</span>
+          <i class="pi pi-times token-pill-remove-icon" aria-hidden="true"></i>
+        </button>
+      </div>
     </div>
     <div class="toolbar-chips-two-thirds">
       <ng-container *ngIf="hasActiveFilters; else noFiltersTemplate">
@@ -132,15 +145,30 @@
             <ng-container [ngSwitch]="column.filterType">
               <ng-container *ngSwitchCase="'text'">
                 <div class="text-header-filter">
-                  <input
-                    type="text"
-                    class="form-control form-control-sm header-filter-input"
-                    placeholder="Contains..."
-                    title="Use commas for multiple tokens. OR/AND controls token matching."
-                    [ngModel]="getTextFilter(column.key)"
-                    (ngModelChange)="setTextFilter(column.key, $event)"
-                    (keydown.escape)="clearTextFilterInput(column.key)"
-                  />
+                  <div class="text-filter-input-stack">
+                    <input
+                      type="text"
+                      class="form-control form-control-sm header-filter-input"
+                      placeholder="Contains..."
+                      title="Use commas for multiple tokens. OR/AND controls token matching."
+                      [ngModel]="getTextFilter(column.key)"
+                      (ngModelChange)="setTextFilter(column.key, $event)"
+                      (keydown.escape)="clearTextFilterInput(column.key)"
+                    />
+                    <div class="token-pills-preview token-pills-inline" *ngIf="getFilterTokensDisplay(getTextFilter(column.key)) as tokens">
+                      <button
+                        type="button"
+                        class="token-pill token-pill-small token-pill-removable"
+                        *ngFor="let token of tokens"
+                        (click)="removeTextFilterToken(column.key, token)"
+                        [attr.aria-label]="'Remove token ' + token"
+                        [title]="'Remove token: ' + token"
+                      >
+                        <span class="token-pill-text">{{ token }}</span>
+                        <i class="pi pi-times token-pill-remove-icon" aria-hidden="true"></i>
+                      </button>
+                    </div>
+                  </div>
                   <div class="mode-toggle">
                     <input
                       class="btn-check"
