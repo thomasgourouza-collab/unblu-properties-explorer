@@ -25,6 +25,14 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
+}
+
+.chips-scroll-area {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
   overflow-x: auto;
   overflow-y: hidden;
   white-space: nowrap;

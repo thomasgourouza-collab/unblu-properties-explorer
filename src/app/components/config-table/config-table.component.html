@@ -12,16 +12,18 @@
     </div>
     <div class="toolbar-chips-two-thirds">
       <ng-container *ngIf="hasActiveFilters; else noFiltersTemplate">
-        <button
-          type="button"
-          class="filter-chip"
-          *ngFor="let chip of activeFilterChips"
-          (click)="removeFilterChip(chip)"
-          [title]="'Remove ' + chip.label"
-        >
-          <span>{{ chip.label }}</span>
-          <i class="pi pi-times" aria-hidden="true"></i>
-        </button>
+        <div class="chips-scroll-area">
+          <button
+            type="button"
+            class="filter-chip"
+            *ngFor="let chip of activeFilterChips"
+            (click)="removeFilterChip(chip)"
+            [title]="'Remove ' + chip.label"
+          >
+            <span>{{ chip.label }}</span>
+            <i class="pi pi-times" aria-hidden="true"></i>
+          </button>
+        </div>
         <button type="button" class="btn btn-sm btn-outline-secondary chips-clear-btn" (click)="clearAllFilters()">
           Clear all
         </button>
