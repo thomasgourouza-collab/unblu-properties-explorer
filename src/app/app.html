@@ -16,11 +16,16 @@
         (dragleave)="onDragLeave($event)"
         (drop)="onDrop($event)"
       >
-        <p class="mb-2">Drop a CSV file here or choose one manually.</p>
+        <div class="upload-inline">
+          <label for="csvUpload" class="btn btn-sm btn-light choose-csv-btn" [class.disabled]="isParsing">
+            Upload
+          </label>
+          <span class="upload-inline-text"> or drop a CSV file here.</span>
+        </div>
         <input
           id="csvUpload"
           type="file"
-          class="form-control"
+          class="visually-hidden"
           accept=".csv,text/csv"
           (change)="onFileSelected($event)"
           [disabled]="isParsing"

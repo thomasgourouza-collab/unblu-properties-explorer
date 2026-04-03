@@ -34,6 +34,37 @@
   background-color: var(--surface-soft);
 }
 
+.upload-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: nowrap;
+}
+
+.upload-inline-text {
+  margin: 0;
+  line-height: 1.2;
+  color: var(--text-secondary);
+}
+
+.choose-csv-btn {
+  min-width: 9.5rem;
+  border: 1px solid var(--surface-border);
+  color: #1f2937;
+  background: #ffffff;
+}
+
+.choose-csv-btn:hover {
+  background: #f5f7fa;
+}
+
+@media (max-width: 640px) {
+  .upload-inline {
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+}
+
 .loading-alert {
   display: inline-flex;
   align-items: center;
