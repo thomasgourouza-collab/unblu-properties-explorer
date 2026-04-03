@@ -1,0 +1,23 @@
+.title-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.title-logo {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.upload-zone {
+  border: 2px dashed #ced4da;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  transition: border-color 0.2s ease;
+}
+
+.upload-zone.dragging {
+  border-color: #0d6efd;
+  background-color: #f8fbff;
+}

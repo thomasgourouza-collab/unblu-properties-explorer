@@ -1,0 +1,51 @@
+<main class="container-fluid py-4 px-3 px-lg-4">
+  <section class="mb-4">
+    <div class="title-row mb-1">
+      <img src="search.png" alt="Search logo" class="title-logo" />
+      <h1 class="h3 mb-0">Properties Explorer</h1>
+    </div>
+    <p class="text-muted mb-0">
+      Upload your CSV file with properties, then sort, filter, hide and reorder columns.
+    </p>
+  </section>
+
+  <section class="card shadow-sm mb-4">
+    <div class="card-body">
+      <div
+        class="upload-zone"
+        [class.dragging]="isDragging"
+        (dragover)="onDragOver($event)"
+        (dragleave)="onDragLeave($event)"
+        (drop)="onDrop($event)"
+      >
+        <p class="mb-2">Drop a CSV file here or choose one manually.</p>
+        <input
+          id="csvUpload"
+          type="file"
+          class="form-control"
+          accept=".csv,text/csv"
+          (change)="onFileSelected($event)"
+          [disabled]="isParsing"
+        />
+      </div>
+
+      <div class="d-flex flex-wrap align-items-center gap-2 mt-3" *ngIf="currentFileName">
+        <span class="badge text-bg-primary">{{ currentFileName }}</span>
+        <span class="text-muted">{{ rows.length }} parsed rows</span>
+        <button type="button" class="btn btn-sm btn-outline-danger" (click)="resetData()">Clear data</button>
+      </div>
+
+      <div class="alert alert-info mt-3 mb-0" *ngIf="isParsing">Parsing CSV file...</div>
+      <div class="alert alert-danger mt-3 mb-0" *ngIf="parseError">{{ parseError }}</div>
+
+      <div class="alert alert-warning mt-3 mb-0" *ngIf="parseWarnings.length > 0">
+        <strong>Parsing warnings:</strong>
+        <ul class="mb-0 mt-2">
+          <li *ngFor="let warning of parseWarnings">{{ warning }}</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <app-config-table *ngIf="rows.length > 0" [rows]="rows" />
+</main>
