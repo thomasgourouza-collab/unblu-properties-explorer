@@ -1,6 +1,6 @@
 <section class="table-toolbar mb-2">
-  <div class="toolbar-row">
-    <div class="toolbar-item toolbar-global">
+  <div class="toolbar-single-row">
+    <div class="toolbar-global-third">
       <input
         id="globalFilterInput"
         type="text"
@@ -10,40 +10,27 @@
         (ngModelChange)="onFiltersChanged()"
       />
     </div>
-    <div class="toolbar-item toolbar-visibility">
-      <p-multiselect
-        inputId="columnVisibility"
-        [options]="columnVisibilityOptions"
-        [showToggleAll]="true"
-        [display]="'chip'"
-        [filter]="true"
-        [appendTo]="'body'"
-        [maxSelectedLabels]="2"
-        placeholder="Columns"
-        [(ngModel)]="visibleColumnKeys"
-        (onChange)="onColumnVisibilityChange()"
-      />
-    </div>
-    <div class="toolbar-item toolbar-actions">
-      <button type="button" class="btn btn-sm btn-outline-secondary" (click)="clearFilters()">Reset</button>
+    <div class="toolbar-chips-two-thirds">
+      <ng-container *ngIf="hasActiveFilters; else noFiltersTemplate">
+        <button
+          type="button"
+          class="filter-chip"
+          *ngFor="let chip of activeFilterChips"
+          (click)="removeFilterChip(chip)"
+          [title]="'Remove ' + chip.label"
+        >
+          <span>{{ chip.label }}</span>
+          <i class="pi pi-times" aria-hidden="true"></i>
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-secondary chips-clear-btn" (click)="clearAllFilters()">
+          Clear all
+        </button>
+      </ng-container>
+      <ng-template #noFiltersTemplate>
+        <span class="no-filters-label">No active filters</span>
+      </ng-template>
     </div>
   </div>
-</section>
-
-<section class="chips-row mb-2" *ngIf="hasActiveFilters">
-  <button
-    type="button"
-    class="filter-chip"
-    *ngFor="let chip of activeFilterChips"
-    (click)="removeFilterChip(chip)"
-    [title]="'Remove ' + chip.label"
-  >
-    <span>{{ chip.label }}</span>
-    <i class="pi pi-times" aria-hidden="true"></i>
-  </button>
-  <button type="button" class="btn btn-sm btn-outline-secondary chips-clear-btn" (click)="clearAllFilters()">
-    Clear all
-  </button>
 </section>
 
 <section class="card shadow-sm">
