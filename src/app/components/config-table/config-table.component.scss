@@ -11,13 +11,47 @@
 
 .toolbar-single-row {
   display: grid;
-  grid-template-columns: minmax(110px, 0.5fr) minmax(0, 2.5fr);
+  grid-template-columns: 2.4rem minmax(140px, 0.5fr) minmax(0, 2.5fr);
   gap: 0.5rem;
   align-items: center;
 }
 
+.toolbar-eye-section {
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+}
+
 .toolbar-global-third {
   min-width: 0;
+}
+
+:host ::ng-deep .column-visibility-eye .p-multiselect {
+  width: 2.1rem;
+  min-width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--surface-border);
+  background: var(--surface-elevated);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--surface-border) 45%, transparent);
+}
+
+:host ::ng-deep .column-visibility-eye .p-multiselect-label-container {
+  display: none;
+}
+
+:host ::ng-deep .column-visibility-eye .p-multiselect-trigger {
+  width: 100%;
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-left: 0;
+  padding: 0;
+}
+
+:host ::ng-deep .column-visibility-eye .p-multiselect-dropdown-icon {
+  font-size: 0.9rem;
 }
 
 .toolbar-chips-two-thirds {
@@ -237,7 +271,7 @@
 
 @media (max-width: 992px) {
   .toolbar-single-row {
-    grid-template-columns: 1fr;
+    grid-template-columns: 2.4rem 1fr;
   }
 
   .filters-row .filter-header-cell {

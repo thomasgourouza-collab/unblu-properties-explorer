@@ -1,5 +1,24 @@
 <section class="table-toolbar mb-2">
   <div class="toolbar-single-row">
+    <div class="toolbar-eye-section">
+      <p-multiselect
+        inputId="columnVisibility"
+        [options]="columnVisibilityOptions"
+        [showToggleAll]="true"
+        [display]="'chip'"
+        [filter]="true"
+        [appendTo]="'body'"
+        [maxSelectedLabels]="2"
+        styleClass="column-visibility-eye"
+        [title]="'Select visible columns'"
+        [(ngModel)]="visibleColumnKeys"
+        (onChange)="onColumnVisibilityChange()"
+      >
+        <ng-template pTemplate="dropdownicon">
+          <i class="pi pi-eye" aria-hidden="true"></i>
+        </ng-template>
+      </p-multiselect>
+    </div>
     <div class="toolbar-global-third">
       <input
         id="globalFilterInput"
