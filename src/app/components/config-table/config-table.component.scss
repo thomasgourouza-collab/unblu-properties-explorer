@@ -198,6 +198,32 @@
   overflow-x: auto;
   overflow-y: hidden;
   white-space: nowrap;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  padding-bottom: 2px;
+}
+
+.property-code-scroll::-webkit-scrollbar {
+  height: 7px;
+}
+
+.property-code-scroll::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 999px;
+}
+
+.property-code-scroll::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+.property-code-scroll:hover,
+.property-code-scroll:focus-within {
+  scrollbar-color: color-mix(in srgb, var(--surface-border) 85%, transparent) transparent;
+}
+
+.property-code-scroll:hover::-webkit-scrollbar-thumb,
+.property-code-scroll:focus-within::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--surface-border) 85%, transparent);
 }
 
 .property-copy-btn {
@@ -340,6 +366,32 @@
   overflow-x: auto;
   overflow-y: hidden;
   white-space: nowrap;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  padding-bottom: 2px;
+}
+
+.cell-x-scroll::-webkit-scrollbar {
+  height: 7px;
+}
+
+.cell-x-scroll::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 999px;
+}
+
+.cell-x-scroll::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+.cell-x-scroll:hover,
+.cell-x-scroll:focus-within {
+  scrollbar-color: color-mix(in srgb, var(--surface-border) 85%, transparent) transparent;
+}
+
+.cell-x-scroll:hover::-webkit-scrollbar-thumb,
+.cell-x-scroll:focus-within::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--surface-border) 85%, transparent);
 }
 
 :host ::ng-deep .p-datatable {
