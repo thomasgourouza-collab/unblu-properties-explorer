@@ -1063,7 +1063,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       this.copiedPropertyValue = null;
       this.copyResetTimerId = undefined;
       this.safeMarkForCheck();
-    }, 700);
+    }, 800);
   }
 
   private async tryCopyToClipboard(text: string): Promise<boolean> {
