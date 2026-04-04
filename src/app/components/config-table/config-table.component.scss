@@ -153,6 +153,12 @@
   align-items: center;
   gap: 0.4rem;
   align-self: end;
+
+  &:has(.no-filters-label) {
+    align-self: center;
+    margin-top: 0.5rem;
+    margin-left: 5px;
+  }
 }
 
 .chips-scroll-area {
