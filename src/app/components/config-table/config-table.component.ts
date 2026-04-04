@@ -309,7 +309,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   }
 
   exportSelectedToCsv(): void {
-    const cols = this.visibleColumns;
+    const cols = this.getExportCsvColumns();
     if (cols.length === 0) {
       return;
     }
@@ -954,6 +954,14 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
   private getCellValue(row: ConfigRow, key: ConfigColumnKey): string {
     return row[key] ?? '';
+  }
+
+  /** All data columns for CSV export (not limited by visible column picker). */
+  private getExportCsvColumns(): ColumnDefinition[] {
+    return this.columnOrderKeys
+      .map((key) => this.columns.find((column) => column.key === key))
+      .filter((column): column is ColumnDefinition => Boolean(column))
+      .filter((column) => column.key !== 'allowedValues' || this.hasAllowedValuesColumn);
   }
 
   private pruneSelectionToFilteredRows(): void {
