@@ -1,7 +1,15 @@
 <main class="container-fluid app-shell py-3 px-3 px-lg-4">
   <section class="app-header mb-2">
     <div class="title-row">
-      <img src="search.png" alt="Search logo" class="title-logo" />
+      <button
+        type="button"
+        class="help-logo-btn"
+        (click)="toggleHelpModal()"
+        title="Shortcuts and tips"
+        aria-label="Open shortcuts and tips"
+      >
+        <img src="search.png" alt="Search logo" class="title-logo" />
+      </button>
       <h1 class="h3 mb-0">Unblu Properties Explorer</h1>
     </div>
   </section>
@@ -54,4 +62,36 @@
   </section>
 
   <app-config-table *ngIf="rows.length > 0" [rows]="rows" />
+
+  <div class="help-modal-backdrop" *ngIf="isHelpOpen" (click)="closeHelpModal()" tabindex="0" (keydown.escape)="closeHelpModal()">
+    <dialog class="help-modal" open aria-label="Keyboard shortcuts and tips" (click)="onHelpModalContentClick($event)" (keydown.escape)="closeHelpModal()">
+      <header class="help-modal-header">
+        <h2 class="help-modal-title">Keyboard Shortcuts & Tips</h2>
+        <button type="button" class="help-close-btn" (click)="closeHelpModal()" aria-label="Close help">
+          <i class="pi pi-times" aria-hidden="true"></i>
+        </button>
+      </header>
+      <div class="help-modal-body">
+        <div class="help-card">
+          <h3 class="help-section-title">Shortcuts</h3>
+          <div class="help-row"><kbd>/</kbd><span>Focus global filter input</span></div>
+          <div class="help-row"><kbd>Esc</kbd><span>Clear current text filter input</span></div>
+          <div class="help-row"><kbd>Cmd</kbd> / <kbd>Ctrl</kbd><span>Hold while hovering a cell to show full title tooltip</span></div>
+          <div class="help-row"><kbd>Shift</kbd><span>Hold while hovering a row to show “Why matched?”</span></div>
+          <div class="help-row"><kbd>Click row</kbd><span>Pin/unpin “Why matched?” popup</span></div>
+        </div>
+
+        <div class="help-card">
+          <h3 class="help-section-title">Filter Tips</h3>
+          <ul class="help-list">
+            <li>Use comma-separated values for multi-token text search in OR/AND modes.</li>
+            <li>Switch to <strong>Regex</strong> mode for advanced matching patterns.</li>
+            <li>Global scope can target either <strong>all columns</strong> or <strong>visible columns</strong>.</li>
+            <li>Global highlights are green; column-specific highlights are blue.</li>
+            <li>Click chips to remove active filters quickly.</li>
+          </ul>
+        </div>
+      </div>
+    </dialog>
+  </div>
 </main>

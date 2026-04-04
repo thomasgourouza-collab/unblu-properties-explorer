@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener } from '@angular/core';
 
 import { ConfigTableComponent } from './components/config-table/config-table.component';
 import { ConfigRow } from './models/config-row.model';
@@ -19,6 +19,7 @@ export class App {
   currentFileName = '';
   isParsing = false;
   isDragging = false;
+  isHelpOpen = false;
 
   constructor(
     private readonly csvParserService: CsvParserService,
@@ -63,6 +64,26 @@ export class App {
     this.parseWarnings = [];
     this.parseError = '';
     this.currentFileName = '';
+  }
+
+  toggleHelpModal(): void {
+    this.isHelpOpen = !this.isHelpOpen;
+  }
+
+  closeHelpModal(): void {
+    this.isHelpOpen = false;
+  }
+
+  onHelpModalContentClick(event: MouseEvent): void {
+    event.stopPropagation();
+  }
+
+  @HostListener('document:keydown', ['$event'])
+  onDocumentKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Escape' && this.isHelpOpen) {
+      event.preventDefault();
+      this.closeHelpModal();
+    }
   }
 
   private async loadFile(file: File): Promise<void> {
