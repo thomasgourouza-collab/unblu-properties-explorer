@@ -156,7 +156,8 @@
                       (keydown.escape)="clearTextFilterInput(column.key)"
                     />
                   </div>
-                  <div class="mode-toggle">
+                  <div class="mode-toggle mode-toggle-text">
+                    <div class="mode-toggle-or-and">
                     <input
                       class="btn-check"
                       type="radio"
@@ -177,6 +178,7 @@
                       (ngModelChange)="setTextMode(column.key, $event)"
                     />
                     <label class="btn btn-outline-secondary btn-xs" [for]="column.key + '-text-and'">AND</label>
+                    </div>
                     <input
                       class="btn-check"
                       type="radio"
