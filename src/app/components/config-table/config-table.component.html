@@ -145,19 +145,11 @@
             <ng-container [ngSwitch]="column.filterType">
               <ng-container *ngSwitchCase="'text'">
                 <div class="text-header-filter">
-                  <div class="text-filter-input-stack">
-                    <input
-                      type="text"
-                      class="form-control form-control-sm header-filter-input"
-                      placeholder="Contains..."
-                      title="Use commas for multiple tokens in OR/AND mode, or switch to Regex mode."
-                      [ngModel]="getTextFilter(column.key)"
-                      (ngModelChange)="setTextFilter(column.key, $event)"
-                      (keydown.escape)="clearTextFilterInput(column.key)"
-                    />
-                  </div>
-                  <div class="mode-toggle mode-toggle-text">
-                    <div class="mode-toggle-or-and">
+                  <div
+                    class="text-filter-mode-row"
+                    role="group"
+                    [attr.aria-label]="column.label + ' filter match mode'"
+                  >
                     <input
                       class="btn-check"
                       type="radio"
@@ -178,7 +170,6 @@
                       (ngModelChange)="setTextMode(column.key, $event)"
                     />
                     <label class="btn btn-outline-secondary btn-xs" [for]="column.key + '-text-and'">AND</label>
-                    </div>
                     <input
                       class="btn-check"
                       type="radio"
@@ -190,6 +181,15 @@
                     />
                     <label class="btn btn-outline-secondary btn-xs" [for]="column.key + '-text-regex'">Regex</label>
                   </div>
+                  <input
+                    type="text"
+                    class="form-control form-control-sm header-filter-input"
+                    placeholder="Contains..."
+                    title="Use commas for multiple tokens in OR/AND mode, or switch to Regex mode."
+                    [ngModel]="getTextFilter(column.key)"
+                    (ngModelChange)="setTextFilter(column.key, $event)"
+                    (keydown.escape)="clearTextFilterInput(column.key)"
+                  />
                 </div>
               </ng-container>
 
