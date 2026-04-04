@@ -263,17 +263,6 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     return this.textFilters[key] ?? '';
   }
 
-  getFilterTokensDisplay(input: string, mode: TextMatchMode = 'or'): string[] {
-    if (mode === 'regex') {
-      const trimmed = input.trim();
-      return trimmed ? [trimmed] : [];
-    }
-    return input
-      .split(',')
-      .map((token) => token.trim())
-      .filter((token) => token.length > 0);
-  }
-
   setTextFilter(key: ConfigColumnKey, value: string): void {
     this.textFilters[key] = value;
     this.onFiltersChanged();
@@ -299,55 +288,6 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       return;
     }
     this.globalFilter = '';
-    this.onFiltersChanged();
-  }
-
-  removeGlobalFilterToken(token: string): void {
-    const parts = this.globalFilter.split(',');
-    let removed = false;
-    const nextParts: string[] = [];
-
-    for (const part of parts) {
-      const trimmed = part.trim();
-      if (!removed && trimmed === token) {
-        removed = true;
-        continue;
-      }
-      if (trimmed) {
-        nextParts.push(trimmed);
-      }
-    }
-
-    if (!removed) {
-      return;
-    }
-
-    this.globalFilter = nextParts.join(', ');
-    this.onFiltersChanged();
-  }
-
-  removeTextFilterToken(columnKey: ConfigColumnKey, token: string): void {
-    const current = this.textFilters[columnKey] ?? '';
-    const parts = current.split(',');
-    let removed = false;
-    const nextParts: string[] = [];
-
-    for (const part of parts) {
-      const trimmed = part.trim();
-      if (!removed && trimmed === token) {
-        removed = true;
-        continue;
-      }
-      if (trimmed) {
-        nextParts.push(trimmed);
-      }
-    }
-
-    if (!removed) {
-      return;
-    }
-
-    this.textFilters[columnKey] = nextParts.join(', ');
     this.onFiltersChanged();
   }
 

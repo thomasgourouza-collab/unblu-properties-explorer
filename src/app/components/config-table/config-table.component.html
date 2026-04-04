@@ -86,19 +86,6 @@
           </button>
         </div>
       </div>
-      <div class="token-pills-preview global-token-pills" *ngIf="getFilterTokensDisplay(globalFilter, globalFilterMode) as tokens">
-        <button
-          type="button"
-          class="token-pill token-pill-removable"
-          *ngFor="let token of tokens"
-          (click)="removeGlobalFilterToken(token)"
-          [attr.aria-label]="'Remove token ' + token"
-          [title]="'Remove token: ' + token"
-        >
-          <span class="token-pill-text">{{ token }}</span>
-          <i class="pi pi-times token-pill-remove-icon" aria-hidden="true"></i>
-        </button>
-      </div>
     </div>
     <div class="toolbar-chips-two-thirds">
       <ng-container *ngIf="hasActiveFilters; else noFiltersTemplate">
@@ -168,19 +155,6 @@
                       (ngModelChange)="setTextFilter(column.key, $event)"
                       (keydown.escape)="clearTextFilterInput(column.key)"
                     />
-                    <div class="token-pills-preview token-pills-inline" *ngIf="getFilterTokensDisplay(getTextFilter(column.key), getTextMode(column.key)) as tokens">
-                      <button
-                        type="button"
-                        class="token-pill token-pill-small token-pill-removable"
-                        *ngFor="let token of tokens"
-                        (click)="removeTextFilterToken(column.key, token)"
-                        [attr.aria-label]="'Remove token ' + token"
-                        [title]="'Remove token: ' + token"
-                      >
-                        <span class="token-pill-text">{{ token }}</span>
-                        <i class="pi pi-times token-pill-remove-icon" aria-hidden="true"></i>
-                      </button>
-                    </div>
                   </div>
                   <div class="mode-toggle">
                     <input
