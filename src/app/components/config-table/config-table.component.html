@@ -109,6 +109,22 @@
   </div>
 </section>
 
+<section class="table-export-bar mb-2" aria-label="Selection and export">
+  <div class="table-export-bar-inner">
+    <button
+      type="button"
+      class="btn btn-sm btn-export-csv"
+      (click)="exportSelectedToCsv()"
+      [disabled]="selectedFilteredCount === 0"
+      title="Download selected rows as CSV (visible columns, UTF-8)"
+    >
+      <i class="pi pi-download" aria-hidden="true"></i>
+      <span>Export to CSV</span>
+    </button>
+    <span class="table-export-bar-count" *ngIf="selectedFilteredCount > 0">({{ selectedFilteredCount }} selected)</span>
+  </div>
+</section>
+
 <section class="card shadow-sm">
   <div class="card-body p-0">
     <p-table
@@ -126,6 +142,17 @@
     >
       <ng-template pTemplate="header" let-columns>
         <tr class="columns-row">
+          <th scope="col" class="header-cell row-select-header">
+            <input
+              type="checkbox"
+              class="form-check-input row-select-checkbox"
+              [appBindIndeterminate]="masterCheckboxIndeterminate"
+              [checked]="masterCheckboxChecked"
+              (change)="onMasterCheckboxChange($event)"
+              [disabled]="filteredRows.length === 0"
+              aria-label="Select all filtered rows"
+            />
+          </th>
           <th
             *ngFor="let column of columns"
             scope="col"
@@ -141,6 +168,7 @@
           </th>
         </tr>
         <tr class="filters-row">
+          <th scope="col" class="filter-header-cell row-select-filter" aria-hidden="true"></th>
           <th *ngFor="let column of columns" scope="col" class="filter-header-cell" [style.width.%]="getColumnWidthPercent(column.key)">
             <ng-container [ngSwitch]="column.filterType">
               <ng-container *ngSwitchCase="'text'">
@@ -265,6 +293,20 @@
           (keydown.space)="onRowClick($event, row); $event.preventDefault()"
         >
           <td
+            class="body-cell row-select-cell"
+            (click)="$event.stopPropagation()"
+            (keydown.space)="$event.stopPropagation()"
+          >
+            <input
+              type="checkbox"
+              class="form-check-input row-select-checkbox"
+              [checked]="isRowSelected(row)"
+              (change)="onRowCheckboxChange(row, $event)"
+              (click)="$event.stopPropagation()"
+              [attr.aria-label]="'Select row ' + row.property"
+            />
+          </td>
+          <td
             *ngFor="let column of columns"
             class="body-cell"
             [style.width.%]="getColumnWidthPercent(column.key)"
@@ -345,7 +387,7 @@
       </ng-template>
       <ng-template pTemplate="emptymessage" let-columns>
         <tr>
-          <td [attr.colspan]="columns.length" class="text-center py-4">
+          <td [attr.colspan]="columns.length + 1" class="text-center py-4">
             No rows match your current filters.
           </td>
         </tr>

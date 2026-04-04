@@ -39,6 +39,62 @@
   padding: 0.5rem;
 }
 
+.table-export-bar {
+  border: 1px solid var(--surface-border);
+  border-radius: 0.75rem;
+  background: var(--surface-raised);
+  padding: 0.45rem 0.65rem;
+}
+
+.table-export-bar-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+.table-export-bar-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.table-export-bar-count {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+.btn-export-csv {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 42%, var(--surface-border));
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--accent-soft) 28%, var(--surface-elevated));
+  font-weight: 500;
+  padding-inline: 0.6rem;
+
+  .pi {
+    font-size: 0.85rem;
+    opacity: 0.92;
+  }
+
+  &:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--accent) 65%, var(--surface-border));
+    background: color-mix(in srgb, var(--accent-soft) 42%, var(--surface-elevated));
+  }
+
+  &:focus-visible {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 0.18rem color-mix(in srgb, var(--accent-soft) 55%, transparent);
+  }
+
+  &:disabled {
+    opacity: 0.42;
+    cursor: not-allowed;
+  }
+}
+
 .toolbar-single-row {
   display: grid;
   grid-template-columns: minmax(196px, 0.7fr) minmax(0, 2fr);
@@ -317,6 +373,42 @@
   font-weight: 600;
 }
 
+.row-select-header,
+.row-select-filter,
+.row-select-cell {
+  width: 2.85rem;
+  min-width: 2.85rem;
+  max-width: 2.85rem;
+  text-align: center;
+  vertical-align: middle;
+  box-sizing: border-box;
+}
+
+.row-select-header,
+.row-select-filter {
+  padding-left: 0.3rem !important;
+  padding-right: 0.3rem !important;
+}
+
+.row-select-cell {
+  padding: 0.35rem 0.3rem !important;
+  vertical-align: middle;
+}
+
+.row-select-checkbox {
+  margin: 0 !important;
+  float: none;
+  cursor: pointer;
+  width: 1.05rem;
+  height: 1.05rem;
+  flex-shrink: 0;
+  accent-color: var(--accent);
+}
+
+.filters-row .filter-header-cell.row-select-filter {
+  vertical-align: middle;
+}
+
 .filters-row .filter-header-cell {
   background: var(--surface-soft);
   vertical-align: bottom;
@@ -325,6 +417,7 @@
   overflow: hidden;
   // Same outer box for compact text inputs and header multiselects.
   --filter-control-height: calc(2.45rem * 0.7);
+  --filter-control-pad-y: calc(0.46rem * 0.7);
 }
 
 .header-filter-input {

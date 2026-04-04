@@ -1,5 +1,17 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, ElementRef, HostListener, Input, OnChanges, OnDestroy, SimpleChanges, ViewChild } from '@angular/core';
+import {
+  AfterViewChecked,
+  ChangeDetectorRef,
+  Component,
+  Directive,
+  ElementRef,
+  HostListener,
+  Input,
+  OnChanges,
+  OnDestroy,
+  SimpleChanges,
+  ViewChild
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { TableColumnReorderEvent, TableModule } from 'primeng/table';
@@ -46,10 +58,28 @@ interface TableState {
   columnOrderKeys?: ConfigColumnKey[];
 }
 
+/** Sets `HTMLInputElement.indeterminate` (not bindable in templates). */
+@Directive({
+  selector: '[appBindIndeterminate]',
+  standalone: true
+})
+export class BindIndeterminateDirective implements AfterViewChecked {
+  @Input() appBindIndeterminate = false;
+
+  constructor(private readonly el: ElementRef<HTMLInputElement>) {}
+
+  ngAfterViewChecked(): void {
+    const input = this.el.nativeElement;
+    if (input.indeterminate !== this.appBindIndeterminate) {
+      input.indeterminate = this.appBindIndeterminate;
+    }
+  }
+}
+
 @Component({
   selector: 'app-config-table',
   standalone: true,
-  imports: [CommonModule, FormsModule, TableModule, MultiSelectModule],
+  imports: [CommonModule, FormsModule, TableModule, MultiSelectModule, BindIndeterminateDirective],
   templateUrl: './config-table.component.html',
   styleUrl: './config-table.component.scss'
 })
@@ -77,6 +107,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   ];
 
   filteredRows: ConfigRow[] = [];
+  /** Row identity for selection / CSV export (configuration property code). */
+  private readonly selectedRowKeys = new Set<string>();
   globalFilter = '';
   globalFilterMode: TextMatchMode = 'or';
   globalFilterScope: GlobalFilterScope = 'all';
@@ -223,6 +255,82 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     return this.activeFilterChips.length > 0;
   }
 
+  get selectedFilteredCount(): number {
+    return this.filteredRows.filter((row) => this.selectedRowKeys.has(row.property)).length;
+  }
+
+  get masterCheckboxChecked(): boolean {
+    const { filteredRows, selectedRowKeys } = this;
+    if (filteredRows.length === 0) {
+      return false;
+    }
+    return filteredRows.every((row) => selectedRowKeys.has(row.property));
+  }
+
+  get masterCheckboxIndeterminate(): boolean {
+    const { filteredRows, selectedRowKeys } = this;
+    if (filteredRows.length === 0) {
+      return false;
+    }
+    const n = filteredRows.filter((row) => selectedRowKeys.has(row.property)).length;
+    return n > 0 && n < filteredRows.length;
+  }
+
+  isRowSelected(row: ConfigRow): boolean {
+    return this.selectedRowKeys.has(row.property);
+  }
+
+  onRowCheckboxChange(row: ConfigRow, event: Event): void {
+    const input = event.target as HTMLInputElement | null;
+    if (!input) {
+      return;
+    }
+    if (input.checked) {
+      this.selectedRowKeys.add(row.property);
+    } else {
+      this.selectedRowKeys.delete(row.property);
+    }
+  }
+
+  onMasterCheckboxChange(event: Event): void {
+    const input = event.target as HTMLInputElement | null;
+    if (!input) {
+      return;
+    }
+    if (input.checked) {
+      for (const row of this.filteredRows) {
+        this.selectedRowKeys.add(row.property);
+      }
+    } else {
+      for (const row of this.filteredRows) {
+        this.selectedRowKeys.delete(row.property);
+      }
+    }
+  }
+
+  exportSelectedToCsv(): void {
+    const cols = this.visibleColumns;
+    if (cols.length === 0) {
+      return;
+    }
+    const selected = this.filteredRows.filter((row) => this.selectedRowKeys.has(row.property));
+    if (selected.length === 0) {
+      return;
+    }
+    const headerLine = cols.map((c) => this.escapeCsvField(c.label)).join(',');
+    const lines = selected.map((row) =>
+      cols.map((col) => this.escapeCsvField(this.getCellValue(row, col.key))).join(',')
+    );
+    const body = [headerLine, ...lines].join('\r\n');
+    const blob = new Blob([`\ufeff${body}`], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = this.buildSelectionExportFilename();
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
   @ViewChild('chipsScrollArea')
   set chipsScrollAreaRef(ref: ElementRef<HTMLElement> | undefined) {
     this.teardownChipsScrollOverflowTracking();
@@ -237,6 +345,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     if (!changes['rows']) {
       return;
     }
+
+    this.selectedRowKeys.clear();
 
     if (!this.restoredState) {
       this.restoreState();
@@ -687,6 +797,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       return true;
     });
 
+    this.pruneSelectionToFilteredRows();
+
     this.scheduleChipsScrollOverflowSync();
 
     if (!this.isMatchInspectorOpen || !this.matchInspectorRow) {
@@ -842,6 +954,31 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
   private getCellValue(row: ConfigRow, key: ConfigColumnKey): string {
     return row[key] ?? '';
+  }
+
+  private pruneSelectionToFilteredRows(): void {
+    const allowed = new Set(this.filteredRows.map((row) => row.property));
+    for (const key of [...this.selectedRowKeys]) {
+      if (!allowed.has(key)) {
+        this.selectedRowKeys.delete(key);
+      }
+    }
+  }
+
+  private escapeCsvField(value: string): string {
+    const s = value ?? '';
+    if (/[",\r\n]/.test(s)) {
+      return `"${s.replaceAll('"', '""')}"`;
+    }
+    return s;
+  }
+
+  private buildSelectionExportFilename(): string {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `configuration-selection-${y}-${m}-${day}.csv`;
   }
 
   getDefaultValueParts(value = ''): string[] {
