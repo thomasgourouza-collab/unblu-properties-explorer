@@ -1,84 +1,90 @@
-<section class="table-toolbar toolbar-eye-card mb-2">
-  <div class="toolbar-eye-section">
-    <p-multiselect
-      inputId="columnVisibility"
-      [options]="columnVisibilityOptions"
-      optionDisabled="disabled"
-      [showToggleAll]="true"
-      [filter]="true"
-      [appendTo]="'body'"
-      [maxSelectedLabels]="0"
-      defaultLabel="Visible columns"
-      selectedItemsLabel="Visible columns"
-      styleClass="column-visibility-select"
-      [title]="'Select visible columns'"
-      [(ngModel)]="visibleColumnKeys"
-      (onChange)="onColumnVisibilityChange()"
-    >
-      <ng-template pTemplate="selectedItems">
-        <span>Visible columns</span>
-      </ng-template>
-    </p-multiselect>
-    <span class="visible-columns-info">{{ visibleDisplayableColumnsCount }} / {{ totalDisplayableColumnsCount }}</span>
-  </div>
-</section>
-
 <section class="table-toolbar mb-2">
   <div class="toolbar-single-row">
     <div class="toolbar-global-third">
       <div class="global-filter-inline">
-        <input
-          #globalFilterInputRef
-          id="globalFilterInput"
-          type="text"
-          class="form-control form-control-sm"
-          placeholder="Global filter. Use commas for multiple tokens."
-          [ngModel]="globalFilter"
-          (ngModelChange)="onGlobalFilterInputChange($event)"
-          (keydown.escape)="clearGlobalFilterInput()"
-        />
-        <div class="mode-toggle">
-          <input
-            class="btn-check"
-            type="radio"
-            id="global-filter-or"
-            name="global-filter-mode"
-            value="or"
-            [ngModel]="globalFilterMode"
-            (ngModelChange)="setGlobalFilterMode($event)"
-          />
-          <label class="btn btn-outline-secondary btn-xs" for="global-filter-or">OR</label>
-          <input
-            class="btn-check"
-            type="radio"
-            id="global-filter-and"
-            name="global-filter-mode"
-            value="and"
-            [ngModel]="globalFilterMode"
-            (ngModelChange)="setGlobalFilterMode($event)"
-          />
-          <label class="btn btn-outline-secondary btn-xs" for="global-filter-and">AND</label>
-          <input
-            class="btn-check"
-            type="radio"
-            id="global-filter-regex"
-            name="global-filter-mode"
-            value="regex"
-            [ngModel]="globalFilterMode"
-            (ngModelChange)="setGlobalFilterMode($event)"
-          />
-          <label class="btn btn-outline-secondary btn-xs" for="global-filter-regex">Regex</label>
+        <div class="global-filter-controls-row">
+          <div class="mode-toggle mode-toggle-inline">
+            <input
+              class="btn-check"
+              type="radio"
+              id="global-filter-or"
+              name="global-filter-mode"
+              value="or"
+              [ngModel]="globalFilterMode"
+              (ngModelChange)="setGlobalFilterMode($event)"
+            />
+            <label class="btn btn-outline-secondary btn-xs" for="global-filter-or">OR</label>
+            <input
+              class="btn-check"
+              type="radio"
+              id="global-filter-and"
+              name="global-filter-mode"
+              value="and"
+              [ngModel]="globalFilterMode"
+              (ngModelChange)="setGlobalFilterMode($event)"
+            />
+            <label class="btn btn-outline-secondary btn-xs" for="global-filter-and">AND</label>
+            <input
+              class="btn-check"
+              type="radio"
+              id="global-filter-regex"
+              name="global-filter-mode"
+              value="regex"
+              [ngModel]="globalFilterMode"
+              (ngModelChange)="setGlobalFilterMode($event)"
+            />
+            <label class="btn btn-outline-secondary btn-xs" for="global-filter-regex">Regex</label>
+          </div>
+          <select
+            class="form-select form-select-sm global-filter-scope-select"
+            [ngModel]="globalFilterScope"
+            (ngModelChange)="setGlobalFilterScope($event)"
+            aria-label="Global filter scope"
+            title="Search scope"
+          >
+            <option value="all">In all columns</option>
+            <option value="visible">In visible columns</option>
+          </select>
+          <p-multiselect
+            inputId="columnVisibility"
+            [options]="columnVisibilityOptions"
+            optionDisabled="disabled"
+            [showToggleAll]="true"
+            [filter]="true"
+            [appendTo]="'body'"
+            [maxSelectedLabels]="0"
+            defaultLabel="Visible columns"
+            selectedItemsLabel="Visible columns"
+            styleClass="column-visibility-select"
+            [title]="'Select visible columns'"
+            [(ngModel)]="visibleColumnKeys"
+            (onChange)="onColumnVisibilityChange()"
+          >
+            <ng-template pTemplate="selectedItems">
+              <span>Visible columns ({{ visibleDisplayableColumnsCount }} / {{ totalDisplayableColumnsCount }})</span>
+            </ng-template>
+          </p-multiselect>
         </div>
-        <select
-          class="form-select form-select-sm global-filter-scope-select"
-          [ngModel]="globalFilterScope"
-          (ngModelChange)="setGlobalFilterScope($event)"
-          aria-label="Global filter scope"
-          title="Search scope"
-        >
-          <option value="all">In all columns</option>
-          <option value="visible">In visible columns</option>
-        </select>
+        <div class="global-filter-input-row">
+          <input
+            #globalFilterInputRef
+            id="globalFilterInput"
+            type="text"
+            class="form-control form-control-sm"
+            placeholder="Global filter. Use commas for multiple tokens."
+            [ngModel]="globalFilter"
+            (ngModelChange)="onGlobalFilterInputChange($event)"
+            (keydown.escape)="clearGlobalFilterInput()"
+          />
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-secondary global-clear-btn"
+            (click)="clearAllFilters()"
+            [disabled]="!hasActiveFilters"
+          >
+            Clear all
+          </button>
+        </div>
       </div>
       <div class="token-pills-preview global-token-pills" *ngIf="getFilterTokensDisplay(globalFilter, globalFilterMode) as tokens">
         <button
@@ -108,9 +114,6 @@
             <i class="pi pi-times" aria-hidden="true"></i>
           </button>
         </div>
-        <button type="button" class="btn btn-sm btn-outline-secondary chips-clear-btn" (click)="clearAllFilters()">
-          Clear all
-        </button>
       </ng-container>
       <ng-template #noFiltersTemplate>
         <span class="no-filters-label">No active filters</span>

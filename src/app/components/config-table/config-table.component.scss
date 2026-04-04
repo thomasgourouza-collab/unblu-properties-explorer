@@ -9,23 +9,11 @@
   padding: 0.5rem;
 }
 
-.toolbar-eye-card {
-  padding: 0.4rem 0.5rem;
-}
-
 .toolbar-single-row {
   display: grid;
   grid-template-columns: minmax(196px, 0.7fr) minmax(0, 2fr);
   gap: 0.5rem;
   align-items: center;
-}
-
-.toolbar-eye-section {
-  min-width: 0;
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  gap: 0.45rem;
 }
 
 .toolbar-global-third {
@@ -37,20 +25,49 @@
 
 .global-filter-inline {
   display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
+}
+
+.global-filter-controls-row {
+  display: flex;
   align-items: center;
   gap: 0.35rem;
   flex-wrap: wrap;
 }
 
-:host ::ng-deep .global-filter-inline .form-control {
+.global-filter-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
   min-width: 0;
-  flex: 1 1 12.6rem;
+}
+
+:host ::ng-deep .global-filter-input-row .form-control {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.mode-toggle-inline {
+  flex-direction: row;
+  gap: 0.2rem;
+  align-items: center;
+}
+
+.mode-toggle-inline .btn {
+  width: auto;
+  min-width: 3.1rem;
 }
 
 .global-filter-scope-select {
   flex: 0 0 auto;
   width: auto;
   min-width: 8.8rem;
+}
+
+.global-clear-btn {
+  flex: 0 0 auto;
 }
 
 .token-pills-preview {
@@ -193,11 +210,6 @@
 
 .filter-chip i {
   font-size: 0.65rem;
-}
-
-.chips-clear-btn {
-  margin-left: 0.2rem;
-  flex: 0 0 auto;
 }
 
 .color-swatch {
@@ -386,15 +398,16 @@
 
 .mode-toggle {
   display: inline-flex;
-  flex-direction: column;
-  gap: 0.15rem;
+  flex-direction: row;
+  gap: 0.2rem;
   flex: 0 0 auto;
-  white-space: normal;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 .mode-toggle .btn {
-  width: 100%;
-  min-width: 3.1rem;
+  width: auto;
+  min-width: 2.9rem;
   text-align: center;
 }
 
