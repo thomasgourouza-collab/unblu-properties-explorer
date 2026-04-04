@@ -370,7 +370,18 @@
       [style.top.px]="cellHoverTooltipTop"
     >
       <div class="cell-hover-tooltip-title">{{ getColumnLabel(cellHoverTooltipColumnKey) }}</div>
-      <div class="cell-hover-tooltip-content">{{ cellHoverTooltipText }}</div>
+      <div class="cell-hover-tooltip-content">
+        <ng-container *ngFor="let part of getHighlightedParts(cellHoverTooltipText, cellHoverTooltipColumnKey ?? undefined)">
+          <mark
+            *ngIf="part.kind !== 'none'"
+            [class.global-filter-highlight]="part.kind === 'global'"
+            [class.column-filter-highlight]="part.kind === 'column'"
+          >
+            {{ part.text }}
+          </mark>
+          <span *ngIf="part.kind === 'none'">{{ part.text }}</span>
+        </ng-container>
+      </div>
     </div>
 
     <div
