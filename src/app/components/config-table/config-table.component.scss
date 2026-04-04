@@ -2,6 +2,36 @@
   display: block;
 }
 
+// Shared with .cell-x-scroll / .property-code-scroll and the main table scroll container.
+@mixin thin-overlay-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+
+  &::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: transparent;
+    border-radius: 999px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background-color: transparent;
+  }
+
+  &:hover,
+  &:focus-within {
+    scrollbar-color: color-mix(in srgb, var(--surface-border) 85%, transparent) transparent;
+  }
+
+  &:hover::-webkit-scrollbar-thumb,
+  &:focus-within::-webkit-scrollbar-thumb {
+    background-color: color-mix(in srgb, var(--surface-border) 85%, transparent);
+  }
+}
+
 .table-toolbar {
   border: 1px solid var(--surface-border);
   border-radius: 0.75rem;
@@ -215,32 +245,8 @@
   overflow-x: auto;
   overflow-y: hidden;
   white-space: nowrap;
-  scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
   padding-bottom: 2px;
-}
-
-.property-code-scroll::-webkit-scrollbar {
-  height: 7px;
-}
-
-.property-code-scroll::-webkit-scrollbar-thumb {
-  background-color: transparent;
-  border-radius: 999px;
-}
-
-.property-code-scroll::-webkit-scrollbar-track {
-  background-color: transparent;
-}
-
-.property-code-scroll:hover,
-.property-code-scroll:focus-within {
-  scrollbar-color: color-mix(in srgb, var(--surface-border) 85%, transparent) transparent;
-}
-
-.property-code-scroll:hover::-webkit-scrollbar-thumb,
-.property-code-scroll:focus-within::-webkit-scrollbar-thumb {
-  background-color: color-mix(in srgb, var(--surface-border) 85%, transparent);
+  @include thin-overlay-scrollbar;
 }
 
 .property-copy-btn {
@@ -410,6 +416,11 @@
   overflow-x: hidden !important;
 }
 
+// Vertical scroll lives here; match in-cell horizontal scrollbars (hidden until hover / focus-within).
+:host ::ng-deep .fixed-columns-table .p-datatable-table-container {
+  @include thin-overlay-scrollbar;
+}
+
 :host ::ng-deep .fixed-columns-table .p-datatable-table,
 :host ::ng-deep .fixed-columns-table .p-datatable-scrollable-table {
   table-layout: fixed;
@@ -428,32 +439,8 @@
   overflow-x: auto;
   overflow-y: hidden;
   white-space: nowrap;
-  scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
   padding-bottom: 2px;
-}
-
-.cell-x-scroll::-webkit-scrollbar {
-  height: 7px;
-}
-
-.cell-x-scroll::-webkit-scrollbar-thumb {
-  background-color: transparent;
-  border-radius: 999px;
-}
-
-.cell-x-scroll::-webkit-scrollbar-track {
-  background-color: transparent;
-}
-
-.cell-x-scroll:hover,
-.cell-x-scroll:focus-within {
-  scrollbar-color: color-mix(in srgb, var(--surface-border) 85%, transparent) transparent;
-}
-
-.cell-x-scroll:hover::-webkit-scrollbar-thumb,
-.cell-x-scroll:focus-within::-webkit-scrollbar-thumb {
-  background-color: color-mix(in srgb, var(--surface-border) 85%, transparent);
+  @include thin-overlay-scrollbar;
 }
 
 :host ::ng-deep .p-datatable {
