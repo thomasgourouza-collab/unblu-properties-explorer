@@ -373,6 +373,7 @@
     <div
       class="cell-hover-tooltip"
       *ngIf="isCellHoverTooltipOpen"
+      [class.cell-hover-tooltip--property]="cellHoverTooltipColumnKey === 'property'"
       [style.left.px]="cellHoverTooltipLeft"
       [style.top.px]="cellHoverTooltipTop"
     >

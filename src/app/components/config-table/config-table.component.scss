@@ -595,6 +595,19 @@
   overflow: auto;
 }
 
+// Property column: full key on one line (native title-style preview); scroll if longer than tooltip.
+.cell-hover-tooltip--property {
+  width: min(720px, 92vw);
+}
+
+.cell-hover-tooltip--property .cell-hover-tooltip-content {
+  white-space: nowrap;
+  word-break: normal;
+  overflow-x: auto;
+  overflow-y: hidden;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
 .match-inspector-tooltip {
   position: fixed;
   z-index: 1395;
