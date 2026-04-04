@@ -89,7 +89,7 @@
     </div>
     <div class="toolbar-chips-two-thirds">
       <ng-container *ngIf="hasActiveFilters; else noFiltersTemplate">
-        <div class="chips-scroll-area">
+        <div #chipsScrollArea class="chips-scroll-area">
           <button
             type="button"
             class="filter-chip"
