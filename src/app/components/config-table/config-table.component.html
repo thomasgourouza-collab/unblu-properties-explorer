@@ -121,7 +121,6 @@
       <i class="pi pi-download" aria-hidden="true"></i>
       <span>Export to CSV</span>
     </button>
-    <span class="table-export-bar-count" *ngIf="selectedFilteredCount > 0">({{ selectedFilteredCount }} selected)</span>
   </div>
 </section>
 
@@ -143,15 +142,25 @@
       <ng-template pTemplate="header" let-columns>
         <tr class="columns-row">
           <th scope="col" class="header-cell row-select-header">
-            <input
-              type="checkbox"
-              class="form-check-input row-select-checkbox"
-              [appBindIndeterminate]="masterCheckboxIndeterminate"
-              [checked]="masterCheckboxChecked"
-              (change)="onMasterCheckboxChange($event)"
-              [disabled]="filteredRows.length === 0"
-              aria-label="Select all filtered rows"
-            />
+            <div class="row-select-header-inner">
+              <input
+                type="checkbox"
+                class="form-check-input row-select-checkbox"
+                [appBindIndeterminate]="masterCheckboxIndeterminate"
+                [checked]="masterCheckboxChecked"
+                (change)="onMasterCheckboxChange($event)"
+                [disabled]="filteredRows.length === 0"
+                aria-label="Select all filtered rows"
+              />
+              <span
+                class="row-select-count"
+                *ngIf="filteredRows.length > 0"
+                aria-live="polite"
+                [attr.aria-label]="selectedFilteredCount + ' of ' + filteredRows.length + ' rows selected'"
+              >
+                {{ selectedFilteredCount }}
+              </span>
+            </div>
           </th>
           <th
             *ngFor="let column of columns"

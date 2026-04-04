@@ -59,11 +59,6 @@
   color: var(--text-primary);
 }
 
-.table-export-bar-count {
-  font-size: 0.74rem;
-  color: var(--text-muted);
-}
-
 .btn-export-csv {
   display: inline-flex;
   align-items: center;
@@ -376,12 +371,31 @@
 .row-select-header,
 .row-select-filter,
 .row-select-cell {
-  width: 2.85rem;
-  min-width: 2.85rem;
-  max-width: 2.85rem;
+  width: 3.6rem;
+  min-width: 3.6rem;
+  max-width: 3.6rem;
   text-align: center;
   vertical-align: middle;
   box-sizing: border-box;
+}
+
+.row-select-header-inner {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.row-select-count {
+  font-size: 0.72rem;
+  line-height: 1;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
 }
 
 .row-select-header,
