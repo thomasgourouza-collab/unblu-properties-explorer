@@ -13,7 +13,7 @@
   display: grid;
   grid-template-columns: minmax(196px, 0.7fr) minmax(0, 2fr);
   gap: 0.5rem;
-  align-items: center;
+  align-items: end;
 }
 
 .toolbar-global-third {
@@ -118,6 +118,7 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
+  align-self: end;
 }
 
 .chips-scroll-area {
