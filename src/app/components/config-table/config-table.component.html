@@ -248,7 +248,7 @@
         </tr>
       </ng-template>
       <ng-template pTemplate="body" let-row let-columns="columns">
-        <tr>
+        <tr (mouseenter)="onRowHoverEnter($event, row)" (mousemove)="onRowHoverMove($event, row)" (mouseleave)="onRowHoverLeave()">
           <td
             *ngFor="let column of columns"
             class="body-cell"
@@ -363,6 +363,21 @@
     >
       <div class="cell-hover-tooltip-title">{{ getColumnLabel(cellHoverTooltipColumnKey) }}</div>
       <div class="cell-hover-tooltip-content">{{ cellHoverTooltipText }}</div>
+    </div>
+
+    <div
+      class="match-inspector-tooltip"
+      *ngIf="isMatchInspectorOpen"
+      [style.left.px]="matchInspectorLeft"
+      [style.top.px]="matchInspectorTop"
+    >
+      <div class="match-inspector-tooltip-title">Why matched?</div>
+      <div class="match-inspector-tooltip-content">
+        <div class="match-inspector-entry" *ngFor="let reason of matchInspectorReasons">
+          <span class="match-inspector-entry-label">{{ reason.label }}:</span>
+          <span>{{ reason.detail }}</span>
+        </div>
+      </div>
     </div>
   </div>
 </section>

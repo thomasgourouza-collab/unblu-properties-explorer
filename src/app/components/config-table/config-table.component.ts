@@ -25,6 +25,11 @@ interface ActiveFilterChip {
   value?: string;
 }
 
+interface MatchReason {
+  label: string;
+  detail: string;
+}
+
 type ListColumnKey = 'allowedScopes' | 'editableBy';
 type GlobalFilterScope = 'all' | 'visible';
 type TextMatchMode = 'or' | 'and' | 'regex';
@@ -91,6 +96,11 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   cellHoverTooltipColumnKey: ConfigColumnKey | null = null;
   cellHoverTooltipLeft = 0;
   cellHoverTooltipTop = 0;
+  isMatchInspectorOpen = false;
+  matchInspectorLeft = 0;
+  matchInspectorTop = 0;
+  matchInspectorReasons: MatchReason[] = [];
+  private matchInspectorRow: ConfigRow | null = null;
 
   private readonly stateStorageKey = 'csv-explorer-table-state-v1';
   private restoredState = false;
@@ -340,6 +350,178 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.cellHoverTooltipColumnKey = null;
   }
 
+  onRowHoverEnter(event: MouseEvent, row: ConfigRow): void {
+    if (!event.shiftKey) {
+      this.closeMatchInspector();
+      return;
+    }
+    this.openMatchInspector(event, row);
+  }
+
+  onRowHoverMove(event: MouseEvent, row: ConfigRow): void {
+    if (!event.shiftKey) {
+      this.closeMatchInspector();
+      return;
+    }
+    this.openMatchInspector(event, row);
+  }
+
+  onRowHoverLeave(): void {
+    this.closeMatchInspector();
+  }
+
+  private openMatchInspector(event: MouseEvent, row: ConfigRow): void {
+    if (!this.hasActiveFilters) {
+      this.closeMatchInspector();
+      return;
+    }
+
+    const reasons = this.getRowMatchReasons(row);
+    if (reasons.length === 0) {
+      this.closeMatchInspector();
+      return;
+    }
+
+    this.matchInspectorRow = row;
+    this.matchInspectorReasons = reasons;
+    this.isMatchInspectorOpen = true;
+    this.positionMatchInspector(event);
+  }
+
+  private closeMatchInspector(): void {
+    this.isMatchInspectorOpen = false;
+    this.matchInspectorReasons = [];
+    this.matchInspectorRow = null;
+  }
+
+  private positionMatchInspector(event: MouseEvent): void {
+    const offset = 14;
+    const maxWidth = 430;
+    const margin = 12;
+    let left = event.clientX + offset;
+    let top = event.clientY + offset;
+
+    if (left + maxWidth > globalThis.innerWidth - margin) {
+      left = Math.max(margin, event.clientX - maxWidth - offset);
+    }
+    const estimatedHeight = 230;
+    if (top + estimatedHeight > globalThis.innerHeight - margin) {
+      top = Math.max(margin, event.clientY - estimatedHeight - offset);
+    }
+
+    this.matchInspectorLeft = left;
+    this.matchInspectorTop = top;
+  }
+
+  private getRowMatchReasons(row: ConfigRow): MatchReason[] {
+    const reasons: MatchReason[] = [];
+
+    const globalInput = this.globalFilter.trim();
+    if (globalInput) {
+      const columnsToSearch = this.globalFilterScope === 'visible' ? this.visibleColumns : this.columns;
+      if (this.globalFilterMode === 'regex') {
+        const regex = this.tryParseRegexInput(globalInput);
+        if (regex) {
+          const matchedColumns = columnsToSearch
+            .filter((column) => this.matchesRegex(this.getCellValue(row, column.key), regex))
+            .map((column) => column.label);
+          if (matchedColumns.length > 0) {
+            reasons.push({
+              label: `Global (${this.globalFilterMode.toUpperCase()}, ${this.globalFilterScope})`,
+              detail: `${globalInput} -> ${matchedColumns.join(', ')}`
+            });
+          }
+        }
+      } else {
+        const rawTokens = this.splitRawFilterTokens(globalInput);
+        const normalizedTokens = this.splitFilterTokens(globalInput, this.globalFilterMode);
+        const tokenMatches: string[] = [];
+        for (let index = 0; index < normalizedTokens.length; index += 1) {
+          const token = normalizedTokens[index];
+          const matchedColumns = columnsToSearch
+            .filter((column) => this.normalize(this.getCellValue(row, column.key)).includes(token))
+            .map((column) => column.label);
+          if (matchedColumns.length > 0) {
+            tokenMatches.push(`${rawTokens[index] ?? token} -> ${matchedColumns.join(', ')}`);
+          }
+        }
+        if (tokenMatches.length > 0) {
+          reasons.push({
+            label: `Global (${this.globalFilterMode.toUpperCase()}, ${this.globalFilterScope})`,
+            detail: tokenMatches.join(' | ')
+          });
+        }
+      }
+    }
+
+    for (const column of this.columns) {
+      if (column.filterType === 'text') {
+        const input = (this.textFilters[column.key] ?? '').trim();
+        if (!input) {
+          continue;
+        }
+        const mode = this.getTextMode(column.key);
+        const value = this.getCellValue(row, column.key);
+        if (mode === 'regex') {
+          const regex = this.tryParseRegexInput(input);
+          if (regex && this.matchesRegex(value, regex)) {
+            reasons.push({
+              label: `${column.label} (${mode.toUpperCase()})`,
+              detail: input
+            });
+          }
+          continue;
+        }
+
+        const rawTokens = this.splitRawFilterTokens(input);
+        const normalizedTokens = this.splitFilterTokens(input, mode);
+        const normalizedValue = this.normalize(value);
+        const matched = rawTokens.filter((_, idx) => normalizedValue.includes(normalizedTokens[idx]));
+        if (matched.length > 0) {
+          reasons.push({
+            label: `${column.label} (${mode.toUpperCase()})`,
+            detail: matched.join(', ')
+          });
+        }
+        continue;
+      }
+
+      const selectedValues = this.valueFilters[column.key] ?? [];
+      if (selectedValues.length === 0) {
+        continue;
+      }
+
+      if (column.filterType === 'list') {
+        const rowTokens = new Set(
+          (column.key === 'allowedScopes' ? row.allowedScopesTokens : row.editableByTokens).map((token) =>
+            this.normalize(token)
+          )
+        );
+        const matchedValues = selectedValues.filter((value) => rowTokens.has(this.normalize(value)));
+        if (matchedValues.length > 0) {
+          reasons.push({
+            label: `${column.label} (${this.getListMode(column.key).toUpperCase()})`,
+            detail: matchedValues.join(', ')
+          });
+        }
+        continue;
+      }
+
+      if (column.filterType === 'select') {
+        const rowValue = this.normalize(this.getCellValue(row, column.key));
+        const matched = selectedValues.find((value) => this.normalize(value) === rowValue);
+        if (matched) {
+          reasons.push({
+            label: `${column.label} (SELECT)`,
+            detail: matched
+          });
+        }
+      }
+    }
+
+    return reasons;
+  }
+
   getColumnLabel(columnKey: ConfigColumnKey | null): string {
     if (!columnKey) {
       return 'Value';
@@ -442,6 +624,22 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
       return true;
     });
+
+    if (!this.isMatchInspectorOpen || !this.matchInspectorRow) {
+      return;
+    }
+
+    if (!this.filteredRows.includes(this.matchInspectorRow) || !this.hasActiveFilters) {
+      this.closeMatchInspector();
+      return;
+    }
+
+    const reasons = this.getRowMatchReasons(this.matchInspectorRow);
+    if (reasons.length === 0) {
+      this.closeMatchInspector();
+      return;
+    }
+    this.matchInspectorReasons = reasons;
   }
 
   private rowMatchesGlobalFilter(row: ConfigRow, tokens: string[], regex: RegExp | null): boolean {
@@ -846,6 +1044,13 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       .filter((token) => token.length > 0);
   }
 
+  private splitRawFilterTokens(input: string): string[] {
+    return input
+      .split(',')
+      .map((token) => token.trim())
+      .filter((token) => token.length > 0);
+  }
+
   private matchesTokens(value: string, tokens: string[], mode: TextMatchMode, regex: RegExp | null): boolean {
     if (mode === 'regex') {
       return this.matchesRegex(value, regex);
@@ -935,6 +1140,13 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
     event.preventDefault();
     this.globalFilterInputRef?.nativeElement.focus();
+  }
+
+  @HostListener('document:keyup', ['$event'])
+  onDocumentKeyup(event: KeyboardEvent): void {
+    if (event.key === 'Shift' && this.isMatchInspectorOpen) {
+      this.closeMatchInspector();
+    }
   }
 
   private syncColumnOrderFromVisibleOrder(orderedVisibleKeys: ConfigColumnKey[]): void {
