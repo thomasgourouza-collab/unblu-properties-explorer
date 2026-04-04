@@ -149,15 +149,25 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   }
 
   getColumnWidthPercent(columnKey: ConfigColumnKey): number {
-    const hasPropertyColumn = this.visibleColumns.some((column) => column.key === 'property');
-    const propertyWidthUnits = 2.5;
-    const totalUnits = this.visibleColumns.length + (hasPropertyColumn ? propertyWidthUnits - 1 : 0);
-    if (totalUnits <= 0) {
+    const totalWeight = this.visibleColumns.reduce(
+      (sum, column) => sum + this.getColumnWidthWeight(column.key),
+      0
+    );
+    if (totalWeight <= 0) {
       return 100;
     }
+    return (100 * this.getColumnWidthWeight(columnKey)) / totalWeight;
+  }
 
-    const unit = 100 / totalUnits;
-    return columnKey === 'property' && hasPropertyColumn ? unit * propertyWidthUnits : unit;
+  /** Relative width units; redistributed so the table stays 100% wide. */
+  private getColumnWidthWeight(columnKey: ConfigColumnKey): number {
+    if (columnKey === 'property') {
+      return 2.5;
+    }
+    if (columnKey === 'visibility') {
+      return 0.5;
+    }
+    return 1;
   }
 
   get activeFilterChips(): ActiveFilterChip[] {
