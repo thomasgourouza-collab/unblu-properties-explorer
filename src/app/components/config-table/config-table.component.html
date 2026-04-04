@@ -144,7 +144,7 @@
           <th *ngFor="let column of columns" scope="col" class="filter-header-cell" [style.width.%]="getColumnWidthPercent(column.key)">
             <ng-container [ngSwitch]="column.filterType">
               <ng-container *ngSwitchCase="'text'">
-                <div class="text-header-filter">
+                <div class="text-header-filter column-filter-stack">
                   <div
                     class="text-filter-mode-row"
                     role="group"
@@ -193,22 +193,9 @@
                 </div>
               </ng-container>
 
-              <p-multiselect
-                *ngSwitchCase="'select'"
-                [options]="getFilterOptions(column.key)"
-                [filter]="true"
-                [showToggleAll]="true"
-                [appendTo]="'body'"
-                [display]="'chip'"
-                [maxSelectedLabels]="1"
-                defaultLabel="All"
-                styleClass="header-filter-select"
-                [ngModel]="getValueFilter(column.key)"
-                (ngModelChange)="setValueFilter(column.key, $event)"
-              />
-
-              <div *ngSwitchCase="'list'" class="list-header-filter">
+              <div *ngSwitchCase="'select'" class="select-header-filter column-filter-stack">
                 <p-multiselect
+                  size="small"
                   [options]="getFilterOptions(column.key)"
                   [filter]="true"
                   [showToggleAll]="true"
@@ -220,7 +207,14 @@
                   [ngModel]="getValueFilter(column.key)"
                   (ngModelChange)="setValueFilter(column.key, $event)"
                 />
-                <div class="mode-toggle">
+              </div>
+
+              <div *ngSwitchCase="'list'" class="list-header-filter column-filter-stack">
+                <div
+                  class="text-filter-mode-row"
+                  role="group"
+                  [attr.aria-label]="column.label + ' list filter match mode'"
+                >
                   <input
                     class="btn-check"
                     type="radio"
@@ -242,6 +236,19 @@
                   />
                   <label class="btn btn-outline-secondary btn-xs" [for]="column.key + '-and'">AND</label>
                 </div>
+                <p-multiselect
+                  size="small"
+                  [options]="getFilterOptions(column.key)"
+                  [filter]="true"
+                  [showToggleAll]="true"
+                  [appendTo]="'body'"
+                  [display]="'chip'"
+                  [maxSelectedLabels]="1"
+                  defaultLabel="All"
+                  styleClass="header-filter-select"
+                  [ngModel]="getValueFilter(column.key)"
+                  (ngModelChange)="setValueFilter(column.key, $event)"
+                />
               </div>
             </ng-container>
           </th>
