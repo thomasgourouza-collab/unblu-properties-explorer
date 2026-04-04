@@ -307,8 +307,7 @@
   padding: 0.4rem 0.5rem;
   overflow: hidden;
   // Same outer box for compact text inputs and header multiselects.
-  --filter-control-height: calc(2.45rem * 0.6);
-  --filter-control-pad-y: calc(0.46rem * 0.6);
+  --filter-control-height: calc(2.45rem * 0.7);
 }
 
 .header-filter-input {
