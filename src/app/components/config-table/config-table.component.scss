@@ -42,7 +42,7 @@
 .toolbar-single-row {
   display: grid;
   grid-template-columns: minmax(196px, 0.7fr) minmax(0, 2fr);
-  gap: 0.5rem;
+  gap: 0.5rem 1.5rem;
   align-items: end;
 }
 
