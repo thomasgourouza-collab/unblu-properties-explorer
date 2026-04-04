@@ -371,9 +371,10 @@
 .row-select-header,
 .row-select-filter,
 .row-select-cell {
-  width: 3.6rem;
-  min-width: 3.6rem;
-  max-width: 3.6rem;
+  /* Checkbox + gap + fixed 4-digit slot (4ch on .row-select-count) + horizontal padding */
+  width: 4.25rem;
+  min-width: 4.25rem;
+  max-width: 4.25rem;
   text-align: center;
   vertical-align: middle;
   box-sizing: border-box;
@@ -394,8 +395,12 @@
   font-weight: 600;
   color: var(--text-muted);
   white-space: nowrap;
-  min-width: 0;
   font-variant-numeric: tabular-nums;
+  /* Reserve width for 9999 so the header layout does not shift with 1–4 digits */
+  flex: 0 0 4ch;
+  width: 4ch;
+  min-width: 4ch;
+  text-align: center;
 }
 
 .row-select-header,
