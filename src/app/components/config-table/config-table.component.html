@@ -374,8 +374,8 @@
       <div class="match-inspector-tooltip-title">Why matched?</div>
       <div class="match-inspector-tooltip-content">
         <div class="match-inspector-entry" *ngFor="let reason of matchInspectorReasons">
-          <span class="match-inspector-entry-label">{{ reason.label }}:</span>
-          <span>{{ reason.detail }}</span>
+          <div class="match-inspector-entry-label">{{ reason.label }}</div>
+          <div class="match-inspector-entry-detail">{{ reason.detail }}</div>
         </div>
       </div>
     </div>

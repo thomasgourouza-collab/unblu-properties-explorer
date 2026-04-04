@@ -591,40 +591,66 @@
   z-index: 1395;
   width: min(430px, 74vw);
   pointer-events: none;
-  border: 1px solid color-mix(in srgb, var(--surface-border) 80%, transparent);
-  border-radius: 0.6rem;
-  background: color-mix(in srgb, var(--surface-elevated) 94%, #06080d);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--surface-border));
+  border-radius: 0.7rem;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent) 9%, var(--surface-elevated)) 0%,
+      color-mix(in srgb, var(--surface-elevated) 96%, #06080d) 100%
+    );
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(8px);
   overflow: hidden;
 }
 
 .match-inspector-tooltip-title {
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: var(--text-muted);
-  padding: 0.3rem 0.55rem;
-  border-bottom: 1px solid color-mix(in srgb, var(--surface-border) 75%, transparent);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: color-mix(in srgb, var(--text-primary) 92%, var(--text-muted));
+  padding: 0.4rem 0.62rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 20%, var(--surface-border));
   text-transform: uppercase;
 }
 
 .match-inspector-tooltip-content {
-  font-size: 0.76rem;
+  font-size: 0.75rem;
   color: var(--text-primary);
-  line-height: 1.35;
-  padding: 0.38rem 0.55rem 0.5rem;
-  max-height: min(250px, 45vh);
-  overflow: auto;
-}
-
-.match-inspector-entry + .match-inspector-entry {
-  margin-top: 0.35rem;
+  padding: 0.44rem 0.58rem 0.58rem;
+  max-height: none;
+  overflow: visible;
 }
 
 .match-inspector-entry-label {
-  color: var(--text-secondary);
-  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: color-mix(in srgb, var(--accent) 65%, var(--text-secondary));
+  font-size: 0.69rem;
+  font-weight: 700;
+  margin-bottom: 0.16rem;
+}
+
+.match-inspector-entry-label::before {
+  content: '';
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 78%, var(--surface-border));
+}
+
+.match-inspector-entry {
+  border: 1px solid color-mix(in srgb, var(--surface-border) 72%, transparent);
+  border-radius: 0.52rem;
+  background: color-mix(in srgb, var(--surface-soft) 66%, transparent);
+  padding: 0.34rem 0.45rem 0.38rem;
+}
+
+.match-inspector-entry-detail {
+  color: var(--text-primary);
+  font-size: 0.76rem;
+  word-break: break-word;
 }
 
 :host ::ng-deep .p-inputtext,
