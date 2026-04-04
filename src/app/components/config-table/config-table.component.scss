@@ -164,6 +164,8 @@
   overflow-x: auto;
   overflow-y: hidden;
   white-space: nowrap;
+  padding-bottom: 2px;
+  @include thin-overlay-scrollbar;
 }
 
 .no-filters-label {
