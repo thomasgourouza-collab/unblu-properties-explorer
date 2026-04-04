@@ -248,7 +248,15 @@
         </tr>
       </ng-template>
       <ng-template pTemplate="body" let-row let-columns="columns">
-        <tr (mouseenter)="onRowHoverEnter($event, row)" (mousemove)="onRowHoverMove($event, row)" (mouseleave)="onRowHoverLeave()">
+        <tr
+          tabindex="0"
+          (mouseenter)="onRowHoverEnter($event, row)"
+          (mousemove)="onRowHoverMove($event, row)"
+          (mouseleave)="onRowHoverLeave()"
+          (click)="onRowClick($event, row)"
+          (keydown.enter)="onRowClick($event, row)"
+          (keydown.space)="onRowClick($event, row); $event.preventDefault()"
+        >
           <td
             *ngFor="let column of columns"
             class="body-cell"
@@ -368,8 +376,10 @@
     <div
       class="match-inspector-tooltip"
       *ngIf="isMatchInspectorOpen"
+      [class.pinned]="isMatchInspectorPinned"
       [style.left.px]="matchInspectorLeft"
       [style.top.px]="matchInspectorTop"
+      (click)="onMatchInspectorClick($event)"
     >
       <div class="match-inspector-tooltip-title">Why matched?</div>
       <div class="match-inspector-tooltip-content">

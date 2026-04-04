@@ -97,6 +97,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   cellHoverTooltipLeft = 0;
   cellHoverTooltipTop = 0;
   isMatchInspectorOpen = false;
+  isMatchInspectorPinned = false;
   matchInspectorLeft = 0;
   matchInspectorTop = 0;
   matchInspectorReasons: MatchReason[] = [];
@@ -351,26 +352,62 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   }
 
   onRowHoverEnter(event: MouseEvent, row: ConfigRow): void {
+    if (this.isMatchInspectorPinned) {
+      return;
+    }
     if (!event.shiftKey) {
       this.closeMatchInspector();
       return;
     }
-    this.openMatchInspector(event, row);
+    this.openMatchInspector(event, row, false);
   }
 
   onRowHoverMove(event: MouseEvent, row: ConfigRow): void {
+    if (this.isMatchInspectorPinned) {
+      return;
+    }
     if (!event.shiftKey) {
       this.closeMatchInspector();
       return;
     }
-    this.openMatchInspector(event, row);
+    this.openMatchInspector(event, row, false);
   }
 
   onRowHoverLeave(): void {
+    if (this.isMatchInspectorPinned) {
+      return;
+    }
     this.closeMatchInspector();
   }
 
-  private openMatchInspector(event: MouseEvent, row: ConfigRow): void {
+  onRowClick(event: Event, row: ConfigRow): void {
+    event.stopPropagation();
+    if (this.isMatchInspectorPinned && this.matchInspectorRow === row) {
+      this.closeMatchInspector();
+      return;
+    }
+    if (event instanceof MouseEvent) {
+      this.openMatchInspector(event, row, true);
+      return;
+    }
+
+    const target = event.target as HTMLElement | null;
+    const synthetic = {
+      clientX: target ? target.getBoundingClientRect().left + 12 : 24,
+      clientY: target ? target.getBoundingClientRect().top + 12 : 24
+    } as MouseEvent;
+    this.openMatchInspector(synthetic, row, true);
+  }
+
+  onMatchInspectorClick(event: MouseEvent): void {
+    event.stopPropagation();
+    event.preventDefault();
+    if (this.isMatchInspectorPinned) {
+      this.closeMatchInspector();
+    }
+  }
+
+  private openMatchInspector(event: MouseEvent, row: ConfigRow, pinned: boolean): void {
     if (!this.hasActiveFilters) {
       this.closeMatchInspector();
       return;
@@ -384,12 +421,14 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
     this.matchInspectorRow = row;
     this.matchInspectorReasons = reasons;
+    this.isMatchInspectorPinned = pinned;
     this.isMatchInspectorOpen = true;
     this.positionMatchInspector(event);
   }
 
   private closeMatchInspector(): void {
     this.isMatchInspectorOpen = false;
+    this.isMatchInspectorPinned = false;
     this.matchInspectorReasons = [];
     this.matchInspectorRow = null;
   }
@@ -1144,7 +1183,14 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
   @HostListener('document:keyup', ['$event'])
   onDocumentKeyup(event: KeyboardEvent): void {
-    if (event.key === 'Shift' && this.isMatchInspectorOpen) {
+    if (event.key === 'Shift' && this.isMatchInspectorOpen && !this.isMatchInspectorPinned) {
+      this.closeMatchInspector();
+    }
+  }
+
+  @HostListener('document:click')
+  onDocumentClick(): void {
+    if (this.isMatchInspectorPinned) {
       this.closeMatchInspector();
     }
   }
