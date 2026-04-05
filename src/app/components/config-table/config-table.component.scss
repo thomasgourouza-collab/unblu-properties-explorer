@@ -111,6 +111,9 @@
   color: var(--text-primary);
 }
 
+// Match Bootstrap .btn-sm (0.875rem) used by Export CSV in the same bar.
+$export-bar-control-font-size: 0.875rem;
+
 .btn-export-csv {
   display: inline-flex;
   align-items: center;
@@ -140,6 +143,10 @@
     opacity: 0.42;
     cursor: not-allowed;
   }
+}
+
+.table-export-bar .btn.btn-sm.btn-export-csv {
+  font-size: $export-bar-control-font-size;
 }
 
 .toolbar-single-row {
@@ -239,8 +246,10 @@
 }
 
 :host ::ng-deep .column-visibility-select .p-multiselect-label {
-  color: var(--text-secondary);
-  font-size: 0.78rem;
+  color: var(--text-primary);
+  font-size: $export-bar-control-font-size;
+  font-weight: 500;
+  line-height: 1.25;
   padding: 0;
 }
 
