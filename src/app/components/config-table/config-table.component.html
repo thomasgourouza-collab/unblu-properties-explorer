@@ -373,7 +373,11 @@
             (mouseover)="onRowMatchInspectorHover($event, row)"
           >
             <ng-container *ngIf="column.key === 'value'; else tplNotValueColumn">
-              <div class="value-cell-wrap" (click)="onValueCellControlClick($event)">
+              <div
+                class="value-cell-wrap"
+                [class.value-cell-diverges]="valueColumnDiffersFromDefault(row)"
+                (click)="onValueCellControlClick($event)"
+              >
                 <ng-container *ngIf="isValueColumnBooleanType(row); else tplValueNonBoolean">
                   <select
                     class="form-select form-select-sm value-cell-select-native"

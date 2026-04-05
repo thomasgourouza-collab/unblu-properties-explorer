@@ -1326,6 +1326,37 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     event.stopPropagation();
   }
 
+  /**
+   * True when the Value field differs from Default value (for list types, token order is ignored).
+   */
+  valueColumnDiffersFromDefault(row: ConfigRow): boolean {
+    if (this.valueColumnUsesMultiSelect(row)) {
+      const valueParts = this.parseCommaSeparatedCellList(row.value ?? '');
+      const defaultParts = this.getDefaultValueParts(row.defaultValue ?? '').filter((p) => p.trim().length > 0);
+      return !this.valueListsEqualIgnoreOrder(valueParts, defaultParts);
+    }
+    if (this.isValueColumnBooleanType(row)) {
+      const v = (row.value ?? '').trim().toLowerCase();
+      const d = (row.defaultValue ?? '').trim().toLowerCase();
+      return v !== d;
+    }
+    return (row.value ?? '').trim() !== (row.defaultValue ?? '').trim();
+  }
+
+  private valueListsEqualIgnoreOrder(left: string[], right: string[]): boolean {
+    const norm = (items: string[]) =>
+      [...items]
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0)
+        .sort((a, b) => a.localeCompare(b));
+    const a = norm(left);
+    const b = norm(right);
+    if (a.length !== b.length) {
+      return false;
+    }
+    return a.every((t, i) => t === b[i]);
+  }
+
   /** True when chip column should render anything (non-empty tokens only). */
   hasChipPartsContent(parts: string[]): boolean {
     return parts.some((part) => part.trim().length > 0);

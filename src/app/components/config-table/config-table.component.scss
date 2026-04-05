@@ -687,6 +687,19 @@ $export-bar-control-font-size: 0.875rem;
   min-width: 0;
 }
 
+$value-column-divergent-border: color-mix(in srgb, #22c55e 72%, var(--surface-border));
+
+:host .value-cell-wrap.value-cell-diverges {
+  .value-cell-select-native,
+  .value-cell-input {
+    border-color: $value-column-divergent-border;
+  }
+}
+
+:host ::ng-deep .value-cell-wrap.value-cell-diverges .value-cell-multiselect-inner.p-multiselect {
+  border-color: $value-column-divergent-border;
+}
+
 .value-cell-input {
   width: 100%;
   max-width: 100%;
