@@ -1350,10 +1350,12 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     if (tokens.length === 0) {
       return true;
     }
+    // Tokens from splitFilterTokens are lowercased; compare on normalized haystack (same as global filter).
+    const haystack = this.normalize(value);
     if (mode === 'and') {
-      return tokens.every((token) => value.includes(token));
+      return tokens.every((token) => haystack.includes(token));
     }
-    return tokens.some((token) => value.includes(token));
+    return tokens.some((token) => haystack.includes(token));
   }
 
   private tryParseRegexInput(input: string): RegExp | null {
