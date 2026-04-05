@@ -113,7 +113,7 @@
       .slice(1)
       .map((p) => cleanText(p.textContent))
       .filter(Boolean);
-    return parts.join("\n").trim();
+    return parts.join(" - ");
   }
 
   const rows = [];
