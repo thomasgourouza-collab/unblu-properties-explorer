@@ -223,14 +223,16 @@ export class CsvParserService {
       extra[colKey] = (row[header] ?? '').trim();
     }
 
+    const defaultValue = getValue('defaultValue');
+
     return {
       category: getValue('category'),
       propertyTitle: getValue('propertyTitle'),
       property: getValue('property'),
       source: this.stripCsvExtensionForDisplay(sourceLabel),
       rowKey: `${rowKeyPrefix}::${rowIndex}`,
-      defaultValue: getValue('defaultValue'),
-      value: '',
+      defaultValue,
+      value: defaultValue,
       type: getValue('type'),
       allowedValues: hasAllowedValuesColumn ? getValue('allowedValues') : '',
       allowedScopes,

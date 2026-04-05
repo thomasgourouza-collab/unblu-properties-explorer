@@ -26,7 +26,7 @@ export interface ConfigRow {
   /** Stable unique id for selection / export when the same property appears in multiple rows. */
   rowKey: string;
   defaultValue: string;
-  /** Synthetic UI column; not loaded from CSV. */
+  /** UI column; not a separate CSV field — initialized from default value on parse. */
   value: string;
   type: string;
   allowedValues: string;

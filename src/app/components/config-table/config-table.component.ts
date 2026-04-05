@@ -105,6 +105,9 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   @ViewChild('globalFilterInputRef') globalFilterInputRef?: ElementRef<HTMLInputElement>;
   private chipsScrollHost: HTMLElement | null = null;
   private chipsScrollResizeObserver: ResizeObserver | null = null;
+  /** Stable `ngModel` / `[options]` refs for Value-column multiselect (new arrays each CD freeze PrimeNG). */
+  private readonly valueColumnMultiModelCache = new Map<string, { value: string; selected: string[] }>();
+  private readonly valueColumnSelectOptionsCache = new Map<string, SelectOption[]>();
   rowsPerPage = 25;
   readonly rowsPerPageOptions = [10, 25, 50, 100];
 
@@ -408,6 +411,9 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     if (!changes['rows']) {
       return;
     }
+
+    this.valueColumnMultiModelCache.clear();
+    this.valueColumnSelectOptionsCache.clear();
 
     this.rebuildColumnsFromRows();
 
@@ -1271,9 +1277,16 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   }
 
   getValueColumnSelectOptions(row: ConfigRow): SelectOption[] {
-    return [...this.getValueColumnAllowedOptionValues(row)]
+    const cacheKey = `${row.rowKey}\0${row.hasAllowedValuesColumn ? row.allowedValues : ''}`;
+    const hit = this.valueColumnSelectOptionsCache.get(cacheKey);
+    if (hit) {
+      return hit;
+    }
+    const opts = [...this.getValueColumnAllowedOptionValues(row)]
       .sort((a, b) => a.localeCompare(b))
       .map((v) => ({ label: v, value: v }));
+    this.valueColumnSelectOptionsCache.set(cacheKey, opts);
+    return opts;
   }
 
   valueColumnUsesMultiSelect(row: ConfigRow): boolean {
@@ -1288,12 +1301,24 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   }
 
   getValueColumnMultiModel(row: ConfigRow): string[] {
+    const v = row.value ?? '';
+    const cached = this.valueColumnMultiModelCache.get(row.rowKey);
+    if (cached && cached.value === v) {
+      return cached.selected;
+    }
     const allowed = new Set(this.getValueColumnAllowedOptionValues(row));
-    return this.parseCommaSeparatedCellList(row.value ?? '').filter((p) => allowed.has(p));
+    const selected = this.parseCommaSeparatedCellList(v).filter((p) => allowed.has(p));
+    this.valueColumnMultiModelCache.set(row.rowKey, { value: v, selected });
+    return selected;
   }
 
   onValueColumnMultiChange(row: ConfigRow, selected: string[] | null | undefined): void {
-    row.value = (selected ?? []).filter((p) => p.trim().length > 0).join(',');
+    const picked = (selected ?? []).filter((p) => p.trim().length > 0);
+    const next = picked.join(',');
+    row.value = next;
+    const allowed = new Set(this.getValueColumnAllowedOptionValues(row));
+    const normalized = picked.filter((p) => allowed.has(p));
+    this.valueColumnMultiModelCache.set(row.rowKey, { value: next, selected: normalized });
     this.safeMarkForCheck();
   }
 
