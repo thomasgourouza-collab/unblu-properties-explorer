@@ -136,11 +136,16 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   cellHoverTooltipLeft = 0;
   cellHoverTooltipTop = 0;
   isMatchInspectorOpen = false;
-  isMatchInspectorPinned = false;
   matchInspectorLeft = 0;
   matchInspectorTop = 0;
   matchInspectorReasons: MatchReason[] = [];
   private matchInspectorRow: ConfigRow | null = null;
+
+  /** Shift+hover: some hosts omit `shiftKey` on mouse events; track Shift from keyboard too. */
+  private matchInspectorShiftFromKeyboard = false;
+  private pointerContextRow: ConfigRow | null = null;
+  private pointerContextClientX = 0;
+  private pointerContextClientY = 0;
 
   private readonly stateStorageKey = 'csv-explorer-table-state-v2';
   private restoredState = false;
@@ -556,69 +561,75 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   }
 
   onCellHoverLeave(): void {
+    if (!this.isCellHoverTooltipOpen && this.cellHoverTooltipColumnKey === null) {
+      return;
+    }
     this.isCellHoverTooltipOpen = false;
     this.cellHoverTooltipColumnKey = null;
   }
 
-  onRowHoverEnter(event: MouseEvent, row: ConfigRow): void {
-    if (this.isMatchInspectorPinned) {
-      return;
-    }
-    if (!event.shiftKey) {
-      this.closeMatchInspector();
-      return;
-    }
-    this.openMatchInspector(event, row, false);
+  /** Stable *ngFor identity so CD / mousemove does not recreate text nodes (which clears selection). */
+  trackByDefaultValuePart(index: number, valuePart: string): string {
+    return `${index}:${valuePart}`;
   }
 
-  onRowHoverMove(event: MouseEvent, row: ConfigRow): void {
-    if (this.isMatchInspectorPinned) {
-      return;
-    }
-    if (!event.shiftKey) {
+  trackByHighlightPart(index: number, part: HighlightPart): string {
+    return `${index}:${part.kind}:${part.text}`;
+  }
+
+  /** Bound on each body cell so PrimeNG scrollable tables still receive Shift+hover reliably. */
+  onRowMatchInspectorHover(event: MouseEvent, row: ConfigRow): void {
+    this.pointerContextRow = row;
+    this.pointerContextClientX = event.clientX;
+    this.pointerContextClientY = event.clientY;
+
+    if (!this.isShiftHeldForMatchInspector(event)) {
       this.closeMatchInspector();
       return;
     }
-    this.openMatchInspector(event, row, false);
+    this.openMatchInspector(event, row);
+  }
+
+  private isShiftHeldForMatchInspector(event: MouseEvent): boolean {
+    if (this.matchInspectorShiftFromKeyboard) {
+      return true;
+    }
+    if (event.shiftKey) {
+      return true;
+    }
+    return typeof event.getModifierState === 'function' && event.getModifierState('Shift');
+  }
+
+  private tryOpenMatchInspectorFromPointerContext(): void {
+    if (!this.pointerContextRow) {
+      return;
+    }
+    const synthetic = {
+      clientX: this.pointerContextClientX,
+      clientY: this.pointerContextClientY
+    } as MouseEvent;
+    this.openMatchInspector(synthetic, this.pointerContextRow);
+  }
+
+  /** Single `mousemove` on data cells: Cmd/Ctrl cell tooltip + Shift match inspector. */
+  onBodyCellMouseMove(event: MouseEvent, row: ConfigRow, column: ColumnDefinition): void {
+    this.onCellHoverMove(event, this.getCellValue(row, column.key), column.key);
+    this.onRowMatchInspectorHover(event, row);
   }
 
   onRowHoverLeave(): void {
-    if (this.isMatchInspectorPinned) {
-      return;
-    }
     this.closeMatchInspector();
+    this.pointerContextRow = null;
   }
 
-  onRowClick(event: Event, row: ConfigRow): void {
-    event.stopPropagation();
-    if (this.isMatchInspectorPinned && this.matchInspectorRow === row) {
-      this.closeMatchInspector();
-      return;
-    }
-    if (event instanceof MouseEvent) {
-      this.openMatchInspector(event, row, true);
-      return;
-    }
-
-    const target = event.target as HTMLElement | null;
-    const synthetic = {
-      clientX: target ? target.getBoundingClientRect().left + 12 : 24,
-      clientY: target ? target.getBoundingClientRect().top + 12 : 24
-    } as MouseEvent;
-    this.openMatchInspector(synthetic, row, true);
-  }
-
-  onMatchInspectorClick(event: MouseEvent): void {
-    event.stopPropagation();
-    event.preventDefault();
-    if (this.isMatchInspectorPinned) {
-      this.closeMatchInspector();
-    }
-  }
-
-  private openMatchInspector(event: MouseEvent, row: ConfigRow, pinned: boolean): void {
+  private openMatchInspector(event: MouseEvent, row: ConfigRow): void {
     if (!this.hasActiveFilters) {
       this.closeMatchInspector();
+      return;
+    }
+
+    if (this.matchInspectorRow === row && this.isMatchInspectorOpen) {
+      this.positionMatchInspector(event);
       return;
     }
 
@@ -630,14 +641,15 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
     this.matchInspectorRow = row;
     this.matchInspectorReasons = reasons;
-    this.isMatchInspectorPinned = pinned;
     this.isMatchInspectorOpen = true;
     this.positionMatchInspector(event);
   }
 
   private closeMatchInspector(): void {
+    if (!this.isMatchInspectorOpen && this.matchInspectorRow === null) {
+      return;
+    }
     this.isMatchInspectorOpen = false;
-    this.isMatchInspectorPinned = false;
     this.matchInspectorReasons = [];
     this.matchInspectorRow = null;
   }
@@ -1468,6 +1480,11 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
   @HostListener('document:keydown', ['$event'])
   onDocumentKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Shift' || event.code === 'ShiftLeft' || event.code === 'ShiftRight') {
+      this.matchInspectorShiftFromKeyboard = true;
+      this.tryOpenMatchInspectorFromPointerContext();
+    }
+
     if (event.defaultPrevented || event.key !== '/' || event.ctrlKey || event.metaKey || event.altKey) {
       return;
     }
@@ -1482,15 +1499,16 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   }
 
   @HostListener('document:keyup', ['$event'])
-  onDocumentKeyup(event: KeyboardEvent): void {
-    if (event.key === 'Shift' && this.isMatchInspectorOpen && !this.isMatchInspectorPinned) {
-      this.closeMatchInspector();
+  onDocumentKeyupShiftTrack(event: KeyboardEvent): void {
+    if (event.key === 'Shift' || event.code === 'ShiftLeft' || event.code === 'ShiftRight') {
+      this.matchInspectorShiftFromKeyboard = false;
     }
   }
 
-  @HostListener('document:click')
-  onDocumentClick(): void {
-    if (this.isMatchInspectorPinned) {
+  @HostListener('window:blur')
+  onWindowBlurClearShiftTrack(): void {
+    this.matchInspectorShiftFromKeyboard = false;
+    if (this.isMatchInspectorOpen) {
       this.closeMatchInspector();
     }
   }
