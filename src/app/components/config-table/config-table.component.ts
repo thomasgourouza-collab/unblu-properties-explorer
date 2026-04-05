@@ -396,6 +396,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   onSelectValueChangesClick(event: MouseEvent): void {
     event.stopPropagation();
     event.preventDefault();
+    this.selectedRowKeys.clear();
     for (const row of this.rows) {
       if (this.valueColumnDiffersFromDefault(row)) {
         this.selectedRowKeys.add(row.rowKey);
