@@ -107,6 +107,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   ];
 
   filteredRows: ConfigRow[] = [];
+  /** When true, the table lists only rows that are selected within the current filter. */
+  showSelectedRowsOnly = false;
   /** Row identity for selection / CSV export (configuration property code). */
   private readonly selectedRowKeys = new Set<string>();
   globalFilter = '';
@@ -255,8 +257,32 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     return this.activeFilterChips.length > 0;
   }
 
+  /** Selected rows that match the current column/global filters (visible in the table when not in “selected only” mode). */
   get selectedFilteredCount(): number {
     return this.filteredRows.filter((row) => this.selectedRowKeys.has(row.property)).length;
+  }
+
+  /** All selected rows in the loaded dataset (persists across filters and pagination). */
+  get selectedDatasetCount(): number {
+    return this.rows.filter((row) => this.selectedRowKeys.has(row.property)).length;
+  }
+
+  /** Rows passed to p-table (full filtered set or selected-only subset). */
+  get tableDisplayedRows(): ConfigRow[] {
+    if (!this.showSelectedRowsOnly) {
+      return this.filteredRows;
+    }
+    return this.filteredRows.filter((row) => this.selectedRowKeys.has(row.property));
+  }
+
+  get emptyTableMessage(): string {
+    if (this.filteredRows.length === 0) {
+      return 'No rows match your current filters.';
+    }
+    if (this.showSelectedRowsOnly) {
+      return 'No selected rows in the current filter. Turn off Selected only to see all filtered rows.';
+    }
+    return 'No rows match your current filters.';
   }
 
   get masterCheckboxChecked(): boolean {
@@ -290,6 +316,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     } else {
       this.selectedRowKeys.delete(row.property);
     }
+    this.clearSelectedOnlyIfNoSelection();
+    this.syncMatchInspectorToDisplayedTable();
   }
 
   onMasterCheckboxChange(event: Event): void {
@@ -306,6 +334,13 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
         this.selectedRowKeys.delete(row.property);
       }
     }
+    this.clearSelectedOnlyIfNoSelection();
+    this.syncMatchInspectorToDisplayedTable();
+  }
+
+  onSelectedOnlyModeChange(on: boolean): void {
+    this.showSelectedRowsOnly = on;
+    this.syncMatchInspectorToDisplayedTable();
   }
 
   exportSelectedToCsv(): void {
@@ -313,7 +348,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     if (cols.length === 0) {
       return;
     }
-    const selected = this.filteredRows.filter((row) => this.selectedRowKeys.has(row.property));
+    const selected = this.rows.filter((row) => this.selectedRowKeys.has(row.property));
     if (selected.length === 0) {
       return;
     }
@@ -345,8 +380,6 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     if (!changes['rows']) {
       return;
     }
-
-    this.selectedRowKeys.clear();
 
     if (!this.restoredState) {
       this.restoreState();
@@ -797,25 +830,25 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       return true;
     });
 
-    this.pruneSelectionToFilteredRows();
+    this.pruneSelectionToDatasetRows();
+    this.clearSelectedOnlyIfNoSelection();
 
     this.scheduleChipsScrollOverflowSync();
 
-    if (!this.isMatchInspectorOpen || !this.matchInspectorRow) {
-      return;
+    if (this.isMatchInspectorOpen && this.matchInspectorRow) {
+      if (!this.filteredRows.includes(this.matchInspectorRow) || !this.hasActiveFilters) {
+        this.closeMatchInspector();
+      } else {
+        const reasons = this.getRowMatchReasons(this.matchInspectorRow);
+        if (reasons.length === 0) {
+          this.closeMatchInspector();
+        } else {
+          this.matchInspectorReasons = reasons;
+        }
+      }
     }
 
-    if (!this.filteredRows.includes(this.matchInspectorRow) || !this.hasActiveFilters) {
-      this.closeMatchInspector();
-      return;
-    }
-
-    const reasons = this.getRowMatchReasons(this.matchInspectorRow);
-    if (reasons.length === 0) {
-      this.closeMatchInspector();
-      return;
-    }
-    this.matchInspectorReasons = reasons;
+    this.syncMatchInspectorToDisplayedTable();
   }
 
   private setupChipsScrollOverflowTracking(el: HTMLElement): void {
@@ -964,12 +997,28 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       .filter((column) => column.key !== 'allowedValues' || this.hasAllowedValuesColumn);
   }
 
-  private pruneSelectionToFilteredRows(): void {
-    const allowed = new Set(this.filteredRows.map((row) => row.property));
+  /** Drop selection only for properties that no longer exist in the loaded dataset (e.g. new file). */
+  private pruneSelectionToDatasetRows(): void {
+    const allowed = new Set(this.rows.map((row) => row.property));
     for (const key of [...this.selectedRowKeys]) {
       if (!allowed.has(key)) {
         this.selectedRowKeys.delete(key);
       }
+    }
+  }
+
+  private clearSelectedOnlyIfNoSelection(): void {
+    if (this.showSelectedRowsOnly && this.selectedFilteredCount === 0) {
+      this.showSelectedRowsOnly = false;
+    }
+  }
+
+  private syncMatchInspectorToDisplayedTable(): void {
+    if (!this.isMatchInspectorOpen || !this.matchInspectorRow) {
+      return;
+    }
+    if (!this.tableDisplayedRows.includes(this.matchInspectorRow)) {
+      this.closeMatchInspector();
     }
   }
 

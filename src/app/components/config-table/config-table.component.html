@@ -115,19 +115,37 @@
       type="button"
       class="btn btn-sm btn-export-csv"
       (click)="exportSelectedToCsv()"
-      [disabled]="selectedFilteredCount === 0"
-      title="Download selected rows as CSV (all columns, UTF-8)"
+      [disabled]="selectedDatasetCount === 0"
+      title="Download all selected rows as CSV (all columns, UTF-8). Selection is kept when you change filters or pages."
     >
       <i class="pi pi-download" aria-hidden="true"></i>
       <span>Export CSV</span>
     </button>
+    <div class="selected-only-toggle">
+      <input
+        type="checkbox"
+        id="config-table-selected-only"
+        class="btn-check"
+        [ngModel]="showSelectedRowsOnly"
+        (ngModelChange)="onSelectedOnlyModeChange($event)"
+        [disabled]="!showSelectedRowsOnly && selectedFilteredCount === 0"
+        aria-label="Show only selected rows in the table"
+      />
+      <label
+        class="btn btn-sm btn-outline-secondary"
+        for="config-table-selected-only"
+        title="When on, the table lists only rows you have checked (within the current filter)"
+      >
+        Selected only
+      </label>
+    </div>
   </div>
 </section>
 
 <section class="card shadow-sm">
   <div class="card-body p-0">
     <p-table
-      [value]="filteredRows"
+      [value]="tableDisplayedRows"
       [columns]="visibleColumns"
       [paginator]="true"
       [rows]="rowsPerPage"
@@ -154,11 +172,11 @@
               />
               <span
                 class="row-select-count"
-                *ngIf="filteredRows.length > 0"
+                *ngIf="rows.length > 0"
                 aria-live="polite"
-                [attr.aria-label]="selectedFilteredCount + ' of ' + filteredRows.length + ' rows selected'"
+                [attr.aria-label]="selectedDatasetCount + ' rows selected'"
               >
-                {{ selectedFilteredCount }}
+                {{ selectedDatasetCount }}
               </span>
             </div>
           </th>
@@ -397,7 +415,7 @@
       <ng-template pTemplate="emptymessage" let-columns>
         <tr>
           <td [attr.colspan]="columns.length + 1" class="text-center py-4">
-            No rows match your current filters.
+            {{ emptyTableMessage }}
           </td>
         </tr>
       </ng-template>

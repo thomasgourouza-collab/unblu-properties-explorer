@@ -53,6 +53,24 @@
   gap: 0.5rem 0.75rem;
 }
 
+.selected-only-toggle {
+  display: inline-flex;
+  align-items: center;
+
+  .btn {
+    font-weight: 500;
+  }
+
+  .btn-check:checked + .btn.btn-outline-secondary {
+    border-color: #34d399;
+    border-width: 1px;
+  }
+
+  .btn-check:checked + .btn.btn-outline-secondary:hover {
+    border-color: #4ade80;
+  }
+}
+
 .table-export-bar-label {
   font-size: 0.78rem;
   font-weight: 600;
