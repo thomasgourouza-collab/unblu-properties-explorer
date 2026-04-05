@@ -1325,7 +1325,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       return cached.selected;
     }
     const allowed = new Set(this.getValueColumnAllowedOptionValues(row));
-    const selected = this.parseCommaSeparatedCellList(v).filter((p) => allowed.has(p));
+    const selected = this.parseListStyleCellToTokens(v).filter((p) => allowed.has(p));
     this.valueColumnMultiModelCache.set(row.rowKey, { value: v, selected });
     return selected;
   }
@@ -1382,10 +1382,28 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   }
 
   private getValueColumnMultiselectTokensForCompare(raw: string): string[] {
-    if (this.isEmptyJsonArrayLiteral(raw)) {
+    return this.parseListStyleCellToTokens(raw);
+  }
+
+  /**
+   * Value column list storage: comma-separated and/or JSON array (copied from Default value on import).
+   */
+  private parseListStyleCellToTokens(raw: string): string[] {
+    const t = (raw ?? '').trim();
+    if (this.isEmptyJsonArrayLiteral(t)) {
       return [];
     }
-    return this.parseCommaSeparatedCellList(raw);
+    if (t.startsWith('[') && t.endsWith(']')) {
+      try {
+        const parsed = JSON.parse(t) as unknown;
+        if (Array.isArray(parsed)) {
+          return parsed.map((e) => String(e ?? '').trim()).filter((s) => s.length > 0);
+        }
+      } catch {
+        /* fall through to comma split */
+      }
+    }
+    return this.parseCommaSeparatedCellList(t);
   }
 
   private getValueColumnMultiselectDefaultTokensForCompare(raw: string): string[] {
