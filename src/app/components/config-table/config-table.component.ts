@@ -9,11 +9,13 @@ import {
   Input,
   OnChanges,
   OnDestroy,
+  QueryList,
   SimpleChanges,
-  ViewChild
+  ViewChild,
+  ViewChildren
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { MultiSelectModule } from 'primeng/multiselect';
+import { MultiSelect, MultiSelectModule } from 'primeng/multiselect';
 import { TableColumnReorderEvent, TableModule } from 'primeng/table';
 
 import { ColumnDefinition, ConfigRow, EXTRA_COLUMN_PREFIX, FilterMode } from '../../models/config-row.model';
@@ -103,6 +105,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
   @Input({ required: true }) rows: ConfigRow[] = [];
   @ViewChild('globalFilterInputRef') globalFilterInputRef?: ElementRef<HTMLInputElement>;
+  @ViewChildren('valueCellMulti', { read: MultiSelect })
+  private valueCellMultiselects?: QueryList<MultiSelect>;
   private chipsScrollHost: HTMLElement | null = null;
   private chipsScrollResizeObserver: ResizeObserver | null = null;
   /** Stable `ngModel` / `[options]` refs for Value-column multiselect (new arrays each CD freeze PrimeNG). */
@@ -1371,6 +1375,19 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     const selected = this.parseListStyleCellToTokens(v).filter((p) => allowed.has(p));
     this.valueColumnMultiModelCache.set(row.rowKey, { value: v, selected });
     return selected;
+  }
+
+  /** Close other value-column multiselect overlays so only one panel stays open (appendTo body). */
+  onValueColumnMultiselectPanelShow(source: MultiSelect): void {
+    const list = this.valueCellMultiselects;
+    if (!list) {
+      return;
+    }
+    for (const ms of list) {
+      if (ms !== source && ms.overlayVisible) {
+        ms.hide();
+      }
+    }
   }
 
   onValueColumnMultiChange(row: ConfigRow, selected: string[] | null | undefined): void {

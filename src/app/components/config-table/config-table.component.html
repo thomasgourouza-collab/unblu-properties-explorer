@@ -437,6 +437,7 @@
                     <ng-template #tplValueNonBoolean>
                       <ng-container *ngIf="valueColumnUsesMultiSelect(row); else tplValueSingleOrText">
                         <p-multiselect
+                          #valueCellMulti
                           class="value-cell-multiselect"
                           size="small"
                           [fluid]="true"
@@ -452,6 +453,7 @@
                           [maxSelectedLabels]="2"
                           [ngModel]="getValueColumnMultiModel(row)"
                           (ngModelChange)="onValueColumnMultiChange(row, $event)"
+                          (onPanelShow)="onValueColumnMultiselectPanelShow(valueCellMulti)"
                           [attr.aria-label]="'Values for ' + row.property"
                         />
                       </ng-container>
