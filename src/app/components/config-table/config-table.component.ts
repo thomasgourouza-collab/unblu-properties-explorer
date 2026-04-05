@@ -615,6 +615,9 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     if (column.key === 'allowedValues') {
       this.cellDetailDialogAllowedLines = [...this.getWhitespaceValueParts(raw)];
       this.cellDetailDialogPlainText = '';
+    } else if (column.key === 'allowedScopes' || column.key === 'editableBy') {
+      this.cellDetailDialogAllowedLines = this.parseCommaSeparatedCellList(raw ?? '');
+      this.cellDetailDialogPlainText = '';
     } else {
       this.cellDetailDialogAllowedLines = null;
       this.cellDetailDialogPlainText = raw?.trim() ?? '';
@@ -646,8 +649,12 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.safeMarkForCheck();
   }
 
-  get isCellDetailDialogAllowedList(): boolean {
-    return this.cellDetailDialogColumnKey === 'allowedValues' && this.cellDetailDialogAllowedLines !== null;
+  get isCellDetailDialogItemList(): boolean {
+    const key = this.cellDetailDialogColumnKey;
+    return (
+      (key === 'allowedValues' || key === 'allowedScopes' || key === 'editableBy') &&
+      this.cellDetailDialogAllowedLines !== null
+    );
   }
 
   get isCellDetailDialogCodeStyle(): boolean {
@@ -1212,6 +1219,18 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     }
     const parts = trimmed.split(/\s+/).filter((part) => part.length > 0);
     return parts.length > 0 ? parts : [''];
+  }
+
+  /** Cmd+click dialog: one row per comma-separated token (allowed scopes, editable by). */
+  parseCommaSeparatedCellList(value = ''): string[] {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return [];
+    }
+    return trimmed
+      .split(',')
+      .map((part) => part.trim())
+      .filter((part) => part.length > 0);
   }
 
   /** True when chip column should render anything (non-empty tokens only). */
