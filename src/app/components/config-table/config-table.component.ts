@@ -343,6 +343,9 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.syncMatchInspectorToDisplayedTable();
   }
 
+  /** Placeholder for future transfer action. */
+  onUtransferClick(): void {}
+
   exportSelectedToCsv(): void {
     const cols = this.getExportCsvColumns();
     if (cols.length === 0) {

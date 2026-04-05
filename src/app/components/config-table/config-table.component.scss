@@ -149,6 +149,11 @@ $export-bar-control-font-size: 0.875rem;
   font-size: $export-bar-control-font-size;
 }
 
+.table-export-bar .btn.btn-sm.btn-utransfer {
+  font-size: $export-bar-control-font-size;
+  font-weight: 500;
+}
+
 .toolbar-single-row {
   display: grid;
   grid-template-columns: minmax(196px, 0.7fr) minmax(0, 2fr);
