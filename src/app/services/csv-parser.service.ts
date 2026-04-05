@@ -226,7 +226,7 @@ export class CsvParserService {
       category: getValue('category'),
       propertyTitle: getValue('propertyTitle'),
       property: getValue('property'),
-      source: sourceLabel,
+      source: this.stripCsvExtensionForDisplay(sourceLabel),
       rowKey: `${rowKeyPrefix}::${rowIndex}`,
       defaultValue: getValue('defaultValue'),
       type: getValue('type'),
@@ -253,6 +253,11 @@ export class CsvParserService {
     return header
       .toLowerCase()
       .replaceAll(/[^a-z0-9]/g, '');
+  }
+
+  /** Filename without trailing `.csv` for the Source column (case-insensitive). */
+  private stripCsvExtensionForDisplay(filename: string): string {
+    return filename.replace(/\.csv$/i, '');
   }
 
   /** Ignore synthetic fields (source, rowKey) so blank CSV lines are still dropped. */

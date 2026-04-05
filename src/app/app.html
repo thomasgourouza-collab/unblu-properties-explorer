@@ -15,18 +15,18 @@
   </section>
 
   <section class="card shadow-sm upload-card mb-3">
-    <div class="card-body py-2">
+    <div class="card-body upload-card-body py-1">
       <div class="upload-slots-grid">
         <div
           class="upload-slot"
           data-slot="1"
+          aria-label="First CSV file"
           [class.dragging]="draggingSlot === 1"
           (dragover)="onDragOver($event, 1)"
           (dragleave)="onDragLeave($event, 1)"
           (drop)="onDrop($event, 1)"
         >
-          <div class="upload-slot-label">CSV 1</div>
-          <div class="upload-zone upload-zone--slot" *ngIf="!fileLabel1">
+          <div class="upload-slot-row" *ngIf="!fileLabel1">
             <div class="upload-inline">
               <label for="csvUpload1" class="btn btn-sm btn-light choose-csv-btn" [class.disabled]="isParsing">
                 Choose file
@@ -42,37 +42,36 @@
               [disabled]="isParsing"
             />
           </div>
-          <div class="upload-slot-loaded" *ngIf="fileLabel1">
-            <span class="badge text-bg-primary">{{ fileLabel1 }}</span>
-            <label for="csvUpload1" class="btn btn-sm btn-outline-secondary replace-file-btn" [class.disabled]="isParsing">
-              Replace
-            </label>
-            <input
-              id="csvUpload1"
-              type="file"
-              class="visually-hidden"
-              accept=".csv,text/csv"
-              (change)="onFileSelected($event, 1)"
+          <div class="upload-slot-row upload-slot-row--loaded" *ngIf="fileLabel1">
+            <span class="badge text-bg-primary upload-slot-filename" [title]="fileLabel1">{{ fileLabel1 }}</span>
+            <span class="upload-slot-row-count text-muted small">{{ slot1RowCount }} rows</span>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-danger upload-slot-clear"
+              (click)="clearSlot(1)"
               [disabled]="isParsing"
-            />
+              title="Remove this file from the merge"
+            >
+              Clear data
+            </button>
           </div>
         </div>
 
         <div
           class="upload-slot"
           data-slot="2"
+          aria-label="Second CSV file, optional"
           [class.dragging]="draggingSlot === 2"
           (dragover)="onDragOver($event, 2)"
           (dragleave)="onDragLeave($event, 2)"
           (drop)="onDrop($event, 2)"
         >
-          <div class="upload-slot-label">CSV 2</div>
-          <div class="upload-zone upload-zone--slot" *ngIf="!fileLabel2">
+          <div class="upload-slot-row" *ngIf="!fileLabel2">
             <div class="upload-inline">
               <label for="csvUpload2" class="btn btn-sm btn-light choose-csv-btn" [class.disabled]="isParsing">
                 Choose file
               </label>
-              <span class="upload-inline-text"> or drop here (optional).</span>
+              <span class="upload-inline-text"> or drop here.</span>
             </div>
             <input
               id="csvUpload2"
@@ -83,30 +82,20 @@
               [disabled]="isParsing"
             />
           </div>
-          <div class="upload-slot-loaded" *ngIf="fileLabel2">
-            <span class="badge text-bg-primary">{{ fileLabel2 }}</span>
-            <label for="csvUpload2" class="btn btn-sm btn-outline-secondary replace-file-btn" [class.disabled]="isParsing">
-              Replace
-            </label>
-            <input
-              id="csvUpload2"
-              type="file"
-              class="visually-hidden"
-              accept=".csv,text/csv"
-              (change)="onFileSelected($event, 2)"
+          <div class="upload-slot-row upload-slot-row--loaded" *ngIf="fileLabel2">
+            <span class="badge text-bg-primary upload-slot-filename" [title]="fileLabel2">{{ fileLabel2 }}</span>
+            <span class="upload-slot-row-count text-muted small">{{ slot2RowCount }} rows</span>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-danger upload-slot-clear"
+              (click)="clearSlot(2)"
               [disabled]="isParsing"
-            />
+              title="Remove this file from the merge"
+            >
+              Clear data
+            </button>
           </div>
         </div>
-      </div>
-
-      <div class="loaded-meta mt-2" *ngIf="hasAnySlotFile">
-        <div class="loaded-meta-leading">
-          <span class="text-muted small">{{ rows.length }} merged rows</span>
-        </div>
-        <button type="button" class="btn btn-sm btn-outline-danger loaded-meta-clear" (click)="resetData()">
-          Clear data
-        </button>
       </div>
 
       <div class="alert alert-info mt-2 mb-0 loading-alert py-2 px-3" *ngIf="isParsing">

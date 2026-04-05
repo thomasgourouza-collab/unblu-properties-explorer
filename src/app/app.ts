@@ -67,14 +67,16 @@ export class App {
     await this.loadFileIntoSlot(slot, file);
   }
 
-  resetData(): void {
-    this.rows = [];
-    this.parseWarnings = [];
+  clearSlot(slot: UploadSlot): void {
     this.parseError = '';
-    this.fileLabel1 = '';
-    this.fileLabel2 = '';
-    this.slot1Parsed = null;
-    this.slot2Parsed = null;
+    if (slot === 1) {
+      this.slot1Parsed = null;
+      this.fileLabel1 = '';
+    } else {
+      this.slot2Parsed = null;
+      this.fileLabel2 = '';
+    }
+    this.applyMerge();
   }
 
   toggleHelpModal(): void {
@@ -97,8 +99,12 @@ export class App {
     }
   }
 
-  get hasAnySlotFile(): boolean {
-    return Boolean(this.fileLabel1 || this.fileLabel2);
+  get slot1RowCount(): number {
+    return this.slot1Parsed?.rows.length ?? 0;
+  }
+
+  get slot2RowCount(): number {
+    return this.slot2Parsed?.rows.length ?? 0;
   }
 
   private async loadFileIntoSlot(slot: UploadSlot, file: File): Promise<void> {
