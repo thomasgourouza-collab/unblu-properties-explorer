@@ -694,19 +694,57 @@ $export-bar-control-font-size: 0.875rem;
   min-width: 0;
 }
 
+/* Native selects: single line + ellipsis so the chevron stays on the right */
+.value-cell-select {
+  display: block;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
 .value-cell-multiselect {
   display: block;
   width: 100%;
   min-width: 0;
 }
 
+/* PrimeNG defaults to inline-flex; in narrow cells the dropdown chevron can wrap below the label */
 :host ::ng-deep .value-cell-multiselect-inner.p-multiselect {
-  width: 100%;
+  display: flex !important;
+  width: 100% !important;
   max-width: 100%;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center;
+  min-width: 0;
 }
 
 :host ::ng-deep .value-cell-multiselect-inner .p-multiselect-label-container {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  overflow: hidden;
+}
+
+:host ::ng-deep .value-cell-multiselect-inner .p-multiselect-label {
+  display: flex !important;
+  align-items: center;
+  flex-wrap: nowrap !important;
+  white-space: nowrap !important;
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
   min-width: 0;
+}
+
+:host ::ng-deep .value-cell-multiselect-inner .p-multiselect-chip-item {
+  flex-shrink: 0;
+}
+
+:host ::ng-deep .value-cell-multiselect-inner .p-multiselect-dropdown {
+  flex-shrink: 0 !important;
+  align-self: center !important;
 }
 
 .cell-x-scroll {
