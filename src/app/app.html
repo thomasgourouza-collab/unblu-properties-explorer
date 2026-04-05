@@ -1,4 +1,10 @@
-<main class="container-fluid app-shell py-3 px-3 px-lg-4">
+<!-- data-bwignore / data-1p-ignore: discourage password-manager autofill overlays (they can throw on non-login UIs). -->
+<main
+  class="container-fluid app-shell py-3 px-3 px-lg-4"
+  data-bwignore
+  data-1p-ignore
+  data-lpignore="true"
+>
   <section class="app-header mb-2">
     <div class="title-row">
       <button
@@ -38,6 +44,10 @@
               type="file"
               class="visually-hidden"
               accept=".csv,text/csv"
+              autocomplete="off"
+              data-bwignore
+              data-1p-ignore
+              data-lpignore="true"
               (change)="onFileSelected($event, 1)"
               [disabled]="isParsing"
             />
@@ -78,6 +88,10 @@
               type="file"
               class="visually-hidden"
               accept=".csv,text/csv"
+              autocomplete="off"
+              data-bwignore
+              data-1p-ignore
+              data-lpignore="true"
               (change)="onFileSelected($event, 2)"
               [disabled]="isParsing"
             />

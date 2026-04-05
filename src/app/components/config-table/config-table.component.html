@@ -1,4 +1,10 @@
-<section class="table-export-bar mb-2" aria-label="Export, column visibility, and selection">
+<section
+  class="table-export-bar mb-2"
+  aria-label="Export, column visibility, and selection"
+  data-bwignore
+  data-1p-ignore
+  data-lpignore="true"
+>
   <div class="table-export-bar-inner">
     <div class="table-export-bar-leading">
       <button
@@ -106,6 +112,10 @@
             (ngModelChange)="setGlobalFilterScope($event)"
             aria-label="Global filter scope"
             title="Search scope"
+            autocomplete="off"
+            data-bwignore
+            data-1p-ignore
+            data-lpignore="true"
           >
             <option value="all">In all columns</option>
             <option value="visible">In visible columns</option>
@@ -118,6 +128,12 @@
             type="text"
             class="form-control form-control-sm"
             placeholder="Global filter. Use commas for multiple tokens."
+            autocomplete="off"
+            autocapitalize="off"
+            spellcheck="false"
+            data-bwignore
+            data-1p-ignore
+            data-lpignore="true"
             [ngModel]="globalFilter"
             (ngModelChange)="onGlobalFilterInputChange($event)"
             (keydown.escape)="clearGlobalFilterInput()"
@@ -155,7 +171,7 @@
   </div>
 </section>
 
-<section class="card shadow-sm">
+<section class="card shadow-sm" data-bwignore data-1p-ignore data-lpignore="true">
   <div class="card-body p-0">
     <p-table
       [value]="tableDisplayedRows"
@@ -254,6 +270,12 @@
                     class="form-control form-control-sm header-filter-input"
                     placeholder="Contains..."
                     title="Use commas for multiple tokens in OR/AND mode, or switch to Regex mode."
+                    autocomplete="off"
+                    autocapitalize="off"
+                    spellcheck="false"
+                    data-bwignore
+                    data-1p-ignore
+                    data-lpignore="true"
                     [ngModel]="getTextFilter(column.key)"
                     (ngModelChange)="setTextFilter(column.key, $event)"
                     (keydown.escape)="clearTextFilterInput(column.key)"
@@ -350,6 +372,79 @@
             (mouseleave)="onCellHoverLeave()"
             (mouseover)="onRowMatchInspectorHover($event, row)"
           >
+            <ng-container *ngIf="column.key === 'value'; else tplNotValueColumn">
+              <div class="value-cell-wrap" (click)="onValueCellControlClick($event)">
+                <ng-container *ngIf="isValueColumnBooleanType(row); else tplValueNonBoolean">
+                  <select
+                    class="form-select form-select-sm value-cell-select"
+                    [ngModel]="row.value"
+                    (ngModelChange)="row.value = $event"
+                    [attr.aria-label]="'Value for ' + row.property"
+                    autocomplete="off"
+                    data-bwignore
+                    data-1p-ignore
+                    data-lpignore="true"
+                  >
+                    <option value=""></option>
+                    <option value="true">true</option>
+                    <option value="false">false</option>
+                  </select>
+                </ng-container>
+                <ng-template #tplValueNonBoolean>
+                  <ng-container *ngIf="valueColumnUsesMultiSelect(row); else tplValueSingleOrText">
+                    <p-multiselect
+                      class="value-cell-multiselect"
+                      size="small"
+                      styleClass="value-cell-multiselect-inner"
+                      [options]="getValueColumnSelectOptions(row)"
+                      optionLabel="label"
+                      optionValue="value"
+                      [display]="'chip'"
+                      [filter]="true"
+                      [showToggleAll]="true"
+                      [appendTo]="'body'"
+                      [maxSelectedLabels]="2"
+                      [ngModel]="getValueColumnMultiModel(row)"
+                      (ngModelChange)="onValueColumnMultiChange(row, $event)"
+                      [attr.aria-label]="'Values for ' + row.property"
+                    />
+                  </ng-container>
+                  <ng-template #tplValueSingleOrText>
+                    <ng-container *ngIf="valueColumnUsesSingleSelectFromAllowed(row); else tplValueFreeText">
+                      <select
+                        class="form-select form-select-sm value-cell-select"
+                        [ngModel]="row.value"
+                        (ngModelChange)="row.value = $event"
+                        [attr.aria-label]="'Value for ' + row.property"
+                        autocomplete="off"
+                        data-bwignore
+                        data-1p-ignore
+                        data-lpignore="true"
+                      >
+                        <option value=""></option>
+                        <option *ngFor="let opt of getValueColumnSelectOptions(row)" [value]="opt.value">{{ opt.label }}</option>
+                      </select>
+                    </ng-container>
+                    <ng-template #tplValueFreeText>
+                      <input
+                        type="text"
+                        class="form-control form-control-sm value-cell-input"
+                        [ngModel]="row.value"
+                        (ngModelChange)="row.value = $event"
+                        [attr.aria-label]="'Value for ' + row.property"
+                        autocomplete="off"
+                        autocapitalize="off"
+                        spellcheck="false"
+                        data-bwignore
+                        data-1p-ignore
+                        data-lpignore="true"
+                      />
+                    </ng-template>
+                  </ng-template>
+                </ng-template>
+              </div>
+            </ng-container>
+            <ng-template #tplNotValueColumn>
             <ng-container *ngIf="column.key === 'defaultValue'; else tplAllowedOrRest">
               <div *ngIf="isDefaultValueCellVisible(getCellValue(row, column.key))" class="cell-x-scroll cell-chips-row">
                 <ng-container
@@ -441,6 +536,7 @@
               </ng-template>
               </ng-template>
             </ng-template>
+            </ng-template>
           </td>
         </tr>
       </ng-template>
@@ -464,6 +560,11 @@
             class="form-select form-select-sm rows-select"
             [ngModel]="rowsPerPage"
             (ngModelChange)="onRowsPerPageChange($event)"
+            autocomplete="off"
+            data-bwignore
+            data-1p-ignore
+            data-lpignore="true"
+            aria-label="Rows per page"
           >
             <option *ngFor="let option of rowsPerPageOptions" [value]="option">{{ option }}</option>
           </select>

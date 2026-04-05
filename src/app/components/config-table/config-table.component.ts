@@ -64,6 +64,7 @@ const BASE_COLUMN_DEFINITIONS: ColumnDefinition[] = [
   { key: 'property', label: 'Property', filterType: 'text' },
   { key: 'source', label: 'Source', filterType: 'text' },
   { key: 'defaultValue', label: 'Default value', filterType: 'text' },
+  { key: 'value', label: 'Value', filterType: 'text' },
   { key: 'type', label: 'Type', filterType: 'select' },
   { key: 'allowedValues', label: 'Allowed values', filterType: 'text' },
   { key: 'allowedScopes', label: 'Allowed scopes', filterType: 'list' },
@@ -211,6 +212,9 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   private getColumnWidthWeight(columnKey: string): number {
     if (columnKey === 'property') {
       return 2;
+    }
+    if (columnKey === 'value') {
+      return 1.2;
     }
     if (columnKey === 'visibility') {
       return 0.6;
@@ -608,7 +612,9 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   }
 
   private isInteractiveCellTarget(el: HTMLElement): boolean {
-    const node = el.closest('button, a, input, textarea, select, label');
+    const node = el.closest(
+      'button, a, input, textarea, select, label, .p-multiselect, .p-multiselect-panel, .p-multiselect-header, .p-multiselect-item'
+    );
     return Boolean(node);
   }
 
@@ -1242,6 +1248,57 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       .split(',')
       .map((part) => part.trim())
       .filter((part) => part.length > 0);
+  }
+
+  isValueColumnBooleanType(row: ConfigRow): boolean {
+    return row.type.trim().toLowerCase() === 'boolean';
+  }
+
+  isValueColumnListOfPrefixType(row: ConfigRow): boolean {
+    return row.type.trim().startsWith('List of');
+  }
+
+  /** Allowed-values tokens for Value column options (same tokenization as Allowed values column). */
+  getValueColumnAllowedOptionValues(row: ConfigRow): string[] {
+    if (!row.hasAllowedValuesColumn) {
+      return [];
+    }
+    return this.getWhitespaceValueParts(row.allowedValues ?? '').filter((part) => part.trim().length > 0);
+  }
+
+  hasValueColumnAllowedOptions(row: ConfigRow): boolean {
+    return this.getValueColumnAllowedOptionValues(row).length > 0;
+  }
+
+  getValueColumnSelectOptions(row: ConfigRow): SelectOption[] {
+    return [...this.getValueColumnAllowedOptionValues(row)]
+      .sort((a, b) => a.localeCompare(b))
+      .map((v) => ({ label: v, value: v }));
+  }
+
+  valueColumnUsesMultiSelect(row: ConfigRow): boolean {
+    return this.hasValueColumnAllowedOptions(row) && this.isValueColumnListOfPrefixType(row);
+  }
+
+  valueColumnUsesSingleSelectFromAllowed(row: ConfigRow): boolean {
+    if (!this.hasValueColumnAllowedOptions(row) || this.isValueColumnBooleanType(row)) {
+      return false;
+    }
+    return !this.isValueColumnListOfPrefixType(row);
+  }
+
+  getValueColumnMultiModel(row: ConfigRow): string[] {
+    const allowed = new Set(this.getValueColumnAllowedOptionValues(row));
+    return this.parseCommaSeparatedCellList(row.value ?? '').filter((p) => allowed.has(p));
+  }
+
+  onValueColumnMultiChange(row: ConfigRow, selected: string[] | null | undefined): void {
+    row.value = (selected ?? []).filter((p) => p.trim().length > 0).join(',');
+    this.safeMarkForCheck();
+  }
+
+  onValueCellControlClick(event: MouseEvent): void {
+    event.stopPropagation();
   }
 
   /** True when chip column should render anything (non-empty tokens only). */

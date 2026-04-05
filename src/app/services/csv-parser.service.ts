@@ -17,6 +17,7 @@ type CsvMappedKey = keyof Omit<
   | 'source'
   | 'rowKey'
   | 'extra'
+  | 'value'
 >;
 
 export interface ParseFileSource {
@@ -229,6 +230,7 @@ export class CsvParserService {
       source: this.stripCsvExtensionForDisplay(sourceLabel),
       rowKey: `${rowKeyPrefix}::${rowIndex}`,
       defaultValue: getValue('defaultValue'),
+      value: '',
       type: getValue('type'),
       allowedValues: hasAllowedValuesColumn ? getValue('allowedValues') : '',
       allowedScopes,

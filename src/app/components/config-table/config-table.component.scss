@@ -682,6 +682,33 @@ $export-bar-control-font-size: 0.875rem;
   vertical-align: top;
 }
 
+.value-cell-wrap {
+  width: 100%;
+  min-width: 0;
+}
+
+.value-cell-input,
+.value-cell-select {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.value-cell-multiselect {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+:host ::ng-deep .value-cell-multiselect-inner.p-multiselect {
+  width: 100%;
+  max-width: 100%;
+}
+
+:host ::ng-deep .value-cell-multiselect-inner .p-multiselect-label-container {
+  min-width: 0;
+}
+
 .cell-x-scroll {
   display: block;
   max-width: 100%;

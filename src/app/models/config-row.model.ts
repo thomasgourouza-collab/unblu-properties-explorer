@@ -4,6 +4,7 @@ export type ConfigColumnKey =
   | 'property'
   | 'source'
   | 'defaultValue'
+  | 'value'
   | 'type'
   | 'allowedValues'
   | 'allowedScopes'
@@ -25,6 +26,8 @@ export interface ConfigRow {
   /** Stable unique id for selection / export when the same property appears in multiple rows. */
   rowKey: string;
   defaultValue: string;
+  /** Synthetic UI column; not loaded from CSV. */
+  value: string;
   type: string;
   allowedValues: string;
   allowedScopes: string;
