@@ -217,9 +217,26 @@
             class="header-cell"
             [style.width.%]="getColumnWidthPercent(column.key)"
           >
-            <div class="header-content">
-              <span>{{ column.label }}</span>
-              <p-sortIcon [field]="column.key" />
+            <div class="header-content" [class.header-content--value]="column.key === 'value'">
+              <ng-container *ngIf="column.key === 'value'; else tplHeaderDefaultLabel">
+                <span class="header-content-value-leading">
+                  <span>{{ column.label }}</span>
+                  <p-sortIcon [field]="column.key" />
+                </span>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-secondary value-header-select-changes-btn"
+                  (click)="onSelectValueChangesClick($event)"
+                  [disabled]="valueColumnChangeRowCount === 0"
+                  title="Select all loaded rows whose Value differs from Default value (order ignored for lists)"
+                >
+                  select changes
+                </button>
+              </ng-container>
+              <ng-template #tplHeaderDefaultLabel>
+                <span>{{ column.label }}</span>
+                <p-sortIcon [field]="column.key" />
+              </ng-template>
             </div>
           </th>
         </tr>

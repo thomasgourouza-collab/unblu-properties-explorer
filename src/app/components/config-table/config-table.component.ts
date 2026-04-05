@@ -366,6 +366,24 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.syncMatchInspectorToDisplayedTable();
   }
 
+  /** Rows in the loaded dataset where Value ≠ Default (same rules as the green border). */
+  get valueColumnChangeRowCount(): number {
+    return this.rows.filter((row) => this.valueColumnDiffersFromDefault(row)).length;
+  }
+
+  onSelectValueChangesClick(event: MouseEvent): void {
+    event.stopPropagation();
+    event.preventDefault();
+    for (const row of this.rows) {
+      if (this.valueColumnDiffersFromDefault(row)) {
+        this.selectedRowKeys.add(row.rowKey);
+      }
+    }
+    this.clearSelectedOnlyIfNoSelection();
+    this.syncMatchInspectorToDisplayedTable();
+    this.safeMarkForCheck();
+  }
+
   onSelectedOnlyModeChange(on: boolean): void {
     this.showSelectedRowsOnly = on;
     this.syncMatchInspectorToDisplayedTable();

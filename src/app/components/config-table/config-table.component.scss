@@ -444,6 +444,33 @@ $export-bar-control-font-size: 0.875rem;
   font-weight: 600;
 }
 
+.columns-row .header-content--value {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.header-content-value-leading {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.value-header-select-changes-btn {
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.1rem 0.32rem;
+  line-height: 1.2;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
 .row-select-header,
 .row-select-filter,
 .row-select-cell {
