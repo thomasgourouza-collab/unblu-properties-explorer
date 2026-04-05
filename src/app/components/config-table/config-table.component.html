@@ -178,6 +178,8 @@
       [columns]="visibleColumns"
       [paginator]="true"
       [rows]="rowsPerPage"
+      [first]="tableFirst"
+      (firstChange)="onTableFirstChange($event)"
       [sortMode]="'multiple'"
       [reorderableColumns]="true"
       [scrollable]="true"

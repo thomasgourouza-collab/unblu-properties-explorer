@@ -110,6 +110,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   private readonly valueColumnSelectOptionsCache = new Map<string, SelectOption[]>();
   rowsPerPage = 25;
   readonly rowsPerPageOptions = [10, 25, 50, 100];
+  /** Bound to p-table [first]; kept in range when data length or page size changes. */
+  tableFirst = 0;
 
   columns: ColumnDefinition[] = [...BASE_COLUMN_DEFINITIONS];
 
@@ -402,7 +404,30 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
   onSelectedOnlyModeChange(on: boolean): void {
     this.showSelectedRowsOnly = on;
+    if (on) {
+      this.tableFirst = 0;
+    } else {
+      this.clampTableFirstToDisplayedData();
+    }
     this.syncMatchInspectorToDisplayedTable();
+  }
+
+  onTableFirstChange(first: number): void {
+    this.tableFirst = typeof first === 'number' && !Number.isNaN(first) ? first : 0;
+  }
+
+  /** Keep paginator index valid when displayed row count shrinks (filters, selected-only, page size). */
+  private clampTableFirstToDisplayedData(): void {
+    const n = this.tableDisplayedRows.length;
+    const r = this.rowsPerPage;
+    if (n === 0) {
+      this.tableFirst = 0;
+      return;
+    }
+    const maxFirst = Math.max(0, (Math.ceil(n / r) - 1) * r);
+    if (this.tableFirst > maxFirst) {
+      this.tableFirst = maxFirst;
+    }
   }
 
   /** Placeholder for future transfer action. */
@@ -962,6 +987,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     const parsed = Number(value);
     if (!Number.isNaN(parsed) && parsed > 0) {
       this.rowsPerPage = parsed;
+      this.clampTableFirstToDisplayedData();
     }
   }
 
@@ -1051,6 +1077,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     }
 
     this.syncMatchInspectorToDisplayedTable();
+    this.clampTableFirstToDisplayedData();
   }
 
   private setupChipsScrollOverflowTracking(el: HTMLElement): void {
