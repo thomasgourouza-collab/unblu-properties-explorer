@@ -383,14 +383,14 @@ $export-bar-control-font-size: 0.875rem;
   display: inline-flex;
   flex-direction: row;
   flex-wrap: nowrap;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.35rem;
   min-width: min-content;
 }
 
 .property-code-wrap {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.28rem;
   min-width: 0;
   width: 100%;
@@ -452,8 +452,12 @@ $export-bar-control-font-size: 0.875rem;
   min-width: 4.25rem;
   max-width: 4.25rem;
   text-align: center;
-  vertical-align: middle;
   box-sizing: border-box;
+}
+
+.row-select-header,
+.row-select-filter {
+  vertical-align: middle;
 }
 
 .row-select-header-inner {
@@ -487,7 +491,7 @@ $export-bar-control-font-size: 0.875rem;
 
 .row-select-cell {
   padding: 0.35rem 0.3rem !important;
-  vertical-align: middle;
+  vertical-align: top;
 }
 
 .row-select-checkbox {
@@ -674,6 +678,7 @@ $export-bar-control-font-size: 0.875rem;
 .body-cell {
   min-width: 0;
   overflow: hidden;
+  vertical-align: top;
 }
 
 .cell-x-scroll {
@@ -701,6 +706,7 @@ $export-bar-control-font-size: 0.875rem;
   color: var(--text-secondary);
   border-color: var(--surface-border);
   background: color-mix(in srgb, #0a0d12 86%, var(--bg-main));
+  vertical-align: top;
 }
 
 :host ::ng-deep .p-datatable-tbody > tr:nth-child(even) {
