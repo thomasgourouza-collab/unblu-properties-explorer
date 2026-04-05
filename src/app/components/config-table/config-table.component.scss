@@ -491,7 +491,7 @@ $export-bar-control-font-size: 0.875rem;
 
 .row-select-cell {
   padding: 0.35rem 0.3rem !important;
-  vertical-align: top;
+  vertical-align: middle;
 }
 
 .row-select-checkbox {
@@ -502,6 +502,7 @@ $export-bar-control-font-size: 0.875rem;
   height: 1.05rem;
   flex-shrink: 0;
   accent-color: var(--accent);
+  transform: translateY(-0.35rem);
 }
 
 .filters-row .filter-header-cell.row-select-filter {
@@ -707,6 +708,10 @@ $export-bar-control-font-size: 0.875rem;
   border-color: var(--surface-border);
   background: color-mix(in srgb, #0a0d12 86%, var(--bg-main));
   vertical-align: top;
+}
+
+:host ::ng-deep .p-datatable-tbody > tr > td.row-select-cell {
+  vertical-align: middle;
 }
 
 :host ::ng-deep .p-datatable-tbody > tr:nth-child(even) {
