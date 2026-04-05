@@ -45,25 +45,6 @@
             <option value="all">In all columns</option>
             <option value="visible">In visible columns</option>
           </select>
-          <p-multiselect
-            inputId="columnVisibility"
-            [options]="columnVisibilityOptions"
-            optionDisabled="disabled"
-            [showToggleAll]="true"
-            [filter]="true"
-            [appendTo]="'body'"
-            [maxSelectedLabels]="0"
-            defaultLabel="Visible columns"
-            selectedItemsLabel="Visible columns"
-            styleClass="column-visibility-select"
-            [title]="'Select visible columns'"
-            [(ngModel)]="visibleColumnKeys"
-            (onChange)="onColumnVisibilityChange()"
-          >
-            <ng-template pTemplate="selectedItems">
-              <span>Visible columns ({{ visibleDisplayableColumnsCount }} / {{ totalDisplayableColumnsCount }})</span>
-            </ng-template>
-          </p-multiselect>
         </div>
         <div class="global-filter-input-row">
           <input
@@ -109,7 +90,7 @@
   </div>
 </section>
 
-<section class="table-export-bar mb-2" aria-label="Selection and export">
+<section class="table-export-bar mb-2" aria-label="Export, column visibility, and selection">
   <div class="table-export-bar-inner">
     <button
       type="button"
@@ -121,6 +102,27 @@
       <i class="pi pi-download" aria-hidden="true"></i>
       <span>Export CSV</span>
     </button>
+    <div class="table-export-bar-column-visibility">
+      <p-multiselect
+        inputId="columnVisibility"
+        [options]="columnVisibilityOptions"
+        optionDisabled="disabled"
+        [showToggleAll]="true"
+        [filter]="true"
+        [appendTo]="'body'"
+        [maxSelectedLabels]="0"
+        defaultLabel="Visible columns"
+        selectedItemsLabel="Visible columns"
+        styleClass="column-visibility-select"
+        [title]="'Select visible columns'"
+        [(ngModel)]="visibleColumnKeys"
+        (onChange)="onColumnVisibilityChange()"
+      >
+        <ng-template pTemplate="selectedItems">
+          <span>Visible columns ({{ visibleDisplayableColumnsCount }} / {{ totalDisplayableColumnsCount }})</span>
+        </ng-template>
+      </p-multiselect>
+    </div>
     <div class="selected-only-toggle">
       <input
         type="checkbox"

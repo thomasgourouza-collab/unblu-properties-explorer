@@ -53,6 +53,19 @@
   gap: 0.5rem 0.75rem;
 }
 
+.table-export-bar-column-visibility {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  flex: 0 1 auto;
+}
+
+// Slightly shorter than toolbar variant so it lines up with adjacent btn-sm controls.
+:host ::ng-deep .table-export-bar-column-visibility .column-visibility-select .p-multiselect {
+  height: 1.9rem;
+  min-height: 1.9rem;
+}
+
 .selected-only-toggle {
   display: inline-flex;
   align-items: center;
