@@ -188,7 +188,11 @@
     >
       <ng-template pTemplate="header" let-columns>
         <tr class="columns-row">
-          <th scope="col" class="header-cell row-select-header">
+          <th
+            scope="col"
+            class="header-cell row-select-header"
+            [class.row-select-col--wide]="selectionCountShowsSplit"
+          >
             <div class="row-select-header-inner">
               <input
                 type="checkbox"
@@ -201,11 +205,20 @@
               />
               <span
                 class="row-select-count"
+                [class.row-select-count--split]="selectionCountShowsSplit"
                 *ngIf="rows.length > 0"
                 aria-live="polite"
-                [attr.aria-label]="selectedDatasetCount + ' rows selected'"
+                [attr.aria-label]="selectionHeaderAriaLabel"
+                [attr.title]="selectionHeaderAriaLabel"
               >
-                {{ selectedDatasetCount }}
+                <ng-container *ngIf="!selectionCountShowsSplit; else splitSelectionCount">{{ selectedDatasetCount }}</ng-container>
+                <ng-template #splitSelectionCount>
+                  <span class="row-select-count-split-inner">
+                    <span class="row-select-count-primary">{{ selectedFilteredCount }}</span>
+                    <span class="row-select-count-sep" aria-hidden="true">/</span>
+                    <span class="row-select-count-dataset">{{ selectedDatasetCount }}</span>
+                  </span>
+                </ng-template>
               </span>
             </div>
           </th>
@@ -241,7 +254,12 @@
           </th>
         </tr>
         <tr class="filters-row">
-          <th scope="col" class="filter-header-cell row-select-filter" aria-hidden="true"></th>
+          <th
+            scope="col"
+            class="filter-header-cell row-select-filter"
+            [class.row-select-col--wide]="selectionCountShowsSplit"
+            aria-hidden="true"
+          ></th>
           <th *ngFor="let column of columns" scope="col" class="filter-header-cell" [style.width.%]="getColumnWidthPercent(column.key)">
             <ng-container [ngSwitch]="column.filterType">
               <ng-container *ngSwitchCase="'text'">
@@ -365,6 +383,7 @@
         <tr (mouseleave)="onRowHoverLeave()">
           <td
             class="body-cell row-select-cell"
+            [class.row-select-col--wide]="selectionCountShowsSplit"
             (click)="$event.stopPropagation()"
             (keydown.space)="$event.stopPropagation()"
             (mouseover)="onRowMatchInspectorHover($event, row)"
@@ -574,6 +593,9 @@
         <div class="paginator-left-report">
           <span>
             Showing {{ state.first + 1 }} to {{ state.first + state.rows > state.totalRecords ? state.totalRecords : state.first + state.rows }} of {{ state.totalRecords }} rows
+            <span *ngIf="selectionCountShowsSplit" class="paginator-selection-hint text-muted">
+              · {{ selectedDatasetCount }} selected in full data
+            </span>
           </span>
         </div>
       </ng-template>

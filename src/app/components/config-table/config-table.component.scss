@@ -487,6 +487,14 @@ $export-bar-control-font-size: 0.875rem;
   box-sizing: border-box;
 }
 
+.row-select-header.row-select-col--wide,
+.row-select-filter.row-select-col--wide,
+.row-select-cell.row-select-col--wide {
+  width: 5.85rem;
+  min-width: 5.85rem;
+  max-width: 5.85rem;
+}
+
 .row-select-header,
 .row-select-filter {
   vertical-align: middle;
@@ -513,6 +521,42 @@ $export-bar-control-font-size: 0.875rem;
   width: 4ch;
   min-width: 4ch;
   text-align: center;
+}
+
+.row-select-count--split {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 0;
+}
+
+.row-select-count-split-inner {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 0;
+}
+
+.row-select-count-primary {
+  color: var(--text-secondary);
+  font-weight: 700;
+}
+
+.row-select-count-sep {
+  margin: 0 0.06rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.row-select-count-dataset {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.paginator-selection-hint {
+  font-size: 0.82em;
+  margin-left: 0.15rem;
+  white-space: nowrap;
 }
 
 .row-select-header,

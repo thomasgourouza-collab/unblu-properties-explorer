@@ -295,6 +295,22 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     return this.rows.filter((row) => this.selectedRowKeys.has(row.rowKey)).length;
   }
 
+  /** True when some selection is off the current filtered view (show dual count in header). */
+  get selectionCountShowsSplit(): boolean {
+    return this.selectedDatasetCount > 0 && this.selectedFilteredCount !== this.selectedDatasetCount;
+  }
+
+  /** Accessible name / tooltip for the header selection count. */
+  get selectionHeaderAriaLabel(): string {
+    if (this.selectedDatasetCount === 0) {
+      return '0 rows selected';
+    }
+    if (!this.selectionCountShowsSplit) {
+      return `${this.selectedDatasetCount} rows selected`;
+    }
+    return `${this.selectedFilteredCount} selected in current filter, ${this.selectedDatasetCount} selected in loaded dataset`;
+  }
+
   /** Rows passed to p-table (full filtered set or selected-only subset). */
   get tableDisplayedRows(): ConfigRow[] {
     if (!this.showSelectedRowsOnly) {
