@@ -53,6 +53,15 @@
   gap: 0.5rem 0.75rem;
 }
 
+.table-export-bar-leading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0.5rem 0.75rem;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .table-export-bar-column-visibility {
   display: flex;
   align-items: stretch;
@@ -152,6 +161,10 @@ $export-bar-control-font-size: 0.875rem;
   font-size: $export-bar-control-font-size;
   font-weight: 500;
   line-height: 1.25;
+}
+
+.table-export-bar .btn.btn-sm.btn-utransfer {
+  flex: 0 0 auto;
 }
 
 .toolbar-single-row {

@@ -1,64 +1,65 @@
 <section class="table-export-bar mb-2" aria-label="Export, column visibility, and selection">
   <div class="table-export-bar-inner">
-    <button
-      type="button"
-      class="btn btn-sm btn-export-csv"
-      (click)="exportSelectedToCsv()"
-      [disabled]="selectedDatasetCount === 0"
-      title="Download all selected rows as CSV (all columns, UTF-8). Selection is kept when you change filters or pages."
-    >
-      <i class="pi pi-download" aria-hidden="true"></i>
-      <span>Export CSV</span>
-    </button>
+    <div class="table-export-bar-leading">
+      <button
+        type="button"
+        class="btn btn-sm btn-export-csv"
+        (click)="exportSelectedToCsv()"
+        [disabled]="selectedDatasetCount === 0"
+        title="Download all selected rows as CSV (all columns, UTF-8). Selection is kept when you change filters or pages."
+      >
+        <i class="pi pi-download" aria-hidden="true"></i>
+        <span>Export CSV</span>
+      </button>
+      <div class="table-export-bar-column-visibility">
+        <p-multiselect
+          inputId="columnVisibility"
+          [options]="columnVisibilityOptions"
+          optionDisabled="disabled"
+          [showToggleAll]="true"
+          [filter]="true"
+          [appendTo]="'body'"
+          [maxSelectedLabels]="0"
+          defaultLabel="Visible columns"
+          selectedItemsLabel="Visible columns"
+          styleClass="column-visibility-select"
+          [title]="'Select visible columns'"
+          [(ngModel)]="visibleColumnKeys"
+          (onChange)="onColumnVisibilityChange()"
+        >
+          <ng-template pTemplate="selectedItems">
+            <span>Visible columns ({{ visibleDisplayableColumnsCount }} / {{ totalDisplayableColumnsCount }})</span>
+          </ng-template>
+        </p-multiselect>
+      </div>
+      <div class="selected-only-toggle">
+        <input
+          type="checkbox"
+          id="config-table-selected-only"
+          class="btn-check"
+          [ngModel]="showSelectedRowsOnly"
+          (ngModelChange)="onSelectedOnlyModeChange($event)"
+          [disabled]="!showSelectedRowsOnly && selectedFilteredCount === 0"
+          aria-label="Show only selected rows in the table"
+        />
+        <label
+          class="btn btn-sm btn-outline-secondary"
+          for="config-table-selected-only"
+          title="When on, the table lists only rows you have checked (within the current filter)"
+        >
+          Selected only
+        </label>
+      </div>
+    </div>
     <button
       type="button"
       class="btn btn-sm btn-utransfer"
       (click)="onUtransferClick()"
-      [disabled]="selectedDatasetCount === 0"
-      title="Not implemented yet. Requires at least one selected row."
+      title="Upload utranfert json file"
     >
-      <i class="pi pi-cog" aria-hidden="true"></i>
+      <i class="pi pi-upload" aria-hidden="true"></i>
       <span>utransfer</span>
     </button>
-    <div class="table-export-bar-column-visibility">
-      <p-multiselect
-        inputId="columnVisibility"
-        [options]="columnVisibilityOptions"
-        optionDisabled="disabled"
-        [showToggleAll]="true"
-        [filter]="true"
-        [appendTo]="'body'"
-        [maxSelectedLabels]="0"
-        defaultLabel="Visible columns"
-        selectedItemsLabel="Visible columns"
-        styleClass="column-visibility-select"
-        [title]="'Select visible columns'"
-        [(ngModel)]="visibleColumnKeys"
-        (onChange)="onColumnVisibilityChange()"
-      >
-        <ng-template pTemplate="selectedItems">
-          <span>Visible columns ({{ visibleDisplayableColumnsCount }} / {{ totalDisplayableColumnsCount }})</span>
-        </ng-template>
-      </p-multiselect>
-    </div>
-    <div class="selected-only-toggle">
-      <input
-        type="checkbox"
-        id="config-table-selected-only"
-        class="btn-check"
-        [ngModel]="showSelectedRowsOnly"
-        (ngModelChange)="onSelectedOnlyModeChange($event)"
-        [disabled]="!showSelectedRowsOnly && selectedFilteredCount === 0"
-        aria-label="Show only selected rows in the table"
-      />
-      <label
-        class="btn btn-sm btn-outline-secondary"
-        for="config-table-selected-only"
-        title="When on, the table lists only rows you have checked (within the current filter)"
-      >
-        Selected only
-      </label>
-    </div>
   </div>
 </section>
 
