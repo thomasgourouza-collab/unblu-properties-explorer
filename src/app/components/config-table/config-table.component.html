@@ -423,7 +423,6 @@
                   >
                     <i class="pi" [ngClass]="isFullCellCopied('property', getCellValue(row, column.key)) ? 'pi-check' : 'pi-copy'"></i>
                   </button>
-                  <span class="property-copy-hint" [class.visible]="isFullCellCopied('property', getCellValue(row, column.key))">Copied</span>
                 </span>
               </ng-container>
               <ng-template #standardTextCell>

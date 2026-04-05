@@ -208,7 +208,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   /** Relative width units; redistributed so the table stays 100% wide. */
   private getColumnWidthWeight(columnKey: string): number {
     if (columnKey === 'property') {
-      return 2.5;
+      return 2;
     }
     if (columnKey === 'visibility') {
       return 0.6;
