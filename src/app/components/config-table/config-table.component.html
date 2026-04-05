@@ -376,7 +376,7 @@
               <div class="value-cell-wrap" (click)="onValueCellControlClick($event)">
                 <ng-container *ngIf="isValueColumnBooleanType(row); else tplValueNonBoolean">
                   <select
-                    class="form-select form-select-sm value-cell-select"
+                    class="form-select form-select-sm value-cell-select-native"
                     [ngModel]="row.value"
                     (ngModelChange)="row.value = $event"
                     [attr.aria-label]="'Value for ' + row.property"
@@ -396,11 +396,12 @@
                       class="value-cell-multiselect"
                       size="small"
                       [fluid]="true"
+                      [showClear]="false"
                       styleClass="value-cell-multiselect-inner"
                       [options]="getValueColumnSelectOptions(row)"
                       optionLabel="label"
                       optionValue="value"
-                      [display]="'chip'"
+                      [display]="'comma'"
                       [filter]="true"
                       [showToggleAll]="true"
                       [appendTo]="'body'"
@@ -413,7 +414,7 @@
                   <ng-template #tplValueSingleOrText>
                     <ng-container *ngIf="valueColumnUsesSingleSelectFromAllowed(row); else tplValueFreeText">
                       <select
-                        class="form-select form-select-sm value-cell-select"
+                        class="form-select form-select-sm value-cell-select-native"
                         [ngModel]="row.value"
                         (ngModelChange)="row.value = $event"
                         [attr.aria-label]="'Value for ' + row.property"

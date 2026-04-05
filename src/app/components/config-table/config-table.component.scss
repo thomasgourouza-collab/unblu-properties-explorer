@@ -687,21 +687,21 @@ $export-bar-control-font-size: 0.875rem;
   min-width: 0;
 }
 
-.value-cell-input,
-.value-cell-select {
+.value-cell-input {
   width: 100%;
   max-width: 100%;
   min-width: 0;
+  box-sizing: border-box;
+  line-height: 1.35;
 }
 
-/* Native selects: single line + ellipsis so the chevron stays on the right */
-.value-cell-select {
-  display: block;
-  line-height: 1.35;
-  text-overflow: ellipsis;
-  overflow: hidden;
-  white-space: nowrap;
+/* Native <select>: avoid overflow/ellipsis hacks — they add scrollbars or odd chrome in WebKit/Firefox */
+.value-cell-select-native {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   box-sizing: border-box;
+  line-height: 1.35;
 }
 
 .value-cell-multiselect {
@@ -727,19 +727,13 @@ $export-bar-control-font-size: 0.875rem;
   overflow: hidden;
 }
 
+/* Comma display: one line, ellipsis — no chip strip scrollbar or per-token remove icons */
 :host ::ng-deep .value-cell-multiselect-inner .p-multiselect-label {
-  display: flex !important;
-  align-items: center;
-  flex-wrap: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
   white-space: nowrap !important;
-  overflow-x: auto;
-  overflow-y: hidden;
   max-width: 100%;
   min-width: 0;
-}
-
-:host ::ng-deep .value-cell-multiselect-inner .p-multiselect-chip-item {
-  flex-shrink: 0;
 }
 
 :host ::ng-deep .value-cell-multiselect-inner .p-multiselect-dropdown {
