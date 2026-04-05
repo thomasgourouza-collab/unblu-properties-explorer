@@ -51,7 +51,13 @@
             "assets": [
               {
                 "glob": "**/*",
-                "input": "public"
+                "input": "src/app/images",
+                "output": "images"
+              },
+              {
+                "glob": "search.png",
+                "input": "src/app/images",
+                "output": "/"
               }
             ],
             "styles": [
