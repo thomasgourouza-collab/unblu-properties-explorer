@@ -135,6 +135,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   @ViewChild('cellDetailDialog') private cellDetailDialogEl?: ElementRef<HTMLDialogElement>;
   cellDetailDialogRowKey: string | null = null;
   cellDetailDialogColumnKey: string | null = null;
+  /** Row property key shown next to the dialog title (Cmd/Ctrl+click). */
+  cellDetailDialogPropertyCode = '';
   cellDetailDialogPlainText = '';
   /** When set, dialog shows list + per-line copy (allowed values). */
   cellDetailDialogAllowedLines: string[] | null = null;
@@ -614,6 +616,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.onCellHoverLeave();
     this.cellDetailDialogRowKey = row.rowKey;
     this.cellDetailDialogColumnKey = column.key;
+    this.cellDetailDialogPropertyCode = this.getCellValue(row, 'property')?.trim() ?? '';
     const raw = this.getCellValue(row, column.key);
     if (column.key === 'allowedValues') {
       this.cellDetailDialogAllowedLines = [...this.getWhitespaceValueParts(raw)];
@@ -647,6 +650,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   onCellDetailDialogCleanup(): void {
     this.cellDetailDialogRowKey = null;
     this.cellDetailDialogColumnKey = null;
+    this.cellDetailDialogPropertyCode = '';
     this.cellDetailDialogPlainText = '';
     this.cellDetailDialogAllowedLines = null;
     this.safeMarkForCheck();

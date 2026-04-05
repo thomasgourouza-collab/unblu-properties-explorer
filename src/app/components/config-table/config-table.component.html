@@ -517,7 +517,14 @@
     >
       <div class="cell-detail-dialog-panel" (click)="$event.stopPropagation()" *ngIf="cellDetailDialogColumnKey">
         <header class="cell-detail-dialog-header">
-          <h3 class="cell-detail-dialog-title">{{ getColumnLabel(cellDetailDialogColumnKey) }}</h3>
+          <div class="cell-detail-dialog-header-text">
+            <h3 class="cell-detail-dialog-title">{{ getColumnLabel(cellDetailDialogColumnKey) }}</h3>
+            <code
+              *ngIf="cellDetailDialogPropertyCode"
+              class="cell-detail-dialog-property"
+              [attr.title]="cellDetailDialogPropertyCode"
+              >{{ cellDetailDialogPropertyCode }}</code>
+          </div>
           <button type="button" class="cell-detail-dialog-close" (click)="closeCellDetailDialog()" aria-label="Close">
             <i class="pi pi-times" aria-hidden="true"></i>
           </button>

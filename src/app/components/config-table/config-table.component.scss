@@ -929,18 +929,49 @@ $export-bar-control-font-size: 0.875rem;
 
 .cell-detail-dialog-header {
   display: flex;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  padding: 0.5rem 0.6rem;
+  padding: 0.55rem 0.7rem;
   border-bottom: 1px solid color-mix(in srgb, var(--accent) 20%, var(--surface-border));
+}
+
+.cell-detail-dialog-header-text {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .cell-detail-dialog-title {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 1.14rem;
   font-weight: 700;
   color: var(--text-primary);
+  line-height: 1.25;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.cell-detail-dialog-property {
+  display: block;
+  font-size: 1.02rem;
+  font-weight: 500;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  color: var(--text-secondary);
+  background: color-mix(in srgb, var(--surface-soft) 78%, transparent);
+  border: 1px solid var(--surface-border);
+  border-radius: 0.32rem;
+  padding: 0.12rem 0.4rem;
+  min-width: 0;
+  flex: 1 1 auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .cell-detail-dialog-close {
@@ -949,12 +980,13 @@ $export-bar-control-font-size: 0.875rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2rem;
+  width: 2.25rem;
+  height: 2.25rem;
   border-radius: 0.35rem;
   color: var(--text-muted);
   cursor: pointer;
   flex-shrink: 0;
+  font-size: 1.05rem;
 }
 
 .cell-detail-dialog-close:hover {
@@ -963,9 +995,10 @@ $export-bar-control-font-size: 0.875rem;
 }
 
 .cell-detail-dialog-body {
-  padding: 0.55rem 0.65rem 0.65rem;
+  padding: 0.65rem 0.75rem 0.75rem;
   overflow: auto;
   min-height: 0;
+  font-size: 1.05rem;
 }
 
 .cell-detail-dialog-hint {
@@ -996,7 +1029,7 @@ $export-bar-control-font-size: 0.875rem;
 
 .cell-detail-dialog-plain-line {
   display: block;
-  font-size: 0.88rem;
+  font-size: 1.05rem;
   color: var(--text-primary);
   word-break: break-word;
 }
@@ -1013,7 +1046,7 @@ $export-bar-control-font-size: 0.875rem;
 }
 
 .cell-detail-dialog-plain {
-  font-size: 0.88rem;
+  font-size: 1.05rem;
   color: var(--text-primary);
   white-space: pre-wrap;
   word-break: break-word;
@@ -1032,6 +1065,11 @@ $export-bar-control-font-size: 0.875rem;
   white-space: pre-wrap;
   word-break: break-word;
   min-height: 2rem;
+  font-size: 1rem;
+}
+
+.cell-detail-dialog-body .cell-code-chip:not(.cell-detail-dialog-code-block) {
+  font-size: 1rem;
 }
 
 :host ::ng-deep .p-inputtext,
