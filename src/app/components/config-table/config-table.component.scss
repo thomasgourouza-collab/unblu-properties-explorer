@@ -768,6 +768,34 @@ $value-cell-font-size: 0.8125rem;
   min-width: 0;
 }
 
+.value-cell-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.28rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.value-cell-control-slot {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.value-cell-reset-btn {
+  flex-shrink: 0;
+  padding: 0.18rem 0.32rem;
+  min-height: $value-cell-control-min-height;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+
+  .pi {
+    font-size: 0.78rem;
+  }
+}
+
 $value-column-divergent-border: color-mix(in srgb, #22c55e 72%, var(--surface-border));
 
 :host .value-cell-wrap.value-cell-diverges {

@@ -1383,6 +1383,17 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.safeMarkForCheck();
   }
 
+  onResetValueToDefault(event: MouseEvent, row: ConfigRow): void {
+    event.stopPropagation();
+    event.preventDefault();
+    if (!this.valueColumnDiffersFromDefault(row)) {
+      return;
+    }
+    row.value = row.defaultValue ?? '';
+    this.valueColumnMultiModelCache.delete(row.rowKey);
+    this.safeMarkForCheck();
+  }
+
   onValueCellControlClick(event: MouseEvent): void {
     event.stopPropagation();
   }

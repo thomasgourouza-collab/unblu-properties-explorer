@@ -245,7 +245,7 @@
                   [disabled]="valueColumnChangeRowCount === 0"
                   title="Select all loaded rows whose Value differs from Default value (order ignored for lists)"
                 >
-                  select diffs
+                  select diffs ({{ valueColumnChangeRowCount }})
                 </button>
               </ng-container>
               <ng-template #tplHeaderDefaultLabel>
@@ -416,45 +416,9 @@
                 [class.value-cell-diverges]="valueColumnDiffersFromDefault(row)"
                 (click)="onValueCellControlClick($event)"
               >
-                <ng-container *ngIf="isValueColumnBooleanType(row); else tplValueNonBoolean">
-                  <select
-                    class="form-select form-select-sm value-cell-select-native"
-                    [ngModel]="row.value"
-                    (ngModelChange)="row.value = $event"
-                    [attr.aria-label]="'Value for ' + row.property"
-                    autocomplete="off"
-                    data-bwignore
-                    data-1p-ignore
-                    data-lpignore="true"
-                  >
-                    <option value=""></option>
-                    <option value="true">true</option>
-                    <option value="false">false</option>
-                  </select>
-                </ng-container>
-                <ng-template #tplValueNonBoolean>
-                  <ng-container *ngIf="valueColumnUsesMultiSelect(row); else tplValueSingleOrText">
-                    <p-multiselect
-                      class="value-cell-multiselect"
-                      size="small"
-                      [fluid]="true"
-                      [showClear]="false"
-                      styleClass="value-cell-multiselect-inner"
-                      [options]="getValueColumnSelectOptions(row)"
-                      optionLabel="label"
-                      optionValue="value"
-                      [display]="'comma'"
-                      [filter]="true"
-                      [showToggleAll]="true"
-                      [appendTo]="'body'"
-                      [maxSelectedLabels]="2"
-                      [ngModel]="getValueColumnMultiModel(row)"
-                      (ngModelChange)="onValueColumnMultiChange(row, $event)"
-                      [attr.aria-label]="'Values for ' + row.property"
-                    />
-                  </ng-container>
-                  <ng-template #tplValueSingleOrText>
-                    <ng-container *ngIf="valueColumnUsesSingleSelectFromAllowed(row); else tplValueFreeText">
+                <div class="value-cell-row">
+                  <div class="value-cell-control-slot">
+                    <ng-container *ngIf="isValueColumnBooleanType(row); else tplValueNonBoolean">
                       <select
                         class="form-select form-select-sm value-cell-select-native"
                         [ngModel]="row.value"
@@ -466,26 +430,76 @@
                         data-lpignore="true"
                       >
                         <option value=""></option>
-                        <option *ngFor="let opt of getValueColumnSelectOptions(row)" [value]="opt.value">{{ opt.label }}</option>
+                        <option value="true">true</option>
+                        <option value="false">false</option>
                       </select>
                     </ng-container>
-                    <ng-template #tplValueFreeText>
-                      <input
-                        type="text"
-                        class="form-control form-control-sm value-cell-input"
-                        [ngModel]="row.value"
-                        (ngModelChange)="row.value = $event"
-                        [attr.aria-label]="'Value for ' + row.property"
-                        autocomplete="off"
-                        autocapitalize="off"
-                        spellcheck="false"
-                        data-bwignore
-                        data-1p-ignore
-                        data-lpignore="true"
-                      />
+                    <ng-template #tplValueNonBoolean>
+                      <ng-container *ngIf="valueColumnUsesMultiSelect(row); else tplValueSingleOrText">
+                        <p-multiselect
+                          class="value-cell-multiselect"
+                          size="small"
+                          [fluid]="true"
+                          [showClear]="false"
+                          styleClass="value-cell-multiselect-inner"
+                          [options]="getValueColumnSelectOptions(row)"
+                          optionLabel="label"
+                          optionValue="value"
+                          [display]="'comma'"
+                          [filter]="true"
+                          [showToggleAll]="true"
+                          [appendTo]="'body'"
+                          [maxSelectedLabels]="2"
+                          [ngModel]="getValueColumnMultiModel(row)"
+                          (ngModelChange)="onValueColumnMultiChange(row, $event)"
+                          [attr.aria-label]="'Values for ' + row.property"
+                        />
+                      </ng-container>
+                      <ng-template #tplValueSingleOrText>
+                        <ng-container *ngIf="valueColumnUsesSingleSelectFromAllowed(row); else tplValueFreeText">
+                          <select
+                            class="form-select form-select-sm value-cell-select-native"
+                            [ngModel]="row.value"
+                            (ngModelChange)="row.value = $event"
+                            [attr.aria-label]="'Value for ' + row.property"
+                            autocomplete="off"
+                            data-bwignore
+                            data-1p-ignore
+                            data-lpignore="true"
+                          >
+                            <option value=""></option>
+                            <option *ngFor="let opt of getValueColumnSelectOptions(row)" [value]="opt.value">{{ opt.label }}</option>
+                          </select>
+                        </ng-container>
+                        <ng-template #tplValueFreeText>
+                          <input
+                            type="text"
+                            class="form-control form-control-sm value-cell-input"
+                            [ngModel]="row.value"
+                            (ngModelChange)="row.value = $event"
+                            [attr.aria-label]="'Value for ' + row.property"
+                            autocomplete="off"
+                            autocapitalize="off"
+                            spellcheck="false"
+                            data-bwignore
+                            data-1p-ignore
+                            data-lpignore="true"
+                          />
+                        </ng-template>
+                      </ng-template>
                     </ng-template>
-                  </ng-template>
-                </ng-template>
+                  </div>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary value-cell-reset-btn"
+                    (click)="onResetValueToDefault($event, row)"
+                    [disabled]="!valueColumnDiffersFromDefault(row)"
+                    title="Reset value to default"
+                    [attr.aria-label]="'Reset value to default for ' + row.property"
+                  >
+                    <i class="pi pi-undo" aria-hidden="true"></i>
+                  </button>
+                </div>
               </div>
             </ng-container>
             <ng-template #tplNotValueColumn>
