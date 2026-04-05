@@ -97,7 +97,7 @@
     const [rawType, ...allowedValuesParts] = parts;
     return {
       type: normalizeTypeLabel(cleanText(rawType)),
-      allowedValues: cleanText(allowedValuesParts.join(", "))
+      allowedValues: cleanText(allowedValuesParts.join(", ")).toUpperCase()
     };
   }
 
