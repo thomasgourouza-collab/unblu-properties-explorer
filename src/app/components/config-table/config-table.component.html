@@ -520,7 +520,7 @@
           <div class="cell-detail-dialog-header-text">
             <h3 class="cell-detail-dialog-title">{{ getColumnLabel(cellDetailDialogColumnKey) }}</h3>
             <code
-              *ngIf="cellDetailDialogPropertyCode"
+              *ngIf="cellDetailDialogPropertyCode && cellDetailDialogColumnKey !== 'property'"
               class="cell-detail-dialog-property"
               [attr.title]="cellDetailDialogPropertyCode"
               >{{ cellDetailDialogPropertyCode }}</code>
