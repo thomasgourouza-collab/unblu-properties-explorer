@@ -1349,8 +1349,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
    */
   valueColumnDiffersFromDefault(row: ConfigRow): boolean {
     if (this.valueColumnUsesMultiSelect(row)) {
-      const valueParts = this.parseCommaSeparatedCellList(row.value ?? '');
-      const defaultParts = this.getDefaultValueParts(row.defaultValue ?? '').filter((p) => p.trim().length > 0);
+      const valueParts = this.getValueColumnMultiselectTokensForCompare(row.value ?? '');
+      const defaultParts = this.getValueColumnMultiselectDefaultTokensForCompare(row.defaultValue ?? '');
       return !this.valueListsEqualIgnoreOrder(valueParts, defaultParts);
     }
     if (this.isValueColumnBooleanType(row)) {
@@ -1373,6 +1373,26 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       return false;
     }
     return a.every((t, i) => t === b[i]);
+  }
+
+  /** Empty selection vs default `[]` — `row.value` may still be the literal `[]` from CSV (comma-split would yield one bogus token). */
+  private isEmptyJsonArrayLiteral(raw: string): boolean {
+    const t = raw.trim();
+    return t.length === 0 || /^\[\s*\]$/.test(t);
+  }
+
+  private getValueColumnMultiselectTokensForCompare(raw: string): string[] {
+    if (this.isEmptyJsonArrayLiteral(raw)) {
+      return [];
+    }
+    return this.parseCommaSeparatedCellList(raw);
+  }
+
+  private getValueColumnMultiselectDefaultTokensForCompare(raw: string): string[] {
+    if (this.isEmptyJsonArrayLiteral(raw)) {
+      return [];
+    }
+    return this.getDefaultValueParts(raw).filter((p) => p.trim().length > 0);
   }
 
   /** True when chip column should render anything (non-empty tokens only). */
