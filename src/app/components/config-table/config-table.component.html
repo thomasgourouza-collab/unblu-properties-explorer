@@ -104,11 +104,12 @@
     </button>
     <button
       type="button"
-      class="btn btn-sm btn-outline-secondary btn-utransfer"
+      class="btn btn-sm btn-utransfer"
       (click)="onUtransferClick()"
-      title="Not implemented yet"
+      [disabled]="selectedDatasetCount === 0"
+      title="Not implemented yet. Requires at least one selected row."
     >
-      utransfer
+      <span>utransfer</span>
     </button>
     <div class="table-export-bar-column-visibility">
       <p-multiselect

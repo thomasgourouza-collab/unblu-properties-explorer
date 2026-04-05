@@ -114,20 +114,16 @@
 // Match Bootstrap .btn-sm (0.875rem) used by Export CSV in the same bar.
 $export-bar-control-font-size: 0.875rem;
 
-.btn-export-csv {
+// Export CSV + utransfer: same chrome (utransfer has no icon).
+.btn-export-csv,
+.btn-utransfer {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
   border: 1px solid color-mix(in srgb, var(--accent) 42%, var(--surface-border));
   color: var(--text-primary);
   background: color-mix(in srgb, var(--accent-soft) 28%, var(--surface-elevated));
   font-weight: 500;
   padding-inline: 0.6rem;
-
-  .pi {
-    font-size: 0.85rem;
-    opacity: 0.92;
-  }
 
   &:hover:not(:disabled) {
     border-color: color-mix(in srgb, var(--accent) 65%, var(--surface-border));
@@ -145,13 +141,20 @@ $export-bar-control-font-size: 0.875rem;
   }
 }
 
-.table-export-bar .btn.btn-sm.btn-export-csv {
-  font-size: $export-bar-control-font-size;
+.btn-export-csv {
+  gap: 0.4rem;
+
+  .pi {
+    font-size: 0.85rem;
+    opacity: 0.92;
+  }
 }
 
+.table-export-bar .btn.btn-sm.btn-export-csv,
 .table-export-bar .btn.btn-sm.btn-utransfer {
   font-size: $export-bar-control-font-size;
   font-weight: 500;
+  line-height: 1.25;
 }
 
 .toolbar-single-row {
