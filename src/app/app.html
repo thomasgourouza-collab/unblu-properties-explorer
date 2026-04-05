@@ -40,10 +40,14 @@
         />
       </div>
 
-      <div class="d-flex flex-wrap align-items-center gap-2 mt-2 loaded-meta" *ngIf="currentFileName">
-        <span class="badge text-bg-primary">{{ currentFileName }}</span>
-        <span class="text-muted small">{{ rows.length }} parsed rows</span>
-        <button type="button" class="btn btn-sm btn-outline-danger" (click)="resetData()">Clear data</button>
+      <div class="loaded-meta mt-2" *ngIf="currentFileName">
+        <div class="loaded-meta-leading">
+          <span class="badge text-bg-primary">{{ currentFileName }}</span>
+          <span class="text-muted small">{{ rows.length }} parsed rows</span>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-danger loaded-meta-clear" (click)="resetData()">
+          Clear data
+        </button>
       </div>
 
       <div class="alert alert-info mt-2 mb-0 loading-alert py-2 px-3" *ngIf="isParsing">
