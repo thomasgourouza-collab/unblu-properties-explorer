@@ -128,8 +128,16 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   columnOrderKeys: string[] = BASE_COLUMN_DEFINITIONS.map((column) => column.key);
   filterOptions: Partial<Record<string, SelectOption[]>> = {};
   private readonly emptyFilterValues: string[] = [];
-  copiedPropertyValue: string | null = null;
+  /** Last successful clipboard copy id (property, default value, dialog lines, …). */
+  lastCopiedClipboardId: string | null = null;
   private copyResetTimerId?: ReturnType<typeof globalThis.setTimeout>;
+
+  @ViewChild('cellDetailDialog') private cellDetailDialogEl?: ElementRef<HTMLDialogElement>;
+  cellDetailDialogRowKey: string | null = null;
+  cellDetailDialogColumnKey: string | null = null;
+  cellDetailDialogPlainText = '';
+  /** When set, dialog shows list + per-line copy (allowed values). */
+  cellDetailDialogAllowedLines: string[] | null = null;
   isCellHoverTooltipOpen = false;
   cellHoverTooltipText = '';
   cellHoverTooltipColumnKey: string | null = null;
@@ -575,6 +583,85 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
   trackByHighlightPart(index: number, part: HighlightPart): string {
     return `${index}:${part.kind}:${part.text}`;
+  }
+
+  trackByDialogLine(index: number, line: string): string {
+    return `${index}:${line}`;
+  }
+
+  onCellCmdClick(event: MouseEvent, row: ConfigRow, column: ColumnDefinition): void {
+    if (!event.metaKey && !event.ctrlKey) {
+      return;
+    }
+    const target = event.target as HTMLElement | null;
+    if (target && this.isInteractiveCellTarget(target)) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    this.openCellDetailDialog(row, column);
+  }
+
+  private isInteractiveCellTarget(el: HTMLElement): boolean {
+    const node = el.closest('button, a, input, textarea, select, label');
+    return Boolean(node);
+  }
+
+  private openCellDetailDialog(row: ConfigRow, column: ColumnDefinition): void {
+    this.onCellHoverLeave();
+    this.cellDetailDialogRowKey = row.rowKey;
+    this.cellDetailDialogColumnKey = column.key;
+    const raw = this.getCellValue(row, column.key);
+    if (column.key === 'allowedValues') {
+      this.cellDetailDialogAllowedLines = [...this.getWhitespaceValueParts(raw)];
+      this.cellDetailDialogPlainText = '';
+    } else {
+      this.cellDetailDialogAllowedLines = null;
+      this.cellDetailDialogPlainText = raw?.trim() ?? '';
+    }
+    this.safeMarkForCheck();
+    queueMicrotask(() => {
+      const dialog = this.cellDetailDialogEl?.nativeElement;
+      if (dialog && !dialog.open) {
+        dialog.showModal();
+      }
+    });
+  }
+
+  closeCellDetailDialog(): void {
+    this.cellDetailDialogEl?.nativeElement.close();
+  }
+
+  onCellDetailDialogBackdrop(event: MouseEvent): void {
+    if (event.target === this.cellDetailDialogEl?.nativeElement) {
+      this.closeCellDetailDialog();
+    }
+  }
+
+  onCellDetailDialogCleanup(): void {
+    this.cellDetailDialogRowKey = null;
+    this.cellDetailDialogColumnKey = null;
+    this.cellDetailDialogPlainText = '';
+    this.cellDetailDialogAllowedLines = null;
+    this.safeMarkForCheck();
+  }
+
+  get isCellDetailDialogAllowedList(): boolean {
+    return this.cellDetailDialogColumnKey === 'allowedValues' && this.cellDetailDialogAllowedLines !== null;
+  }
+
+  get isCellDetailDialogCodeStyle(): boolean {
+    const key = this.cellDetailDialogColumnKey;
+    return key === 'property' || key === 'defaultValue';
+  }
+
+  cellDetailDialogFullCellCopyId(): string {
+    const key = this.cellDetailDialogColumnKey ?? '';
+    return this.fullCellCopyId(key, this.cellDetailDialogPlainText);
+  }
+
+  dialogLineCopyId(index: number): string {
+    return `dlg:${this.cellDetailDialogRowKey ?? 'x'}:${index}`;
   }
 
   /** Bound on each body cell so PrimeNG scrollable tables still receive Shift+hover reliably. */
@@ -1114,64 +1201,16 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       }
     }
 
-    return this.splitTopLevelValues(trimmed);
+    return this.getWhitespaceValueParts(trimmed);
   }
 
-  private splitTopLevelValues(input: string): string[] {
-    const parts: string[] = [];
-    let current = '';
-    let parenDepth = 0;
-    let bracketDepth = 0;
-    let inSingleQuote = false;
-    let inDoubleQuote = false;
-
-    for (const char of input) {
-      if (char === '\'' && !inDoubleQuote) {
-        inSingleQuote = !inSingleQuote;
-        current += char;
-        continue;
-      }
-      if (char === '"' && !inSingleQuote) {
-        inDoubleQuote = !inDoubleQuote;
-        current += char;
-        continue;
-      }
-
-      if (!inSingleQuote && !inDoubleQuote) {
-        if (char === '(') {
-          parenDepth += 1;
-          current += char;
-          continue;
-        }
-        if (char === ')' && parenDepth > 0) {
-          parenDepth -= 1;
-          current += char;
-          continue;
-        }
-        if (char === '[') {
-          bracketDepth += 1;
-          current += char;
-          continue;
-        }
-        if (char === ']' && bracketDepth > 0) {
-          bracketDepth -= 1;
-          current += char;
-          continue;
-        }
-        if (char === ',' && parenDepth === 0 && bracketDepth === 0) {
-          parts.push(current.trim());
-          current = '';
-          continue;
-        }
-      }
-
-      current += char;
+  /** Split cell display tokens on whitespace (allowed values, non-JSON default value). */
+  getWhitespaceValueParts(value = ''): string[] {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return [''];
     }
-
-    if (current.trim() || input.endsWith(',')) {
-      parts.push(current.trim());
-    }
-
+    const parts = trimmed.split(/\s+/).filter((part) => part.length > 0);
     return parts.length > 0 ? parts : [''];
   }
 
@@ -1339,12 +1378,24 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     return fn === 'rgba' ? `rgb(${r},${g},${b})` : rgbLikeMatch[0];
   }
 
-  isCopiedProperty(value: string): boolean {
-    return this.copiedPropertyValue === value.trim();
+  isFullCellCopied(columnKey: string, value: string): boolean {
+    const text = value?.trim() ?? '';
+    return this.lastCopiedClipboardId === this.fullCellCopyId(columnKey, text);
   }
 
-  async copyPropertyValue(value: string): Promise<void> {
-    const text = value.trim();
+  fullCellCopyId(columnKey: string, trimmedValue: string): string {
+    return `full:${columnKey}:${trimmedValue}`;
+  }
+
+  async copyFullCell(columnKey: string, value: string): Promise<void> {
+    const text = value?.trim() ?? '';
+    if (!text) {
+      return;
+    }
+    await this.copyById(this.fullCellCopyId(columnKey, text), text);
+  }
+
+  async copyById(id: string, text: string): Promise<void> {
     if (!text) {
       return;
     }
@@ -1354,16 +1405,20 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       return;
     }
 
-    this.copiedPropertyValue = text;
+    this.lastCopiedClipboardId = id;
     this.safeMarkForCheck();
     if (this.copyResetTimerId !== undefined) {
       globalThis.clearTimeout(this.copyResetTimerId);
     }
     this.copyResetTimerId = globalThis.setTimeout(() => {
-      this.copiedPropertyValue = null;
+      this.lastCopiedClipboardId = null;
       this.copyResetTimerId = undefined;
       this.safeMarkForCheck();
     }, 800);
+  }
+
+  isCopiedId(id: string): boolean {
+    return this.lastCopiedClipboardId === id;
   }
 
   private async tryCopyToClipboard(text: string): Promise<boolean> {

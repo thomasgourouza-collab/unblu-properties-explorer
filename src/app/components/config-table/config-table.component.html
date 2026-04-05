@@ -344,38 +344,74 @@
             *ngFor="let column of columns"
             class="body-cell"
             [style.width.%]="getColumnWidthPercent(column.key)"
+            (click)="onCellCmdClick($event, row, column)"
             (mouseenter)="onCellHoverEnter($event, getCellValue(row, column.key), column.key)"
             (mousemove)="onBodyCellMouseMove($event, row, column)"
             (mouseleave)="onCellHoverLeave()"
             (mouseover)="onRowMatchInspectorHover($event, row)"
           >
-            <ng-container *ngIf="column.key === 'defaultValue'; else plainCell">
-              <div class="cell-x-scroll">
-                <ng-container
-                  *ngFor="let valuePart of getDefaultValueParts(getCellValue(row, column.key)); let isLast = last; trackBy: trackByDefaultValuePart"
-                >
-                  <ng-container *ngFor="let part of getHighlightedParts(valuePart, column.key); trackBy: trackByHighlightPart">
-                    <mark
-                      *ngIf="part.kind !== 'none'"
-                      [class.global-filter-highlight]="part.kind === 'global'"
-                      [class.column-filter-highlight]="part.kind === 'column'"
+            <ng-container *ngIf="column.key === 'defaultValue'; else tplAllowedOrRest">
+              <span class="property-code-wrap">
+                <span class="property-code-scroll">
+                  <div class="cell-x-scroll cell-chips-row">
+                    <ng-container
+                      *ngFor="let valuePart of getDefaultValueParts(getCellValue(row, column.key)); trackBy: trackByDefaultValuePart"
                     >
-                      {{ part.text }}
-                    </mark>
-                    <span *ngIf="part.kind === 'none'">{{ part.text }}</span>
-                  </ng-container>
-                  <span
-                    class="color-swatch"
-                    *ngIf="getColorSwatchForPart(row, valuePart) as swatchColor"
-                    [style.backgroundColor]="swatchColor"
-                    [title]="swatchColor"
-                    aria-label="Detected color"
-                  ></span>
-                  <span *ngIf="!isLast">,</span>
-                </ng-container>
-              </div>
+                      <code class="cell-code-chip">
+                        <ng-container *ngFor="let part of getHighlightedParts(valuePart, column.key); trackBy: trackByHighlightPart">
+                          <mark
+                            *ngIf="part.kind !== 'none'"
+                            [class.global-filter-highlight]="part.kind === 'global'"
+                            [class.column-filter-highlight]="part.kind === 'column'"
+                          >
+                            {{ part.text }}
+                          </mark>
+                          <span *ngIf="part.kind === 'none'">{{ part.text }}</span>
+                        </ng-container>
+                      </code>
+                      <span
+                        class="color-swatch"
+                        *ngIf="getColorSwatchForPart(row, valuePart) as swatchColor"
+                        [style.backgroundColor]="swatchColor"
+                        [title]="swatchColor"
+                        aria-label="Detected color"
+                      ></span>
+                    </ng-container>
+                  </div>
+                </span>
+                <button
+                  type="button"
+                  class="property-copy-btn"
+                  (click)="$event.stopPropagation(); copyFullCell('defaultValue', getCellValue(row, column.key))"
+                  [title]="isFullCellCopied('defaultValue', getCellValue(row, column.key)) ? 'Copied' : 'Copy default value'"
+                  [attr.aria-label]="isFullCellCopied('defaultValue', getCellValue(row, column.key)) ? 'Copied' : 'Copy default value'"
+                >
+                  <i class="pi" [ngClass]="isFullCellCopied('defaultValue', getCellValue(row, column.key)) ? 'pi-check' : 'pi-copy'"></i>
+                </button>
+                <span class="property-copy-hint" [class.visible]="isFullCellCopied('defaultValue', getCellValue(row, column.key))">Copied</span>
+              </span>
             </ng-container>
-            <ng-template #plainCell>
+            <ng-template #tplAllowedOrRest>
+              <ng-container *ngIf="column.key === 'allowedValues'; else tplPlainCell">
+                <div class="cell-x-scroll cell-chips-row">
+                  <code
+                    class="cell-code-chip"
+                    *ngFor="let valuePart of getWhitespaceValueParts(getCellValue(row, column.key)); trackBy: trackByDefaultValuePart"
+                  >
+                    <ng-container *ngFor="let part of getHighlightedParts(valuePart, column.key); trackBy: trackByHighlightPart">
+                      <mark
+                        *ngIf="part.kind !== 'none'"
+                        [class.global-filter-highlight]="part.kind === 'global'"
+                        [class.column-filter-highlight]="part.kind === 'column'"
+                      >
+                        {{ part.text }}
+                      </mark>
+                      <span *ngIf="part.kind === 'none'">{{ part.text }}</span>
+                    </ng-container>
+                  </code>
+                </div>
+              </ng-container>
+              <ng-template #tplPlainCell>
               <ng-container *ngIf="column.key === 'property'; else standardTextCell">
                 <span class="property-code-wrap">
                   <span class="property-code-scroll">
@@ -395,13 +431,13 @@
                   <button
                     type="button"
                     class="property-copy-btn"
-                    (click)="$event.stopPropagation(); copyPropertyValue(getCellValue(row, column.key))"
-                    [title]="isCopiedProperty(getCellValue(row, column.key)) ? 'Copied' : 'Copy property'"
-                    [attr.aria-label]="isCopiedProperty(getCellValue(row, column.key)) ? 'Copied' : 'Copy property value'"
+                    (click)="$event.stopPropagation(); copyFullCell('property', getCellValue(row, column.key))"
+                    [title]="isFullCellCopied('property', getCellValue(row, column.key)) ? 'Copied' : 'Copy property'"
+                    [attr.aria-label]="isFullCellCopied('property', getCellValue(row, column.key)) ? 'Copied' : 'Copy property value'"
                   >
-                    <i class="pi" [ngClass]="isCopiedProperty(getCellValue(row, column.key)) ? 'pi-check' : 'pi-copy'"></i>
+                    <i class="pi" [ngClass]="isFullCellCopied('property', getCellValue(row, column.key)) ? 'pi-check' : 'pi-copy'"></i>
                   </button>
-                  <span class="property-copy-hint" [class.visible]="isCopiedProperty(getCellValue(row, column.key))">Copied</span>
+                  <span class="property-copy-hint" [class.visible]="isFullCellCopied('property', getCellValue(row, column.key))">Copied</span>
                 </span>
               </ng-container>
               <ng-template #standardTextCell>
@@ -417,6 +453,7 @@
                     <span *ngIf="part.kind === 'none'">{{ part.text }}</span>
                   </ng-container>
                 </div>
+              </ng-template>
               </ng-template>
             </ng-template>
           </td>
@@ -485,5 +522,85 @@
         </div>
       </div>
     </div>
+
+    <dialog
+      #cellDetailDialog
+      class="cell-detail-dialog"
+      aria-label="Cell content"
+      (click)="onCellDetailDialogBackdrop($event)"
+      (close)="onCellDetailDialogCleanup()"
+    >
+      <div class="cell-detail-dialog-panel" (click)="$event.stopPropagation()" *ngIf="cellDetailDialogColumnKey">
+        <header class="cell-detail-dialog-header">
+          <h3 class="cell-detail-dialog-title">{{ getColumnLabel(cellDetailDialogColumnKey) }}</h3>
+          <button type="button" class="cell-detail-dialog-close" (click)="closeCellDetailDialog()" aria-label="Close">
+            <i class="pi pi-times" aria-hidden="true"></i>
+          </button>
+        </header>
+        <div class="cell-detail-dialog-body">
+          <ng-container *ngIf="isCellDetailDialogAllowedList; else cellDetailCodeOrPlain">
+            <ul class="cell-detail-dialog-value-list">
+              <li *ngFor="let line of cellDetailDialogAllowedLines!; let i = index; trackBy: trackByDialogLine">
+                <code class="cell-code-chip cell-detail-dialog-code">{{ line }}</code>
+                <button
+                  type="button"
+                  class="property-copy-btn cell-detail-dialog-line-copy"
+                  (click)="$event.stopPropagation(); copyById(dialogLineCopyId(i), line)"
+                  [title]="isCopiedId(dialogLineCopyId(i)) ? 'Copied' : 'Copy value'"
+                  [attr.aria-label]="isCopiedId(dialogLineCopyId(i)) ? 'Copied' : 'Copy this value'"
+                >
+                  <i class="pi" [ngClass]="isCopiedId(dialogLineCopyId(i)) ? 'pi-check' : 'pi-copy'"></i>
+                </button>
+              </li>
+            </ul>
+          </ng-container>
+          <ng-template #cellDetailCodeOrPlain>
+            <ng-container *ngIf="isCellDetailDialogCodeStyle; else cellDetailPlainBody">
+              <div class="cell-detail-dialog-code-with-copy">
+                <code class="cell-code-chip cell-detail-dialog-code-block">
+                  <ng-container
+                    *ngFor="let part of getHighlightedParts(cellDetailDialogPlainText, cellDetailDialogColumnKey); trackBy: trackByHighlightPart"
+                  >
+                    <mark
+                      *ngIf="part.kind !== 'none'"
+                      [class.global-filter-highlight]="part.kind === 'global'"
+                      [class.column-filter-highlight]="part.kind === 'column'"
+                    >
+                      {{ part.text }}
+                    </mark>
+                    <span *ngIf="part.kind === 'none'">{{ part.text }}</span>
+                  </ng-container>
+                </code>
+                <button
+                  type="button"
+                  class="property-copy-btn cell-detail-dialog-line-copy"
+                  (click)="$event.stopPropagation(); copyById(cellDetailDialogFullCellCopyId(), cellDetailDialogPlainText)"
+                  [title]="isCopiedId(cellDetailDialogFullCellCopyId()) ? 'Copied' : 'Copy value'"
+                  [attr.aria-label]="isCopiedId(cellDetailDialogFullCellCopyId()) ? 'Copied' : 'Copy full value'"
+                >
+                  <i class="pi" [ngClass]="isCopiedId(cellDetailDialogFullCellCopyId()) ? 'pi-check' : 'pi-copy'"></i>
+                </button>
+              </div>
+            </ng-container>
+          </ng-template>
+          <ng-template #cellDetailPlainBody>
+            <div class="cell-detail-dialog-plain">
+              <ng-container
+                *ngFor="let part of getHighlightedParts(cellDetailDialogPlainText, cellDetailDialogColumnKey); trackBy: trackByHighlightPart"
+              >
+                <mark
+                  *ngIf="part.kind !== 'none'"
+                  [class.global-filter-highlight]="part.kind === 'global'"
+                  [class.column-filter-highlight]="part.kind === 'column'"
+                >
+                  {{ part.text }}
+                </mark>
+                <span *ngIf="part.kind === 'none'">{{ part.text }}</span>
+              </ng-container>
+            </div>
+          </ng-template>
+        </div>
+      </div>
+    </dialog>
   </div>
 </section>
