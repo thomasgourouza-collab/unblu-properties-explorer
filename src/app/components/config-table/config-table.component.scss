@@ -359,10 +359,14 @@ $export-bar-control-font-size: 0.875rem;
 }
 
 .column-filter-highlight {
-  background: color-mix(in srgb, #2563eb 52%, transparent);
-  color: var(--text-primary);
-  border-radius: 0.2rem;
-  padding: 0 0.08rem;
+  background: color-mix(in srgb, #ff7a00 62%, transparent);
+  color: #0c1220;
+  border-radius: 0.22rem;
+  padding: 0 0.1rem;
+  font-weight: 600;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, #ffb020 70%, transparent),
+    0 0 12px color-mix(in srgb, #ff8500 42%, transparent);
 }
 
 .property-code-cell,
