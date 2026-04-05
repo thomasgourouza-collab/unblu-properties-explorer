@@ -351,7 +351,7 @@
             (mouseover)="onRowMatchInspectorHover($event, row)"
           >
             <ng-container *ngIf="column.key === 'defaultValue'; else tplAllowedOrRest">
-              <span class="property-code-wrap">
+              <span *ngIf="isDefaultValueCellVisible(getCellValue(row, column.key))" class="property-code-wrap">
                 <span class="property-code-scroll">
                   <div class="cell-x-scroll cell-chips-row">
                     <ng-container
@@ -393,7 +393,7 @@
             </ng-container>
             <ng-template #tplAllowedOrRest>
               <ng-container *ngIf="column.key === 'allowedValues'; else tplPlainCell">
-                <div class="cell-x-scroll cell-chips-row">
+                <div *ngIf="isAllowedValuesCellVisible(getCellValue(row, column.key))" class="cell-x-scroll cell-chips-row">
                   <code
                     class="cell-code-chip"
                     *ngFor="let valuePart of getWhitespaceValueParts(getCellValue(row, column.key)); trackBy: trackByDefaultValuePart"
@@ -539,24 +539,29 @@
         </header>
         <div class="cell-detail-dialog-body">
           <ng-container *ngIf="isCellDetailDialogAllowedList; else cellDetailCodeOrPlain">
-            <ul class="cell-detail-dialog-value-list">
-              <li *ngFor="let line of cellDetailDialogAllowedLines!; let i = index; trackBy: trackByDialogLine">
-                <code class="cell-code-chip cell-detail-dialog-code">{{ line }}</code>
-                <button
-                  type="button"
-                  class="property-copy-btn cell-detail-dialog-line-copy"
-                  (click)="$event.stopPropagation(); copyById(dialogLineCopyId(i), line)"
-                  [title]="isCopiedId(dialogLineCopyId(i)) ? 'Copied' : 'Copy value'"
-                  [attr.aria-label]="isCopiedId(dialogLineCopyId(i)) ? 'Copied' : 'Copy this value'"
+            <ng-container *ngIf="cellDetailDialogAllowedLinesForDisplay.length > 0">
+              <p class="cell-detail-dialog-hint">Each value on its own line; copy individually.</p>
+              <ul class="cell-detail-dialog-value-list">
+                <li
+                  *ngFor="let line of cellDetailDialogAllowedLinesForDisplay; let i = index; trackBy: trackByDialogLine"
                 >
-                  <i class="pi" [ngClass]="isCopiedId(dialogLineCopyId(i)) ? 'pi-check' : 'pi-copy'"></i>
-                </button>
-              </li>
-            </ul>
+                  <code class="cell-code-chip cell-detail-dialog-code">{{ line }}</code>
+                  <button
+                    type="button"
+                    class="property-copy-btn cell-detail-dialog-line-copy"
+                    (click)="$event.stopPropagation(); copyById(dialogLineCopyId(i), line)"
+                    [title]="isCopiedId(dialogLineCopyId(i)) ? 'Copied' : 'Copy value'"
+                    [attr.aria-label]="isCopiedId(dialogLineCopyId(i)) ? 'Copied' : 'Copy this value'"
+                  >
+                    <i class="pi" [ngClass]="isCopiedId(dialogLineCopyId(i)) ? 'pi-check' : 'pi-copy'"></i>
+                  </button>
+                </li>
+              </ul>
+            </ng-container>
           </ng-container>
           <ng-template #cellDetailCodeOrPlain>
             <ng-container *ngIf="isCellDetailDialogCodeStyle; else cellDetailPlainBody">
-              <div class="cell-detail-dialog-code-with-copy">
+              <div *ngIf="cellDetailDialogPlainText.trim()" class="cell-detail-dialog-code-with-copy">
                 <code class="cell-code-chip cell-detail-dialog-code-block">
                   <ng-container
                     *ngFor="let part of getHighlightedParts(cellDetailDialogPlainText, cellDetailDialogColumnKey); trackBy: trackByHighlightPart"

@@ -1214,6 +1214,27 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     return parts.length > 0 ? parts : [''];
   }
 
+  /** True when chip column should render anything (non-empty tokens only). */
+  hasChipPartsContent(parts: string[]): boolean {
+    return parts.some((part) => part.trim().length > 0);
+  }
+
+  isDefaultValueCellVisible(raw: string): boolean {
+    return this.hasChipPartsContent(this.getDefaultValueParts(raw));
+  }
+
+  isAllowedValuesCellVisible(raw: string): boolean {
+    return this.hasChipPartsContent(this.getWhitespaceValueParts(raw));
+  }
+
+  get cellDetailDialogAllowedLinesForDisplay(): string[] {
+    const lines = this.cellDetailDialogAllowedLines;
+    if (!lines) {
+      return [];
+    }
+    return lines.filter((line) => line.trim().length > 0);
+  }
+
   isColorType(typeValue: string): boolean {
     const normalized = typeValue.toLowerCase();
     return normalized.includes('color') || normalized.includes('colors');
