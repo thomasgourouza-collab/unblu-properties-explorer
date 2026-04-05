@@ -1211,14 +1211,18 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
           return parsed.map((entry) => String(entry ?? '').trim());
         }
       } catch {
-        // Fall through to generic splitting when the value is not valid JSON.
+        // Fall through when the value is not valid JSON.
       }
     }
 
-    return this.getWhitespaceValueParts(trimmed);
+    // Default value: one logical value may contain spaces; multiple values use commas only.
+    if (trimmed.includes(',')) {
+      return this.parseCommaSeparatedCellList(trimmed);
+    }
+    return [trimmed];
   }
 
-  /** Split cell display tokens on whitespace (allowed values, non-JSON default value). */
+  /** Split cell display tokens on whitespace (allowed values). */
   getWhitespaceValueParts(value = ''): string[] {
     const trimmed = value.trim();
     if (!trimmed) {
