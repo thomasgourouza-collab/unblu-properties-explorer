@@ -682,6 +682,11 @@ $export-bar-control-font-size: 0.875rem;
   vertical-align: top;
 }
 
+$value-cell-control-pad-y: 0.16rem;
+$value-cell-control-pad-x: 0.32rem;
+$value-cell-control-min-height: 1.58rem;
+$value-cell-font-size: 0.8125rem;
+
 .value-cell-wrap {
   width: 100%;
   min-width: 0;
@@ -705,7 +710,10 @@ $value-column-divergent-border: color-mix(in srgb, #22c55e 72%, var(--surface-bo
   max-width: 100%;
   min-width: 0;
   box-sizing: border-box;
-  line-height: 1.35;
+  min-height: $value-cell-control-min-height;
+  padding: $value-cell-control-pad-y $value-cell-control-pad-x;
+  line-height: 1.2;
+  font-size: $value-cell-font-size;
 }
 
 /* Native <select>: avoid overflow/ellipsis hacks — they add scrollbars or odd chrome in WebKit/Firefox */
@@ -714,7 +722,13 @@ $value-column-divergent-border: color-mix(in srgb, #22c55e 72%, var(--surface-bo
   max-width: 100%;
   min-width: 0;
   box-sizing: border-box;
-  line-height: 1.35;
+  min-height: $value-cell-control-min-height;
+  padding-top: $value-cell-control-pad-y;
+  padding-bottom: $value-cell-control-pad-y;
+  padding-left: $value-cell-control-pad-x;
+  padding-right: 1.65rem;
+  line-height: 1.2;
+  font-size: $value-cell-font-size;
 }
 
 .value-cell-multiselect {
@@ -732,6 +746,8 @@ $value-column-divergent-border: color-mix(in srgb, #22c55e 72%, var(--surface-bo
   flex-wrap: nowrap !important;
   align-items: center;
   min-width: 0;
+  min-height: $value-cell-control-min-height;
+  font-size: $value-cell-font-size;
 }
 
 :host ::ng-deep .value-cell-multiselect-inner .p-multiselect-label-container {
@@ -747,11 +763,21 @@ $value-column-divergent-border: color-mix(in srgb, #22c55e 72%, var(--surface-bo
   white-space: nowrap !important;
   max-width: 100%;
   min-width: 0;
+  padding-block: $value-cell-control-pad-y !important;
+  padding-inline: $value-cell-control-pad-x !important;
+  line-height: 1.2 !important;
 }
 
 :host ::ng-deep .value-cell-multiselect-inner .p-multiselect-dropdown {
   flex-shrink: 0 !important;
   align-self: center !important;
+  padding-inline: 0.2rem !important;
+}
+
+:host ::ng-deep .value-cell-multiselect-inner .p-multiselect-dropdown .p-icon,
+:host ::ng-deep .value-cell-multiselect-inner .p-multiselect-dropdown svg {
+  width: 0.72rem !important;
+  height: 0.72rem !important;
 }
 
 .cell-x-scroll {
