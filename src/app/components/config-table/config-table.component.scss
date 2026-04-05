@@ -544,19 +544,38 @@
   overflow: hidden;
 }
 
+:host ::ng-deep .filters-row .filter-header-cell p-multiselect.header-filter-select .p-multiselect {
+  display: flex !important;
+  align-items: center !important;
+  align-self: stretch;
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  max-height: 100%;
+  box-sizing: border-box;
+}
+
 :host ::ng-deep .filters-row .filter-header-cell p-multiselect.header-filter-select .p-multiselect-label-container {
+  display: flex !important;
+  align-items: center !important;
   flex: 1 1 auto;
   min-width: 0;
   min-height: 0 !important;
   max-height: 100%;
-  padding-top: var(--filter-control-pad-y);
-  padding-bottom: var(--filter-control-pad-y);
-  align-items: center;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 0.4rem;
+  padding-right: 0.2rem;
 }
 
 :host ::ng-deep .filters-row .filter-header-cell p-multiselect.header-filter-select .p-multiselect-label {
+  display: flex !important;
+  align-items: center !important;
   font-size: 0.875rem;
-  line-height: 1.25;
+  line-height: 1.2;
+  margin: 0;
+  padding: 0;
 }
 
 :host ::ng-deep .filters-row .filter-header-cell p-multiselect.header-filter-select .p-multiselect-dropdown {
