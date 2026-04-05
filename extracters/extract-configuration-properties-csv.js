@@ -108,7 +108,11 @@
   function getDescription(propertyBlock) {
     const paragraphs = propertyBlock.querySelectorAll(":scope > .paragraph > p");
     if (paragraphs.length < 2) return "";
-    return cleanText(paragraphs[1].textContent);
+    const parts = Array.from(paragraphs)
+      .slice(1)
+      .map((p) => cleanText(p.textContent))
+      .filter(Boolean);
+    return cleanText(parts.join(" "));
   }
 
   const rows = [];
