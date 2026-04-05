@@ -351,45 +351,31 @@
             (mouseover)="onRowMatchInspectorHover($event, row)"
           >
             <ng-container *ngIf="column.key === 'defaultValue'; else tplAllowedOrRest">
-              <span *ngIf="isDefaultValueCellVisible(getCellValue(row, column.key))" class="property-code-wrap">
-                <span class="property-code-scroll">
-                  <div class="cell-x-scroll cell-chips-row">
-                    <ng-container
-                      *ngFor="let valuePart of getDefaultValueParts(getCellValue(row, column.key)); trackBy: trackByDefaultValuePart"
-                    >
-                      <code class="cell-code-chip">
-                        <ng-container *ngFor="let part of getHighlightedParts(valuePart, column.key); trackBy: trackByHighlightPart">
-                          <mark
-                            *ngIf="part.kind !== 'none'"
-                            [class.global-filter-highlight]="part.kind === 'global'"
-                            [class.column-filter-highlight]="part.kind === 'column'"
-                          >
-                            {{ part.text }}
-                          </mark>
-                          <span *ngIf="part.kind === 'none'">{{ part.text }}</span>
-                        </ng-container>
-                      </code>
-                      <span
-                        class="color-swatch"
-                        *ngIf="getColorSwatchForPart(row, valuePart) as swatchColor"
-                        [style.backgroundColor]="swatchColor"
-                        [title]="swatchColor"
-                        aria-label="Detected color"
-                      ></span>
-                    </ng-container>
-                  </div>
-                </span>
-                <button
-                  type="button"
-                  class="property-copy-btn"
-                  (click)="$event.stopPropagation(); copyFullCell('defaultValue', getCellValue(row, column.key))"
-                  [title]="isFullCellCopied('defaultValue', getCellValue(row, column.key)) ? 'Copied' : 'Copy default value'"
-                  [attr.aria-label]="isFullCellCopied('defaultValue', getCellValue(row, column.key)) ? 'Copied' : 'Copy default value'"
+              <div *ngIf="isDefaultValueCellVisible(getCellValue(row, column.key))" class="cell-x-scroll cell-chips-row">
+                <ng-container
+                  *ngFor="let valuePart of getDefaultValueParts(getCellValue(row, column.key)); trackBy: trackByDefaultValuePart"
                 >
-                  <i class="pi" [ngClass]="isFullCellCopied('defaultValue', getCellValue(row, column.key)) ? 'pi-check' : 'pi-copy'"></i>
-                </button>
-                <span class="property-copy-hint" [class.visible]="isFullCellCopied('defaultValue', getCellValue(row, column.key))">Copied</span>
-              </span>
+                  <code class="cell-code-chip">
+                    <ng-container *ngFor="let part of getHighlightedParts(valuePart, column.key); trackBy: trackByHighlightPart">
+                      <mark
+                        *ngIf="part.kind !== 'none'"
+                        [class.global-filter-highlight]="part.kind === 'global'"
+                        [class.column-filter-highlight]="part.kind === 'column'"
+                      >
+                        {{ part.text }}
+                      </mark>
+                      <span *ngIf="part.kind === 'none'">{{ part.text }}</span>
+                    </ng-container>
+                  </code>
+                  <span
+                    class="color-swatch"
+                    *ngIf="getColorSwatchForPart(row, valuePart) as swatchColor"
+                    [style.backgroundColor]="swatchColor"
+                    [title]="swatchColor"
+                    aria-label="Detected color"
+                  ></span>
+                </ng-container>
+              </div>
             </ng-container>
             <ng-template #tplAllowedOrRest>
               <ng-container *ngIf="column.key === 'allowedValues'; else tplPlainCell">
