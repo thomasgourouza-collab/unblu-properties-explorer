@@ -16,34 +16,93 @@
 
   <section class="card shadow-sm upload-card mb-3">
     <div class="card-body py-2">
-      <div
-        class="upload-zone"
-        *ngIf="!currentFileName"
-        [class.dragging]="isDragging"
-        (dragover)="onDragOver($event)"
-        (dragleave)="onDragLeave($event)"
-        (drop)="onDrop($event)"
-      >
-        <div class="upload-inline">
-          <label for="csvUpload" class="btn btn-sm btn-light choose-csv-btn" [class.disabled]="isParsing">
-            Upload
-          </label>
-          <span class="upload-inline-text"> or drop a CSV file here.</span>
+      <div class="upload-slots-grid">
+        <div
+          class="upload-slot"
+          data-slot="1"
+          [class.dragging]="draggingSlot === 1"
+          (dragover)="onDragOver($event, 1)"
+          (dragleave)="onDragLeave($event, 1)"
+          (drop)="onDrop($event, 1)"
+        >
+          <div class="upload-slot-label">CSV 1</div>
+          <div class="upload-zone upload-zone--slot" *ngIf="!fileLabel1">
+            <div class="upload-inline">
+              <label for="csvUpload1" class="btn btn-sm btn-light choose-csv-btn" [class.disabled]="isParsing">
+                Choose file
+              </label>
+              <span class="upload-inline-text"> or drop here.</span>
+            </div>
+            <input
+              id="csvUpload1"
+              type="file"
+              class="visually-hidden"
+              accept=".csv,text/csv"
+              (change)="onFileSelected($event, 1)"
+              [disabled]="isParsing"
+            />
+          </div>
+          <div class="upload-slot-loaded" *ngIf="fileLabel1">
+            <span class="badge text-bg-primary">{{ fileLabel1 }}</span>
+            <label for="csvUpload1" class="btn btn-sm btn-outline-secondary replace-file-btn" [class.disabled]="isParsing">
+              Replace
+            </label>
+            <input
+              id="csvUpload1"
+              type="file"
+              class="visually-hidden"
+              accept=".csv,text/csv"
+              (change)="onFileSelected($event, 1)"
+              [disabled]="isParsing"
+            />
+          </div>
         </div>
-        <input
-          id="csvUpload"
-          type="file"
-          class="visually-hidden"
-          accept=".csv,text/csv"
-          (change)="onFileSelected($event)"
-          [disabled]="isParsing"
-        />
+
+        <div
+          class="upload-slot"
+          data-slot="2"
+          [class.dragging]="draggingSlot === 2"
+          (dragover)="onDragOver($event, 2)"
+          (dragleave)="onDragLeave($event, 2)"
+          (drop)="onDrop($event, 2)"
+        >
+          <div class="upload-slot-label">CSV 2</div>
+          <div class="upload-zone upload-zone--slot" *ngIf="!fileLabel2">
+            <div class="upload-inline">
+              <label for="csvUpload2" class="btn btn-sm btn-light choose-csv-btn" [class.disabled]="isParsing">
+                Choose file
+              </label>
+              <span class="upload-inline-text"> or drop here (optional).</span>
+            </div>
+            <input
+              id="csvUpload2"
+              type="file"
+              class="visually-hidden"
+              accept=".csv,text/csv"
+              (change)="onFileSelected($event, 2)"
+              [disabled]="isParsing"
+            />
+          </div>
+          <div class="upload-slot-loaded" *ngIf="fileLabel2">
+            <span class="badge text-bg-primary">{{ fileLabel2 }}</span>
+            <label for="csvUpload2" class="btn btn-sm btn-outline-secondary replace-file-btn" [class.disabled]="isParsing">
+              Replace
+            </label>
+            <input
+              id="csvUpload2"
+              type="file"
+              class="visually-hidden"
+              accept=".csv,text/csv"
+              (change)="onFileSelected($event, 2)"
+              [disabled]="isParsing"
+            />
+          </div>
+        </div>
       </div>
 
-      <div class="loaded-meta mt-2" *ngIf="currentFileName">
+      <div class="loaded-meta mt-2" *ngIf="hasAnySlotFile">
         <div class="loaded-meta-leading">
-          <span class="badge text-bg-primary">{{ currentFileName }}</span>
-          <span class="text-muted small">{{ rows.length }} parsed rows</span>
+          <span class="text-muted small">{{ rows.length }} merged rows</span>
         </div>
         <button type="button" class="btn btn-sm btn-outline-danger loaded-meta-clear" (click)="resetData()">
           Clear data

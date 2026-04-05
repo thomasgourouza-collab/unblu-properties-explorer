@@ -6,7 +6,7 @@
         class="btn btn-sm btn-export-csv"
         (click)="exportSelectedToCsv()"
         [disabled]="selectedDatasetCount === 0"
-        title="Download all selected rows as CSV (all columns, UTF-8). Selection is kept when you change filters or pages."
+        title="Download selected rows as CSV using visible columns only, in the same order as the table (UTF-8). Selection is kept when you change filters or pages."
       >
         <i class="pi pi-download" aria-hidden="true"></i>
         <span>Export CSV</span>
@@ -343,20 +343,20 @@
               [checked]="isRowSelected(row)"
               (change)="onRowCheckboxChange(row, $event)"
               (click)="$event.stopPropagation()"
-              [attr.aria-label]="'Select row ' + row.property"
+              [attr.aria-label]="'Select row ' + row.property + ' (' + row.source + ')'"
             />
           </td>
           <td
             *ngFor="let column of columns"
             class="body-cell"
             [style.width.%]="getColumnWidthPercent(column.key)"
-            (mouseenter)="onCellHoverEnter($event, row[column.key], column.key)"
-            (mousemove)="onCellHoverMove($event, row[column.key], column.key)"
+            (mouseenter)="onCellHoverEnter($event, getCellValue(row, column.key), column.key)"
+            (mousemove)="onCellHoverMove($event, getCellValue(row, column.key), column.key)"
             (mouseleave)="onCellHoverLeave()"
           >
             <ng-container *ngIf="column.key === 'defaultValue'; else plainCell">
               <div class="cell-x-scroll">
-                <ng-container *ngFor="let valuePart of getDefaultValueParts(row[column.key]); let isLast = last">
+                <ng-container *ngFor="let valuePart of getDefaultValueParts(getCellValue(row, column.key)); let isLast = last">
                   <ng-container *ngFor="let part of getHighlightedParts(valuePart, column.key)">
                     <mark
                       *ngIf="part.kind !== 'none'"
@@ -383,7 +383,7 @@
                 <span class="property-code-wrap">
                   <span class="property-code-scroll">
                     <code class="property-code-cell">
-                      <ng-container *ngFor="let part of getHighlightedParts(row[column.key], column.key)">
+                      <ng-container *ngFor="let part of getHighlightedParts(getCellValue(row, column.key), column.key)">
                         <mark
                           *ngIf="part.kind !== 'none'"
                           [class.global-filter-highlight]="part.kind === 'global'"
@@ -398,18 +398,18 @@
                   <button
                     type="button"
                     class="property-copy-btn"
-                    (click)="$event.stopPropagation(); copyPropertyValue(row[column.key])"
-                    [title]="isCopiedProperty(row[column.key]) ? 'Copied' : 'Copy property'"
-                    [attr.aria-label]="isCopiedProperty(row[column.key]) ? 'Copied' : 'Copy property value'"
+                    (click)="$event.stopPropagation(); copyPropertyValue(getCellValue(row, column.key))"
+                    [title]="isCopiedProperty(getCellValue(row, column.key)) ? 'Copied' : 'Copy property'"
+                    [attr.aria-label]="isCopiedProperty(getCellValue(row, column.key)) ? 'Copied' : 'Copy property value'"
                   >
-                    <i class="pi" [ngClass]="isCopiedProperty(row[column.key]) ? 'pi-check' : 'pi-copy'"></i>
+                    <i class="pi" [ngClass]="isCopiedProperty(getCellValue(row, column.key)) ? 'pi-check' : 'pi-copy'"></i>
                   </button>
-                  <span class="property-copy-hint" [class.visible]="isCopiedProperty(row[column.key])">Copied</span>
+                  <span class="property-copy-hint" [class.visible]="isCopiedProperty(getCellValue(row, column.key))">Copied</span>
                 </span>
               </ng-container>
               <ng-template #standardTextCell>
                 <div class="cell-x-scroll">
-                  <ng-container *ngFor="let part of getHighlightedParts(row[column.key], column.key)">
+                  <ng-container *ngFor="let part of getHighlightedParts(getCellValue(row, column.key), column.key)">
                     <mark
                       *ngIf="part.kind !== 'none'"
                       [class.global-filter-highlight]="part.kind === 'global'"

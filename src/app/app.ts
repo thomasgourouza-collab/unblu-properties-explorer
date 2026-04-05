@@ -2,8 +2,10 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, HostListener } from '@angular/core';
 
 import { ConfigTableComponent } from './components/config-table/config-table.component';
-import { ConfigRow } from './models/config-row.model';
+import { ConfigRow, CsvParseFileResult } from './models/config-row.model';
 import { CsvParserService } from './services/csv-parser.service';
+
+type UploadSlot = 1 | 2;
 
 @Component({
   selector: 'app-root',
@@ -16,54 +18,63 @@ export class App {
   rows: ConfigRow[] = [];
   parseWarnings: string[] = [];
   parseError = '';
-  currentFileName = '';
+  fileLabel1 = '';
+  fileLabel2 = '';
   isParsing = false;
-  isDragging = false;
+  draggingSlot: UploadSlot | null = null;
   isHelpOpen = false;
+
+  private slot1Parsed: CsvParseFileResult | null = null;
+  private slot2Parsed: CsvParseFileResult | null = null;
 
   constructor(
     private readonly csvParserService: CsvParserService,
     private readonly cdr: ChangeDetectorRef
   ) {}
 
-  async onFileSelected(event: Event): Promise<void> {
+  async onFileSelected(event: Event, slot: UploadSlot): Promise<void> {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) {
       return;
     }
 
-    await this.loadFile(file);
+    await this.loadFileIntoSlot(slot, file);
     input.value = '';
   }
 
-  onDragOver(event: DragEvent): void {
+  onDragOver(event: DragEvent, slot: UploadSlot): void {
     event.preventDefault();
-    this.isDragging = true;
+    this.draggingSlot = slot;
   }
 
-  onDragLeave(event: DragEvent): void {
+  onDragLeave(event: DragEvent, slot: UploadSlot): void {
     event.preventDefault();
-    this.isDragging = false;
+    if (this.draggingSlot === slot) {
+      this.draggingSlot = null;
+    }
   }
 
-  async onDrop(event: DragEvent): Promise<void> {
+  async onDrop(event: DragEvent, slot: UploadSlot): Promise<void> {
     event.preventDefault();
-    this.isDragging = false;
+    this.draggingSlot = null;
     const file = event.dataTransfer?.files?.[0];
 
     if (!file) {
       return;
     }
 
-    await this.loadFile(file);
+    await this.loadFileIntoSlot(slot, file);
   }
 
   resetData(): void {
     this.rows = [];
     this.parseWarnings = [];
     this.parseError = '';
-    this.currentFileName = '';
+    this.fileLabel1 = '';
+    this.fileLabel2 = '';
+    this.slot1Parsed = null;
+    this.slot2Parsed = null;
   }
 
   toggleHelpModal(): void {
@@ -86,26 +97,44 @@ export class App {
     }
   }
 
-  private async loadFile(file: File): Promise<void> {
+  get hasAnySlotFile(): boolean {
+    return Boolean(this.fileLabel1 || this.fileLabel2);
+  }
+
+  private async loadFileIntoSlot(slot: UploadSlot, file: File): Promise<void> {
     this.isParsing = true;
     this.parseError = '';
     this.cdr.detectChanges();
 
+    const rowKeyPrefix = slot === 1 ? 'slot1' : 'slot2';
+
     try {
-      const result = await this.csvParserService.parse(file);
-      this.rows = result.rows;
-      this.parseWarnings = result.warnings;
-      this.currentFileName = file.name;
+      const result = await this.csvParserService.parseFile(file, {
+        displayLabel: file.name,
+        rowKeyPrefix
+      });
+      if (slot === 1) {
+        this.slot1Parsed = result;
+        this.fileLabel1 = file.name;
+      } else {
+        this.slot2Parsed = result;
+        this.fileLabel2 = file.name;
+      }
+      this.applyMerge();
       this.cdr.detectChanges();
     } catch (error) {
-      this.rows = [];
-      this.parseWarnings = [];
-      this.currentFileName = '';
-      this.parseError = error instanceof Error ? error.message : 'The CSV file could not be parsed.';
+      this.parseError =
+        error instanceof Error ? error.message : 'The CSV file could not be parsed.';
       this.cdr.detectChanges();
     } finally {
       this.isParsing = false;
       this.cdr.detectChanges();
     }
+  }
+
+  private applyMerge(): void {
+    const merged = this.csvParserService.mergeParsedFiles(this.slot1Parsed, this.slot2Parsed);
+    this.rows = merged.rows;
+    this.parseWarnings = merged.warnings;
   }
 }

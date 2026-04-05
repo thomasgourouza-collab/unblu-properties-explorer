@@ -45,6 +45,40 @@
   border: 1px solid var(--surface-border);
 }
 
+.upload-slots-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+@media (max-width: 640px) {
+  .upload-slots-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.upload-slot {
+  border: 1px solid color-mix(in srgb, var(--surface-border) 85%, transparent);
+  border-radius: 0.75rem;
+  padding: 0.55rem 0.65rem;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+  min-width: 0;
+}
+
+.upload-slot.dragging {
+  border-color: var(--accent);
+  background-color: var(--surface-soft);
+}
+
+.upload-slot-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  margin-bottom: 0.35rem;
+}
+
 .upload-zone {
   border: 1px dashed var(--surface-border);
   border-radius: 0.75rem;
@@ -52,9 +86,20 @@
   transition: border-color 0.2s ease, background-color 0.2s ease;
 }
 
-.upload-zone.dragging {
-  border-color: var(--accent);
-  background-color: var(--surface-soft);
+.upload-zone--slot {
+  margin: 0;
+}
+
+.upload-slot-loaded {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2.25rem;
+}
+
+.replace-file-btn {
+  flex: 0 0 auto;
 }
 
 .upload-inline {
