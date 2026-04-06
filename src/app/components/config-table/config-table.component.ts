@@ -19,6 +19,7 @@ import { MultiSelect, MultiSelectModule } from 'primeng/multiselect';
 import { TableColumnReorderEvent, TableModule } from 'primeng/table';
 
 import { ColumnDefinition, ConfigRow, EXTRA_COLUMN_PREFIX, FilterMode } from '../../models/config-row.model';
+import unbluScopeEditorsJson from '../../data/unblu-scope-editors.json';
 
 interface SelectOption {
   label: string;
@@ -44,6 +45,11 @@ interface MatchReason {
   detail: string;
 }
 
+interface CellDetailAllowedScopeRow {
+  scope: string;
+  roles: string[];
+}
+
 type ListColumnKey = 'allowedScopes' | 'editableBy';
 type GlobalFilterScope = 'all' | 'visible';
 type TextMatchMode = 'or' | 'and' | 'regex';
@@ -59,6 +65,8 @@ interface TableState {
   visibleColumnKeys: string[];
   columnOrderKeys?: string[];
 }
+
+const UNBLU_SCOPE_EDITORS: Record<string, string[]> = unbluScopeEditorsJson as Record<string, string[]>;
 
 const BASE_COLUMN_DEFINITIONS: ColumnDefinition[] = [
   { key: 'category', label: 'Category', filterType: 'select' },
@@ -150,6 +158,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   cellDetailDialogPlainText = '';
   /** When set, dialog shows list + per-line copy (allowed values). */
   cellDetailDialogAllowedLines: string[] | null = null;
+  /** Cmd/Ctrl+click on Allowed scopes: one row per scope with role hints from `unblu-scope-editors.json`. */
+  cellDetailDialogAllowedScopeRows: CellDetailAllowedScopeRow[] | null = null;
   isCellHoverTooltipOpen = false;
   cellHoverTooltipText = '';
   cellHoverTooltipColumnKey: string | null = null;
@@ -668,6 +678,26 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     return `${index}:${line}`;
   }
 
+  trackByAllowedScopeRow(index: number, row: CellDetailAllowedScopeRow): string {
+    return `${index}:${row.scope}`;
+  }
+
+  private buildCellDetailAllowedScopeRows(raw: string): CellDetailAllowedScopeRow[] {
+    return this.parseCommaSeparatedCellList(raw)
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0)
+      .map((scope) => ({
+        scope,
+        roles: this.getUnbluScopeEditorRoles(scope)
+      }));
+  }
+
+  private getUnbluScopeEditorRoles(scope: string): string[] {
+    const key = scope.trim().toUpperCase();
+    const list = UNBLU_SCOPE_EDITORS[key];
+    return list ?? [];
+  }
+
   onCellCmdClick(event: MouseEvent, row: ConfigRow, column: ColumnDefinition): void {
     if (!event.metaKey && !event.ctrlKey) {
       return;
@@ -695,13 +725,20 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.cellDetailDialogPropertyCode = this.getCellValue(row, 'property')?.trim() ?? '';
     const raw = this.getCellValue(row, column.key);
     if (column.key === 'allowedValues') {
+      this.cellDetailDialogAllowedScopeRows = null;
       this.cellDetailDialogAllowedLines = [...this.getWhitespaceValueParts(raw)];
       this.cellDetailDialogPlainText = '';
-    } else if (column.key === 'allowedScopes' || column.key === 'editableBy') {
+    } else if (column.key === 'allowedScopes') {
+      this.cellDetailDialogAllowedLines = null;
+      this.cellDetailDialogAllowedScopeRows = this.buildCellDetailAllowedScopeRows(raw ?? '');
+      this.cellDetailDialogPlainText = '';
+    } else if (column.key === 'editableBy') {
+      this.cellDetailDialogAllowedScopeRows = null;
       this.cellDetailDialogAllowedLines = this.parseCommaSeparatedCellList(raw ?? '');
       this.cellDetailDialogPlainText = '';
     } else {
       this.cellDetailDialogAllowedLines = null;
+      this.cellDetailDialogAllowedScopeRows = null;
       this.cellDetailDialogPlainText = raw?.trim() ?? '';
     }
     this.safeMarkForCheck();
@@ -729,13 +766,17 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.cellDetailDialogPropertyCode = '';
     this.cellDetailDialogPlainText = '';
     this.cellDetailDialogAllowedLines = null;
+    this.cellDetailDialogAllowedScopeRows = null;
     this.safeMarkForCheck();
   }
 
   get isCellDetailDialogItemList(): boolean {
     const key = this.cellDetailDialogColumnKey;
+    if (key === 'allowedScopes') {
+      return this.cellDetailDialogAllowedScopeRows !== null;
+    }
     return (
-      (key === 'allowedValues' || key === 'allowedScopes' || key === 'editableBy') &&
+      (key === 'allowedValues' || key === 'editableBy') &&
       this.cellDetailDialogAllowedLines !== null
     );
   }

@@ -695,33 +695,51 @@
         </header>
         <div class="cell-detail-dialog-body">
           <ng-container *ngIf="isCellDetailDialogItemList; else cellDetailCodeOrPlain">
-            <ng-container *ngIf="cellDetailDialogAllowedLinesForDisplay.length > 0">
-              <ng-container *ngIf="cellDetailDialogColumnKey === 'allowedValues'; else cellDetailListPlainLines">
-                <ul class="cell-detail-dialog-value-list">
-                  <li
-                    *ngFor="let line of cellDetailDialogAllowedLinesForDisplay; let i = index; trackBy: trackByDialogLine"
-                  >
-                    <code class="cell-code-chip cell-detail-dialog-code">{{ line }}</code>
-                    <button
-                      type="button"
-                      class="property-copy-btn cell-detail-dialog-line-copy"
-                      (click)="$event.stopPropagation(); copyById(dialogLineCopyId(i), line)"
-                      [title]="isCopiedId(dialogLineCopyId(i)) ? 'Copied' : 'Copy value'"
-                      [attr.aria-label]="isCopiedId(dialogLineCopyId(i)) ? 'Copied' : 'Copy this value'"
-                    >
-                      <i class="pi" [ngClass]="isCopiedId(dialogLineCopyId(i)) ? 'pi-check' : 'pi-copy'"></i>
-                    </button>
-                  </li>
-                </ul>
-              </ng-container>
-              <ng-template #cellDetailListPlainLines>
-                <ul class="cell-detail-dialog-value-list cell-detail-dialog-value-list--plain">
-                  <li *ngFor="let line of cellDetailDialogAllowedLinesForDisplay; trackBy: trackByDialogLine">
-                    <span class="cell-detail-dialog-plain-line">{{ line }}</span>
-                  </li>
-                </ul>
-              </ng-template>
+            <ng-container *ngIf="cellDetailDialogColumnKey === 'allowedScopes'; else cellDetailOtherItemLists">
+              <ul
+                class="cell-detail-dialog-value-list cell-detail-dialog-value-list--allowed-scopes"
+                *ngIf="cellDetailDialogAllowedScopeRows?.length"
+              >
+                <li *ngFor="let row of cellDetailDialogAllowedScopeRows; trackBy: trackByAllowedScopeRow">
+                  <span class="cell-detail-dialog-scope-line">
+                    <code class="cell-code-chip cell-detail-dialog-code">{{ row.scope }}</code>
+                    <em class="cell-detail-dialog-editable-by-label">editable by</em>
+                    <span class="cell-detail-dialog-scope-roles">{{
+                      row.roles.length ? row.roles.join(', ') : '—'
+                    }}</span>
+                  </span>
+                </li>
+              </ul>
             </ng-container>
+            <ng-template #cellDetailOtherItemLists>
+              <ng-container *ngIf="cellDetailDialogAllowedLinesForDisplay.length > 0">
+                <ng-container *ngIf="cellDetailDialogColumnKey === 'allowedValues'; else cellDetailListPlainLines">
+                  <ul class="cell-detail-dialog-value-list">
+                    <li
+                      *ngFor="let line of cellDetailDialogAllowedLinesForDisplay; let i = index; trackBy: trackByDialogLine"
+                    >
+                      <code class="cell-code-chip cell-detail-dialog-code">{{ line }}</code>
+                      <button
+                        type="button"
+                        class="property-copy-btn cell-detail-dialog-line-copy"
+                        (click)="$event.stopPropagation(); copyById(dialogLineCopyId(i), line)"
+                        [title]="isCopiedId(dialogLineCopyId(i)) ? 'Copied' : 'Copy value'"
+                        [attr.aria-label]="isCopiedId(dialogLineCopyId(i)) ? 'Copied' : 'Copy this value'"
+                      >
+                        <i class="pi" [ngClass]="isCopiedId(dialogLineCopyId(i)) ? 'pi-check' : 'pi-copy'"></i>
+                      </button>
+                    </li>
+                  </ul>
+                </ng-container>
+                <ng-template #cellDetailListPlainLines>
+                  <ul class="cell-detail-dialog-value-list cell-detail-dialog-value-list--plain">
+                    <li *ngFor="let line of cellDetailDialogAllowedLinesForDisplay; trackBy: trackByDialogLine">
+                      <span class="cell-detail-dialog-plain-line">{{ line }}</span>
+                    </li>
+                  </ul>
+                </ng-template>
+              </ng-container>
+            </ng-template>
           </ng-container>
           <ng-template #cellDetailCodeOrPlain>
             <ng-container *ngIf="isCellDetailDialogCodeStyle; else cellDetailPlainBody">
