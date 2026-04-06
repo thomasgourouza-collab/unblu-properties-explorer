@@ -120,17 +120,46 @@
   color: var(--text-secondary);
 }
 
-.choose-csv-btn {
+// Match config-table JSON import button (`.btn-utransfer`): icon + accent chrome.
+.choose-csv-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   min-width: 6.75rem;
-  padding-top: 0.2rem;
-  padding-bottom: 0.2rem;
-  border: 1px solid var(--surface-border);
-  color: #1f2937;
-  background: #ffffff;
+  padding: 0.28rem 0.6rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 42%, var(--surface-border));
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--accent-soft) 28%, var(--surface-elevated));
+  font-weight: 500;
+  font-size: 0.875rem;
+  line-height: 1.25;
+  cursor: pointer;
+  margin: 0;
+
+  .pi {
+    font-size: 0.85rem;
+    opacity: 0.92;
+  }
+
+  &:hover:not(.choose-csv-upload-btn--disabled) {
+    border-color: color-mix(in srgb, var(--accent) 65%, var(--surface-border));
+    background: color-mix(in srgb, var(--accent-soft) 42%, var(--surface-elevated));
+  }
+
+  &:focus-within {
+    outline: none;
+  }
+
+  &:focus-visible {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 0.18rem color-mix(in srgb, var(--accent-soft) 55%, transparent);
+  }
 }
 
-.choose-csv-btn:hover {
-  background: #f5f7fa;
+.choose-csv-upload-btn--disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 @media (max-width: 640px) {

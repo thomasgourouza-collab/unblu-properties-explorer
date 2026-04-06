@@ -34,8 +34,13 @@
         >
           <div class="upload-slot-row" *ngIf="!fileLabel1">
             <div class="upload-inline">
-              <label for="csvUpload1" class="btn btn-sm btn-light choose-csv-btn" [class.disabled]="isParsing">
-                Choose file
+              <label
+                for="csvUpload1"
+                class="btn btn-sm choose-csv-upload-btn"
+                [class.choose-csv-upload-btn--disabled]="isParsing"
+              >
+                <i class="pi pi-upload" aria-hidden="true"></i>
+                <span>Choose file</span>
               </label>
               <span class="upload-inline-text"> or drop here.</span>
             </div>
@@ -78,8 +83,13 @@
         >
           <div class="upload-slot-row" *ngIf="!fileLabel2">
             <div class="upload-inline">
-              <label for="csvUpload2" class="btn btn-sm btn-light choose-csv-btn" [class.disabled]="isParsing">
-                Choose file
+              <label
+                for="csvUpload2"
+                class="btn btn-sm choose-csv-upload-btn"
+                [class.choose-csv-upload-btn--disabled]="isParsing"
+              >
+                <i class="pi pi-upload" aria-hidden="true"></i>
+                <span>Choose file</span>
               </label>
               <span class="upload-inline-text"> or drop here.</span>
             </div>
