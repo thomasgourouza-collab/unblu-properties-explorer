@@ -50,6 +50,12 @@ interface CellDetailAllowedScopeRow {
   roles: string[];
 }
 
+/** One unmatched JSON key in the import “not found” dialog (plain text, no JSON quotes). */
+interface ImportMissingKeyDialogRow {
+  property: string;
+  value: string;
+}
+
 type ListColumnKey = 'allowedScopes' | 'editableBy';
 type GlobalFilterScope = 'all' | 'visible';
 type TextMatchMode = 'or' | 'and' | 'regex';
@@ -166,7 +172,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   /** Help-style overlay when JSON import contains keys with no matching Property row. */
   importMissingKeysDialogVisible = false;
   importMissingKeysDialogTitle = '';
-  importMissingKeysDialogLines: string[] = [];
+  importMissingKeysDialogRows: ImportMissingKeyDialogRow[] = [];
   cellDetailDialogRowKey: string | null = null;
   cellDetailDialogColumnKey: string | null = null;
   /** Row property key shown next to the dialog title (Cmd/Ctrl+click). */
@@ -500,11 +506,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     if (!this.lastConfigImport) {
       return;
     }
-    this.applyJsonConfigImport(
-      this.clonePlainJsonObject(this.lastConfigImport.snapshot),
-      this.lastConfigImport.fileName,
-      ''
-    );
+    this.applyJsonConfigImport(this.clonePlainJsonObject(this.lastConfigImport.snapshot), this.lastConfigImport.fileName);
   }
 
   onImportConfigFileSelected(event: Event): void {
@@ -523,7 +525,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
           globalThis.alert('JSON import requires a plain object (not an array).');
           return;
         }
-        this.applyJsonConfigImport(parsed as Record<string, unknown>, file.name, text);
+        this.applyJsonConfigImport(parsed as Record<string, unknown>, file.name);
       } catch {
         globalThis.alert('Could not parse JSON. Check that the file is valid UTF-8 JSON.');
       }
@@ -538,11 +540,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     return JSON.parse(JSON.stringify(obj)) as Record<string, unknown>;
   }
 
-  private applyJsonConfigImport(
-    obj: Record<string, unknown>,
-    importedFileName: string,
-    rawJsonFileText: string
-  ): void {
+  private applyJsonConfigImport(obj: Record<string, unknown>, importedFileName: string): void {
     const unmatchedKeys: string[] = [];
     for (const k of Object.keys(obj)) {
       const trimmedKey = k.trim();
@@ -580,21 +578,39 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.persistState();
 
     if (unmatchedKeys.length > 0) {
-      const lines = this.extractMissingKeyDisplayLines(rawJsonFileText, unmatchedKeys, obj);
-      this.openImportMissingKeysDialog(unmatchedKeys.length, lines);
+      const dialogRows = this.buildImportMissingKeyDialogRows(unmatchedKeys, obj);
+      this.openImportMissingKeysDialog(unmatchedKeys.length, dialogRows);
     }
   }
 
-  trackByImportMissingLine(index: number, line: string): string {
-    return `${index}\0${line}`;
+  trackByImportMissingRow(index: number, row: ImportMissingKeyDialogRow): string {
+    return `${index}\0${row.property}\0${row.value}`;
   }
 
-  private openImportMissingKeysDialog(count: number, lines: string[]): void {
+  importMissingKeyPropertyCopyId(index: number): string {
+    return `importMissing:${index}:prop`;
+  }
+
+  importMissingKeyValueCopyId(index: number): string {
+    return `importMissing:${index}:val`;
+  }
+
+  private buildImportMissingKeyDialogRows(
+    unmatchedKeys: string[],
+    obj: Record<string, unknown>
+  ): ImportMissingKeyDialogRow[] {
+    return unmatchedKeys.map((k) => ({
+      property: k,
+      value: this.coerceJsonImportValueToRaw(obj[k])
+    }));
+  }
+
+  private openImportMissingKeysDialog(count: number, rows: ImportMissingKeyDialogRow[]): void {
     this.importMissingKeysDialogTitle =
       count === 1
         ? 'Import — 1 key not found'
         : `Import — ${count} keys not found`;
-    this.importMissingKeysDialogLines = lines;
+    this.importMissingKeysDialogRows = rows;
     this.importMissingKeysDialogVisible = true;
     this.safeMarkForCheck();
   }
@@ -602,46 +618,11 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   closeImportMissingKeysDialog(): void {
     this.importMissingKeysDialogVisible = false;
     this.importMissingKeysDialogTitle = '';
-    this.importMissingKeysDialogLines = [];
+    this.importMissingKeysDialogRows = [];
   }
 
   onImportMissingKeysPanelClick(event: MouseEvent): void {
     event.stopPropagation();
-  }
-
-  /**
-   * Prefer the source file line that declares each key; if the file is minified (same long line for
-   * several keys), fall back to one compact `"key": <value>` line per key.
-   */
-  private extractMissingKeyDisplayLines(
-    fileText: string,
-    unmatchedKeys: string[],
-    obj: Record<string, unknown>
-  ): string[] {
-    const rawLines = fileText.split(/\r?\n/);
-    const found = unmatchedKeys.map((key) => this.findSourceLineForJsonKey(rawLines, key));
-    const useCompact =
-      found.length > 1 &&
-      found.every((line) => line !== null && line === found[0] && (found[0]?.length ?? 0) > 400);
-
-    if (useCompact) {
-      return unmatchedKeys.map((k) => `${JSON.stringify(k)}: ${JSON.stringify(obj[k])}`);
-    }
-
-    return unmatchedKeys.map((key, i) => {
-      const line = found[i];
-      if (line !== null) {
-        return line.trim();
-      }
-      return `${JSON.stringify(key)}: ${JSON.stringify(obj[key])}`;
-    });
-  }
-
-  private findSourceLineForJsonKey(lines: string[], key: string): string | null {
-    const escaped = key.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&');
-    const re = new RegExp(`"${escaped}"\\s*:`);
-    const hit = lines.find((ln) => re.test(ln));
-    return hit ?? null;
   }
 
   private coerceJsonImportValueToRaw(value: unknown): string {

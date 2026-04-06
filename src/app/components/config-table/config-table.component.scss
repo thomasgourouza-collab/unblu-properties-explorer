@@ -1021,28 +1021,71 @@ $value-column-divergent-border: color-mix(in srgb, #22c55e 72%, var(--surface-bo
   color: color-mix(in srgb, var(--accent) 68%, var(--text-secondary));
 }
 
-.import-missing-keys-list {
-  margin: 0;
-  padding-left: 0;
-  list-style: none;
+.import-missing-keys-table-wrap {
+  overflow-x: auto;
+  border-radius: 0.35rem;
+  border: 1px solid color-mix(in srgb, var(--surface-border) 75%, transparent);
+  background: color-mix(in srgb, var(--surface-elevated) 72%, #06080d);
+  @include thin-overlay-scrollbar;
 }
 
-.import-missing-keys-line {
-  margin: 0;
-  padding: 0.28rem 0.45rem;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+.import-missing-keys-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
   font-size: 0.8rem;
+}
+
+.import-missing-keys-table th {
+  text-align: left;
+  padding: 0.35rem 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: color-mix(in srgb, var(--accent) 68%, var(--text-secondary));
+  border-bottom: 1px solid color-mix(in srgb, var(--surface-border) 80%, transparent);
+  background: color-mix(in srgb, var(--surface-soft) 55%, transparent);
+}
+
+.import-missing-keys-table th:first-child {
+  width: 42%;
+}
+
+.import-missing-keys-table td {
+  vertical-align: middle;
+  border-bottom: 1px solid color-mix(in srgb, var(--surface-border) 65%, transparent);
+}
+
+.import-missing-keys-table tr:last-child td {
+  border-bottom: none;
+}
+
+.import-missing-keys-cell {
+  padding: 0;
+}
+
+.import-missing-keys-cell-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.32rem 0.45rem;
+  min-height: 2rem;
+}
+
+.import-missing-keys-cell-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
   line-height: 1.35;
   color: var(--text-secondary);
   white-space: nowrap;
   overflow-x: auto;
-  border-radius: 0.35rem;
-  background: color-mix(in srgb, var(--surface-elevated) 72%, #06080d);
-  border: 1px solid color-mix(in srgb, var(--surface-border) 75%, transparent);
+  @include thin-overlay-scrollbar;
 }
 
-.import-missing-keys-line + .import-missing-keys-line {
-  margin-top: 0.4rem;
+.import-missing-keys-cell-copy {
+  flex-shrink: 0;
 }
 
 :host ::ng-deep .p-paginator {
