@@ -592,8 +592,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   private openImportMissingKeysDialog(count: number, lines: string[]): void {
     this.importMissingKeysDialogTitle =
       count === 1
-        ? 'Import — 1 key not in Property column'
-        : `Import — ${count} keys not in Property column`;
+        ? 'Import — 1 key not found'
+        : `Import — ${count} keys not found`;
     this.importMissingKeysDialogLines = lines;
     this.importMissingKeysDialogVisible = true;
     this.safeMarkForCheck();

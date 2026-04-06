@@ -864,10 +864,7 @@
         </header>
         <div class="import-missing-keys-body">
           <div class="import-missing-keys-card">
-            <h3 class="import-missing-keys-section-title">Entries from JSON not found in the table</h3>
-            <p class="import-missing-keys-hint">
-              Each line is one key from the file. Long lines scroll horizontally; there is no wrapping.
-            </p>
+            <h3 class="import-missing-keys-section-title">Entries from JSON not found in the properties</h3>
             <ul class="import-missing-keys-list">
               <li
                 *ngFor="let line of importMissingKeysDialogLines; trackBy: trackByImportMissingLine"

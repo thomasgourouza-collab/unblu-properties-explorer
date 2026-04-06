@@ -1021,13 +1021,6 @@ $value-column-divergent-border: color-mix(in srgb, #22c55e 72%, var(--surface-bo
   color: color-mix(in srgb, var(--accent) 68%, var(--text-secondary));
 }
 
-.import-missing-keys-hint {
-  margin: 0 0 0.55rem;
-  font-size: 0.82rem;
-  line-height: 1.35;
-  color: var(--text-secondary);
-}
-
 .import-missing-keys-list {
   margin: 0;
   padding-left: 0;
