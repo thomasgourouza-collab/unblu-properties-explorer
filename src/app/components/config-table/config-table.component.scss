@@ -943,7 +943,7 @@ $value-column-divergent-border: color-mix(in srgb, #22c55e 72%, var(--surface-bo
 }
 
 .import-missing-keys-dialog {
-  width: min(680px, 94vw);
+  width: min(920px, 96vw);
   max-width: 100%;
   max-height: 88vh;
   display: flex;
@@ -1033,13 +1033,12 @@ $value-column-divergent-border: color-mix(in srgb, #22c55e 72%, var(--surface-bo
   background: color-mix(in srgb, var(--surface-soft) 55%, transparent);
 }
 
-/* Property : Value = 1.5 : 1 → 60% / 40% */
 .import-missing-keys-table th:first-child {
-  width: 60%;
+  width: 70%;
 }
 
 .import-missing-keys-table th:last-child {
-  width: 40%;
+  width: 30%;
 }
 
 .import-missing-keys-table td {
