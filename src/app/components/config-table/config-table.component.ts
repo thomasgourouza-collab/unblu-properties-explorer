@@ -226,7 +226,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       return 1.2;
     }
     if (columnKey === 'visibility') {
-      return 0.6;
+      return 0.65;
     }
     if (columnKey === 'source') {
       return 1.1;
