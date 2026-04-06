@@ -723,7 +723,30 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = this.buildSelectionExportFilename();
+    anchor.download = this.buildSelectionExportFilename('csv');
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
+  exportSelectedToJson(): void {
+    const selected = this.rows.filter((row) => this.selectedRowKeys.has(row.rowKey));
+    if (selected.length === 0) {
+      return;
+    }
+    const out: Record<string, string> = {};
+    for (const row of selected) {
+      const prop = this.getCellValue(row, 'property').trim();
+      if (!prop) {
+        continue;
+      }
+      out[prop] = this.getCellValue(row, 'value');
+    }
+    const body = `${JSON.stringify(out, null, 2)}\n`;
+    const blob = new Blob([body], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = this.buildSelectionExportFilename('json');
     anchor.click();
     URL.revokeObjectURL(url);
   }
@@ -1625,12 +1648,12 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     return s;
   }
 
-  private buildSelectionExportFilename(): string {
+  private buildSelectionExportFilename(extension: 'csv' | 'json'): string {
     const d = new Date();
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
-    return `configuration-selection-${y}-${m}-${day}.csv`;
+    return `configuration-selection-${y}-${m}-${day}.${extension}`;
   }
 
   getDefaultValueParts(value = ''): string[] {

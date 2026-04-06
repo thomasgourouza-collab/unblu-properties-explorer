@@ -17,6 +17,16 @@
         <i class="pi pi-download" aria-hidden="true"></i>
         <span>Export CSV</span>
       </button>
+      <button
+        type="button"
+        class="btn btn-sm btn-export-json"
+        (click)="exportSelectedToJson()"
+        [disabled]="selectedDatasetCount === 0"
+        title="Download selected rows as JSON: each Property is a key and the editable Value is the string value (UTF-8). Rows with an empty Property are skipped; duplicate properties keep the last selected row."
+      >
+        <i class="pi pi-download" aria-hidden="true"></i>
+        <span>Export JSON</span>
+      </button>
       <div class="table-export-bar-column-visibility">
         <p-multiselect
           inputId="columnVisibility"

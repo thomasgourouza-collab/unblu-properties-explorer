@@ -123,8 +123,9 @@
 // Match Bootstrap .btn-sm (0.875rem) used by Export CSV in the same bar.
 $export-bar-control-font-size: 0.875rem;
 
-// Export CSV + utransfer: same chrome (icon + label).
+// Export CSV / JSON + utransfer: same chrome (icon + label).
 .btn-export-csv,
+.btn-export-json,
 .btn-utransfer {
   display: inline-flex;
   align-items: center;
@@ -157,6 +158,7 @@ $export-bar-control-font-size: 0.875rem;
 }
 
 .table-export-bar .btn.btn-sm.btn-export-csv,
+.table-export-bar .btn.btn-sm.btn-export-json,
 .table-export-bar .btn.btn-sm.btn-utransfer {
   font-size: $export-bar-control-font-size;
   font-weight: 500;
