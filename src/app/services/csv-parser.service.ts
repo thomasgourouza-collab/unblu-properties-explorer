@@ -233,6 +233,7 @@ export class CsvParserService {
       rowKey: `${rowKeyPrefix}::${rowIndex}`,
       defaultValue,
       value: defaultValue,
+      configImportError: '',
       type: getValue('type'),
       allowedValues: hasAllowedValuesColumn ? getValue('allowedValues') : '',
       allowedScopes,

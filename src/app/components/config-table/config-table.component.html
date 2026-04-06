@@ -57,6 +57,22 @@
         </label>
       </div>
     </div>
+    <input
+      #importConfigInput
+      type="file"
+      accept="application/json,.json"
+      class="visually-hidden"
+      tabindex="-1"
+      aria-hidden="true"
+      (change)="onImportConfigFileSelected($event)"
+    />
+    <span
+      *ngIf="lastConfigImportMeta as meta"
+      class="config-import-file-label text-muted small me-2 align-self-center"
+      [attr.title]="'Last imported: ' + meta.fileName + ' (' + meta.keyCount + ' keys)'"
+    >
+      {{ meta.fileName }} ({{ meta.keyCount }})
+    </span>
     <button
       type="button"
       class="btn btn-sm btn-utransfer"
@@ -506,6 +522,10 @@
               </div>
             </ng-container>
             <ng-template #tplNotValueColumn>
+            <ng-container *ngIf="column.key === 'configImportError'; else tplNotImportErrorColumn">
+              <span class="text-danger fw-bold text-break config-import-error-cell">{{ row.configImportError }}</span>
+            </ng-container>
+            <ng-template #tplNotImportErrorColumn>
             <ng-container *ngIf="column.key === 'defaultValue'; else tplAllowedOrRest">
               <div *ngIf="isDefaultValueCellVisible(getCellValue(row, column.key))" class="cell-x-scroll cell-chips-row">
                 <ng-container
@@ -596,6 +616,7 @@
                 </div>
               </ng-template>
               </ng-template>
+            </ng-template>
             </ng-template>
             </ng-template>
           </td>

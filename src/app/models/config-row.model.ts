@@ -5,6 +5,7 @@ export type ConfigColumnKey =
   | 'source'
   | 'defaultValue'
   | 'value'
+  | 'configImportError'
   | 'type'
   | 'allowedValues'
   | 'allowedScopes'
@@ -28,6 +29,8 @@ export interface ConfigRow {
   defaultValue: string;
   /** UI column; not a separate CSV field — initialized from default value on parse. */
   value: string;
+  /** UI-only: last JSON import rejected value for this row (empty when none). */
+  configImportError: string;
   type: string;
   allowedValues: string;
   allowedScopes: string;

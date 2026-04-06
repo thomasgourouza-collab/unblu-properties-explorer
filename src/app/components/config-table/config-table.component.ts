@@ -75,6 +75,7 @@ const BASE_COLUMN_DEFINITIONS: ColumnDefinition[] = [
   { key: 'source', label: 'Source', filterType: 'text' },
   { key: 'defaultValue', label: 'Default value', filterType: 'text' },
   { key: 'value', label: 'Value', filterType: 'text' },
+  { key: 'configImportError', label: 'Error', filterType: 'text' },
   { key: 'type', label: 'Type', filterType: 'select' },
   { key: 'allowedValues', label: 'Allowed values', filterType: 'text' },
   { key: 'allowedScopes', label: 'Allowed scopes', filterType: 'list' },
@@ -119,6 +120,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
   @Input({ required: true }) rows: ConfigRow[] = [];
   @ViewChild('globalFilterInputRef') globalFilterInputRef?: ElementRef<HTMLInputElement>;
+  @ViewChild('importConfigInput') private readonly importConfigInputRef?: ElementRef<HTMLInputElement>;
   @ViewChildren('valueCellMulti', { read: MultiSelect })
   private valueCellMultiselects?: QueryList<MultiSelect>;
   private chipsScrollHost: HTMLElement | null = null;
@@ -154,6 +156,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   private readonly emptyFilterValues: string[] = [];
   /** Last successful clipboard copy id (property, default value, dialog lines, …). */
   lastCopiedClipboardId: string | null = null;
+  /** Shown next to Import config after a successful JSON apply; cleared when `rows` input changes. */
+  lastConfigImportMeta: { fileName: string; keyCount: number } | null = null;
   private copyResetTimerId?: ReturnType<typeof globalThis.setTimeout>;
 
   @ViewChild('cellDetailDialog') private cellDetailDialogEl?: ElementRef<HTMLDialogElement>;
@@ -183,7 +187,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   private pointerContextClientX = 0;
   private pointerContextClientY = 0;
 
-  private readonly stateStorageKey = 'csv-explorer-table-state-v2';
+  private readonly stateStorageKey = 'csv-explorer-table-state-v3';
   private restoredState = false;
 
   get visibleColumns(): ColumnDefinition[] {
@@ -240,6 +244,9 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     }
     if (columnKey === 'value') {
       return 1.2;
+    }
+    if (columnKey === 'configImportError') {
+      return 0.9;
     }
     if (columnKey === 'visibility') {
       return 0.65;
@@ -451,8 +458,145 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     }
   }
 
-  /** Placeholder for future transfer action. */
-  onUtransferClick(): void {}
+  onUtransferClick(): void {
+    this.importConfigInputRef?.nativeElement?.click();
+  }
+
+  onImportConfigFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) {
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const text = typeof reader.result === 'string' ? reader.result : '';
+        const parsed: unknown = JSON.parse(text);
+        if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+          globalThis.alert('JSON import requires a plain object (not an array).');
+          return;
+        }
+        this.applyJsonConfigImport(parsed as Record<string, unknown>, file.name);
+      } catch {
+        globalThis.alert('Could not parse JSON. Check that the file is valid UTF-8 JSON.');
+      }
+    };
+    reader.onerror = () => {
+      globalThis.alert('Could not read the selected file.');
+    };
+    reader.readAsText(file, 'UTF-8');
+  }
+
+  private applyJsonConfigImport(obj: Record<string, unknown>, importedFileName: string): void {
+    for (const row of this.rows) {
+      row.configImportError = '';
+    }
+    for (const k of Object.keys(obj)) {
+      const trimmedKey = k.trim();
+      const matchingRows = this.rows.filter((row) => row.property.trim() === trimmedKey);
+      for (const row of matchingRows) {
+        this.selectedRowKeys.add(row.rowKey);
+        const raw = this.coerceJsonImportValueToRaw(obj[k]);
+        if (this.jsonImportValueIsValid(row, raw)) {
+          row.value = this.canonicalJsonImportStoredValue(row, raw);
+          row.configImportError = '';
+          this.valueColumnMultiModelCache.delete(row.rowKey);
+        } else {
+          row.configImportError = raw.length > 400 ? `${raw.slice(0, 400)}…` : raw;
+        }
+      }
+    }
+    this.lastConfigImportMeta = {
+      fileName: importedFileName,
+      keyCount: Object.keys(obj).length
+    };
+    this.clearSelectedOnlyIfNoSelection();
+    this.syncMatchInspectorToDisplayedTable();
+    this.safeMarkForCheck();
+    this.persistState();
+  }
+
+  private coerceJsonImportValueToRaw(value: unknown): string {
+    if (value === null || value === undefined) {
+      return '';
+    }
+    if (typeof value === 'boolean') {
+      return value ? 'true' : 'false';
+    }
+    if (typeof value === 'number') {
+      return String(value);
+    }
+    if (typeof value === 'string') {
+      return value;
+    }
+    if (Array.isArray(value)) {
+      return value.map((el) => this.coerceJsonImportArrayElementToRaw(el)).join(',');
+    }
+    if (typeof value === 'object') {
+      return JSON.stringify(value);
+    }
+    if (typeof value === 'bigint') {
+      return String(value);
+    }
+    return '';
+  }
+
+  private coerceJsonImportArrayElementToRaw(value: unknown): string {
+    if (value === null || value === undefined) {
+      return '';
+    }
+    if (typeof value === 'boolean') {
+      return value ? 'true' : 'false';
+    }
+    if (typeof value === 'number') {
+      return String(value);
+    }
+    if (typeof value === 'string') {
+      return value;
+    }
+    return JSON.stringify(value);
+  }
+
+  private jsonImportValueIsValid(row: ConfigRow, raw: string): boolean {
+    if (this.isValueColumnBooleanType(row)) {
+      const t = raw.trim().toLowerCase();
+      return t === '' || t === 'true' || t === 'false';
+    }
+    if (this.valueColumnUsesMultiSelect(row)) {
+      const allowed = new Set(this.getValueColumnAllowedOptionValues(row));
+      const tokens = this.parseListStyleCellToTokens(raw);
+      if (tokens.length === 0) {
+        return true;
+      }
+      return tokens.every((tok) => allowed.has(tok));
+    }
+    if (this.valueColumnUsesSingleSelectFromAllowed(row)) {
+      const t = raw.trim();
+      if (t === '') {
+        return true;
+      }
+      return this.getValueColumnAllowedOptionValues(row).includes(t);
+    }
+    return true;
+  }
+
+  private canonicalJsonImportStoredValue(row: ConfigRow, raw: string): string {
+    if (this.isValueColumnBooleanType(row)) {
+      const t = raw.trim().toLowerCase();
+      return t === '' ? '' : t;
+    }
+    if (this.valueColumnUsesMultiSelect(row)) {
+      const allowed = new Set(this.getValueColumnAllowedOptionValues(row));
+      const tokens = this.parseListStyleCellToTokens(raw).filter((tok) => allowed.has(tok));
+      return [...tokens].sort((a, b) => a.localeCompare(b)).join(',');
+    }
+    if (this.valueColumnUsesSingleSelectFromAllowed(row)) {
+      return raw.trim();
+    }
+    return raw;
+  }
 
   exportSelectedToCsv(): void {
     const cols = this.visibleColumns;
@@ -492,6 +636,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       return;
     }
 
+    this.lastConfigImportMeta = null;
     this.valueColumnMultiModelCache.clear();
     this.valueColumnSelectOptionsCache.clear();
 
@@ -556,7 +701,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.visibleColumnKeys = this.columnOrderKeys.filter((key) => selectedSet.has(key));
 
     if (this.visibleColumnKeys.length === 0 && this.columnOrderKeys.length > 0) {
-      this.visibleColumnKeys = [this.columnOrderKeys[0]];
+      this.visibleColumnKeys = this.ensurePropertyVisible([this.columnOrderKeys[0]]);
     }
 
     this.onFiltersChanged();
@@ -1323,6 +1468,9 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     if (key === 'source') {
       return row.source ?? '';
     }
+    if (key === 'configImportError') {
+      return row.configImportError ?? '';
+    }
     if (key.startsWith(EXTRA_COLUMN_PREFIX)) {
       return row.extra[key] ?? '';
     }
@@ -2050,7 +2198,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       }
     } catch {
       this.columnOrderKeys = this.columns.map((column) => column.key);
-      this.visibleColumnKeys = [...this.columnOrderKeys];
+      this.visibleColumnKeys = this.ensurePropertyVisible([...this.columnOrderKeys]);
     }
   }
 
