@@ -929,6 +929,129 @@ $value-column-divergent-border: color-mix(in srgb, #22c55e 72%, var(--surface-bo
   color: var(--text-primary);
 }
 
+// JSON import: unknown keys — full chrome copied from app `help-modal` (styles there do not pierce this component).
+.import-missing-keys-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1650;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.2rem;
+  background: color-mix(in srgb, #05070c 72%, transparent);
+  backdrop-filter: blur(4px);
+}
+
+.import-missing-keys-dialog {
+  width: min(1400px, 98vw);
+  max-width: min(960px, 100%);
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin: 0;
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--surface-border));
+  border-radius: 0.95rem;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent) 9%, var(--surface-elevated)) 0%,
+      color-mix(in srgb, var(--surface-elevated) 96%, #06080d) 100%
+    );
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+}
+
+.import-missing-keys-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem 0.8rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 18%, var(--surface-border));
+  flex-shrink: 0;
+}
+
+.import-missing-keys-title {
+  margin: 0;
+  font-size: 1.03rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.import-missing-keys-close {
+  border: 1px solid var(--surface-border);
+  background: color-mix(in srgb, var(--surface-soft) 75%, transparent);
+  color: var(--text-secondary);
+  border-radius: 999px;
+  width: 1.9rem;
+  height: 1.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.import-missing-keys-close:hover {
+  color: var(--text-primary);
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--surface-border));
+}
+
+.import-missing-keys-body {
+  padding: 0.85rem 1rem 1rem;
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.import-missing-keys-card {
+  border: 1px solid color-mix(in srgb, var(--surface-border) 70%, transparent);
+  border-radius: 0.7rem;
+  background: color-mix(in srgb, var(--surface-soft) 62%, transparent);
+  padding: 0.65rem 0.72rem 0.72rem;
+}
+
+.import-missing-keys-section-title {
+  margin: 0 0 0.55rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: color-mix(in srgb, var(--accent) 68%, var(--text-secondary));
+}
+
+.import-missing-keys-hint {
+  margin: 0 0 0.55rem;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  color: var(--text-secondary);
+}
+
+.import-missing-keys-list {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.import-missing-keys-line {
+  margin: 0;
+  padding: 0.28rem 0.45rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow-x: auto;
+  border-radius: 0.35rem;
+  background: color-mix(in srgb, var(--surface-elevated) 72%, #06080d);
+  border: 1px solid color-mix(in srgb, var(--surface-border) 75%, transparent);
+}
+
+.import-missing-keys-line + .import-missing-keys-line {
+  margin-top: 0.4rem;
+}
+
 :host ::ng-deep .p-paginator {
   background: var(--surface-raised);
   border-top: 1px solid var(--surface-border);

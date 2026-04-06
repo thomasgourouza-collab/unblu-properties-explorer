@@ -837,5 +837,48 @@
         </div>
       </div>
     </dialog>
+
+    <div
+      class="import-missing-keys-backdrop"
+      *ngIf="importMissingKeysDialogVisible"
+      (click)="closeImportMissingKeysDialog()"
+      tabindex="-1"
+    >
+      <div
+        class="import-missing-keys-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="import-missing-keys-heading"
+        (click)="onImportMissingKeysPanelClick($event)"
+      >
+        <header class="import-missing-keys-header">
+          <h2 id="import-missing-keys-heading" class="import-missing-keys-title">{{ importMissingKeysDialogTitle }}</h2>
+          <button
+            type="button"
+            class="import-missing-keys-close"
+            (click)="closeImportMissingKeysDialog()"
+            aria-label="Close"
+          >
+            <i class="pi pi-times" aria-hidden="true"></i>
+          </button>
+        </header>
+        <div class="import-missing-keys-body">
+          <div class="import-missing-keys-card">
+            <h3 class="import-missing-keys-section-title">Entries from JSON not found in the table</h3>
+            <p class="import-missing-keys-hint">
+              Each line is one key from the file. Long lines scroll horizontally; there is no wrapping.
+            </p>
+            <ul class="import-missing-keys-list">
+              <li
+                *ngFor="let line of importMissingKeysDialogLines; trackBy: trackByImportMissingLine"
+                class="import-missing-keys-line"
+              >
+                {{ line }}
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </section>

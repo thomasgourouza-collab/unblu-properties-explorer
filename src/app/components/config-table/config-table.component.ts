@@ -163,6 +163,10 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   private copyResetTimerId?: ReturnType<typeof globalThis.setTimeout>;
 
   @ViewChild('cellDetailDialog') private cellDetailDialogEl?: ElementRef<HTMLDialogElement>;
+  /** Help-style overlay when JSON import contains keys with no matching Property row. */
+  importMissingKeysDialogVisible = false;
+  importMissingKeysDialogTitle = '';
+  importMissingKeysDialogLines: string[] = [];
   cellDetailDialogRowKey: string | null = null;
   cellDetailDialogColumnKey: string | null = null;
   /** Row property key shown next to the dialog title (Cmd/Ctrl+click). */
@@ -498,7 +502,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     }
     this.applyJsonConfigImport(
       this.clonePlainJsonObject(this.lastConfigImport.snapshot),
-      this.lastConfigImport.fileName
+      this.lastConfigImport.fileName,
+      ''
     );
   }
 
@@ -518,7 +523,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
           globalThis.alert('JSON import requires a plain object (not an array).');
           return;
         }
-        this.applyJsonConfigImport(parsed as Record<string, unknown>, file.name);
+        this.applyJsonConfigImport(parsed as Record<string, unknown>, file.name, text);
       } catch {
         globalThis.alert('Could not parse JSON. Check that the file is valid UTF-8 JSON.');
       }
@@ -533,7 +538,20 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     return JSON.parse(JSON.stringify(obj)) as Record<string, unknown>;
   }
 
-  private applyJsonConfigImport(obj: Record<string, unknown>, importedFileName: string): void {
+  private applyJsonConfigImport(
+    obj: Record<string, unknown>,
+    importedFileName: string,
+    rawJsonFileText: string
+  ): void {
+    const unmatchedKeys: string[] = [];
+    for (const k of Object.keys(obj)) {
+      const trimmedKey = k.trim();
+      const hasRow = this.rows.some((row) => row.property.trim() === trimmedKey);
+      if (!hasRow) {
+        unmatchedKeys.push(k);
+      }
+    }
+
     for (const row of this.rows) {
       row.configImportError = '';
     }
@@ -560,6 +578,70 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.syncMatchInspectorToDisplayedTable();
     this.safeMarkForCheck();
     this.persistState();
+
+    if (unmatchedKeys.length > 0) {
+      const lines = this.extractMissingKeyDisplayLines(rawJsonFileText, unmatchedKeys, obj);
+      this.openImportMissingKeysDialog(unmatchedKeys.length, lines);
+    }
+  }
+
+  trackByImportMissingLine(index: number, line: string): string {
+    return `${index}\0${line}`;
+  }
+
+  private openImportMissingKeysDialog(count: number, lines: string[]): void {
+    this.importMissingKeysDialogTitle =
+      count === 1
+        ? 'Import — 1 key not in Property column'
+        : `Import — ${count} keys not in Property column`;
+    this.importMissingKeysDialogLines = lines;
+    this.importMissingKeysDialogVisible = true;
+    this.safeMarkForCheck();
+  }
+
+  closeImportMissingKeysDialog(): void {
+    this.importMissingKeysDialogVisible = false;
+    this.importMissingKeysDialogTitle = '';
+    this.importMissingKeysDialogLines = [];
+  }
+
+  onImportMissingKeysPanelClick(event: MouseEvent): void {
+    event.stopPropagation();
+  }
+
+  /**
+   * Prefer the source file line that declares each key; if the file is minified (same long line for
+   * several keys), fall back to one compact `"key": <value>` line per key.
+   */
+  private extractMissingKeyDisplayLines(
+    fileText: string,
+    unmatchedKeys: string[],
+    obj: Record<string, unknown>
+  ): string[] {
+    const rawLines = fileText.split(/\r?\n/);
+    const found = unmatchedKeys.map((key) => this.findSourceLineForJsonKey(rawLines, key));
+    const useCompact =
+      found.length > 1 &&
+      found.every((line) => line !== null && line === found[0] && (found[0]?.length ?? 0) > 400);
+
+    if (useCompact) {
+      return unmatchedKeys.map((k) => `${JSON.stringify(k)}: ${JSON.stringify(obj[k])}`);
+    }
+
+    return unmatchedKeys.map((key, i) => {
+      const line = found[i];
+      if (line !== null) {
+        return line.trim();
+      }
+      return `${JSON.stringify(key)}: ${JSON.stringify(obj[key])}`;
+    });
+  }
+
+  private findSourceLineForJsonKey(lines: string[], key: string): string | null {
+    const escaped = key.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&');
+    const re = new RegExp(`"${escaped}"\\s*:`);
+    const hit = lines.find((ln) => re.test(ln));
+    return hit ?? null;
   }
 
   private coerceJsonImportValueToRaw(value: unknown): string {
@@ -681,6 +763,9 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     }
 
     this.lastConfigImport = null;
+    if (this.importMissingKeysDialogVisible) {
+      this.closeImportMissingKeysDialog();
+    }
     this.valueColumnMultiModelCache.clear();
     this.valueColumnSelectOptionsCache.clear();
 
@@ -2119,6 +2204,12 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
   @HostListener('document:keydown', ['$event'])
   onDocumentKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Escape' && this.importMissingKeysDialogVisible) {
+      event.preventDefault();
+      this.closeImportMissingKeysDialog();
+      return;
+    }
+
     if (event.key === 'Shift' || event.code === 'ShiftLeft' || event.code === 'ShiftRight') {
       this.matchInspectorShiftFromKeyboard = true;
       this.tryOpenMatchInspectorFromPointerContext();
