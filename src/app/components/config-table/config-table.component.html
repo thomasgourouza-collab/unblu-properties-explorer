@@ -863,60 +863,57 @@
           </button>
         </header>
         <div class="import-missing-keys-body">
-          <div class="import-missing-keys-card">
-            <h3 class="import-missing-keys-section-title">Entries from JSON not found in the properties</h3>
-            <div class="import-missing-keys-table-wrap">
-              <table class="import-missing-keys-table">
-                <thead>
-                  <tr>
-                    <th scope="col">Property</th>
-                    <th scope="col">Value</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr
-                    *ngFor="let row of importMissingKeysDialogRows; let i = index; trackBy: trackByImportMissingRow"
-                  >
-                    <td class="import-missing-keys-cell">
-                      <div class="import-missing-keys-cell-inner">
-                        <span class="import-missing-keys-cell-text">{{ row.property }}</span>
-                        <button
-                          type="button"
-                          class="property-copy-btn import-missing-keys-cell-copy"
-                          (click)="$event.stopPropagation(); copyById(importMissingKeyPropertyCopyId(i), row.property)"
-                          [title]="isCopiedId(importMissingKeyPropertyCopyId(i)) ? 'Copied' : 'Copy property'"
-                          [attr.aria-label]="
-                            isCopiedId(importMissingKeyPropertyCopyId(i)) ? 'Copied' : 'Copy property name'
-                          "
-                        >
-                          <i
-                            class="pi"
-                            [ngClass]="isCopiedId(importMissingKeyPropertyCopyId(i)) ? 'pi-check' : 'pi-copy'"
-                          ></i>
-                        </button>
-                      </div>
-                    </td>
-                    <td class="import-missing-keys-cell">
-                      <div class="import-missing-keys-cell-inner">
-                        <span class="import-missing-keys-cell-text">{{ row.value }}</span>
-                        <button
-                          type="button"
-                          class="property-copy-btn import-missing-keys-cell-copy"
-                          (click)="$event.stopPropagation(); copyById(importMissingKeyValueCopyId(i), row.value)"
-                          [title]="isCopiedId(importMissingKeyValueCopyId(i)) ? 'Copied' : 'Copy value'"
-                          [attr.aria-label]="isCopiedId(importMissingKeyValueCopyId(i)) ? 'Copied' : 'Copy value'"
-                        >
-                          <i
-                            class="pi"
-                            [ngClass]="isCopiedId(importMissingKeyValueCopyId(i)) ? 'pi-check' : 'pi-copy'"
-                          ></i>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+          <div class="import-missing-keys-table-wrap">
+            <table class="import-missing-keys-table">
+              <thead>
+                <tr>
+                  <th scope="col">Property</th>
+                  <th scope="col">Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  *ngFor="let row of importMissingKeysDialogRows; let i = index; trackBy: trackByImportMissingRow"
+                >
+                  <td class="import-missing-keys-cell">
+                    <div class="import-missing-keys-cell-inner">
+                      <span class="import-missing-keys-cell-text">{{ row.property }}</span>
+                      <button
+                        type="button"
+                        class="property-copy-btn import-missing-keys-cell-copy"
+                        (click)="$event.stopPropagation(); copyById(importMissingKeyPropertyCopyId(i), row.property)"
+                        [title]="isCopiedId(importMissingKeyPropertyCopyId(i)) ? 'Copied' : 'Copy property'"
+                        [attr.aria-label]="
+                          isCopiedId(importMissingKeyPropertyCopyId(i)) ? 'Copied' : 'Copy property name'
+                        "
+                      >
+                        <i
+                          class="pi"
+                          [ngClass]="isCopiedId(importMissingKeyPropertyCopyId(i)) ? 'pi-check' : 'pi-copy'"
+                        ></i>
+                      </button>
+                    </div>
+                  </td>
+                  <td class="import-missing-keys-cell">
+                    <div class="import-missing-keys-cell-inner">
+                      <span class="import-missing-keys-cell-text">{{ row.value }}</span>
+                      <button
+                        type="button"
+                        class="property-copy-btn import-missing-keys-cell-copy"
+                        (click)="$event.stopPropagation(); copyById(importMissingKeyValueCopyId(i), row.value)"
+                        [title]="isCopiedId(importMissingKeyValueCopyId(i)) ? 'Copied' : 'Copy value'"
+                        [attr.aria-label]="isCopiedId(importMissingKeyValueCopyId(i)) ? 'Copied' : 'Copy value'"
+                      >
+                        <i
+                          class="pi"
+                          [ngClass]="isCopiedId(importMissingKeyValueCopyId(i)) ? 'pi-check' : 'pi-copy'"
+                        ></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

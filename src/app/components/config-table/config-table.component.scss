@@ -943,8 +943,8 @@ $value-column-divergent-border: color-mix(in srgb, #22c55e 72%, var(--surface-bo
 }
 
 .import-missing-keys-dialog {
-  width: min(1400px, 98vw);
-  max-width: min(960px, 100%);
+  width: min(520px, 94vw);
+  max-width: 100%;
   max-height: 88vh;
   display: flex;
   flex-direction: column;
@@ -999,33 +999,18 @@ $value-column-divergent-border: color-mix(in srgb, #22c55e 72%, var(--surface-bo
 }
 
 .import-missing-keys-body {
-  padding: 0.85rem 1rem 1rem;
+  padding: 0 1rem 0.85rem;
   overflow-y: auto;
   flex: 1 1 auto;
   min-height: 0;
 }
 
-.import-missing-keys-card {
-  border: 1px solid color-mix(in srgb, var(--surface-border) 70%, transparent);
-  border-radius: 0.7rem;
-  background: color-mix(in srgb, var(--surface-soft) 62%, transparent);
-  padding: 0.65rem 0.72rem 0.72rem;
-}
-
-.import-missing-keys-section-title {
-  margin: 0 0 0.55rem;
-  font-size: 0.82rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: color-mix(in srgb, var(--accent) 68%, var(--text-secondary));
-}
-
 .import-missing-keys-table-wrap {
   overflow-x: auto;
-  border-radius: 0.35rem;
-  border: 1px solid color-mix(in srgb, var(--surface-border) 75%, transparent);
-  background: color-mix(in srgb, var(--surface-elevated) 72%, #06080d);
+  border-radius: 0;
+  border: none;
+  border-top: 1px solid color-mix(in srgb, var(--accent) 12%, var(--surface-border));
+  background: transparent;
   @include thin-overlay-scrollbar;
 }
 
