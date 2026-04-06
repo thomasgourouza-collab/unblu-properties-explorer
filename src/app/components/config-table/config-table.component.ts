@@ -83,6 +83,12 @@ const BASE_COLUMN_DEFINITIONS: ColumnDefinition[] = [
   { key: 'description', label: 'Description', filterType: 'text' }
 ];
 
+/**
+ * Header multiselect value for “no value” on Allowed scopes, Visibility, and Editable by.
+ * Not a real cell value; handled in rowMatchesColumnFilter / getRowMatchReasons.
+ */
+const COLUMN_FILTER_NONE_VALUE = '__none__';
+
 /** Sets `HTMLInputElement.indeterminate` (not bindable in templates). */
 @Directive({
   selector: '[appBindIndeterminate]',
@@ -276,7 +282,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       for (const value of selectedValues) {
         chips.push({
           id: `value:${column.key}:${value}`,
-          label: `${column.label}: ${value}`,
+          label: `${column.label}: ${this.columnFilterChipValueLabel(value)}`,
           kind: 'value',
           columnKey: column.key,
           value
@@ -970,16 +976,25 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       }
 
       if (column.filterType === 'list') {
-        const rowTokens = new Set(
-          (column.key === 'allowedScopes' ? row.allowedScopesTokens : row.editableByTokens).map((token) =>
-            this.normalize(token)
-          )
-        );
-        const matchedValues = selectedValues.filter((value) => rowTokens.has(this.normalize(value)));
-        if (matchedValues.length > 0) {
+        const tokens = this.listColumnNormalizedTokenSet(row, column.key);
+        const noneN = this.normalize(COLUMN_FILTER_NONE_VALUE);
+        const selectedNorm = selectedValues.map((value) => this.normalize(value));
+        const matchedLabels: string[] = [];
+        if (selectedNorm.includes(noneN) && tokens.size === 0) {
+          matchedLabels.push('None');
+        }
+        for (const value of selectedValues) {
+          if (this.normalize(value) === noneN) {
+            continue;
+          }
+          if (tokens.has(this.normalize(value))) {
+            matchedLabels.push(value);
+          }
+        }
+        if (matchedLabels.length > 0) {
           reasons.push({
             label: `${column.label} (${this.getListMode(column.key).toUpperCase()})`,
-            detail: matchedValues.join(', ')
+            detail: matchedLabels.join(', ')
           });
         }
         continue;
@@ -987,11 +1002,22 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
       if (column.filterType === 'select') {
         const rowValue = this.normalize(this.getCellValue(row, column.key));
-        const matched = selectedValues.find((value) => this.normalize(value) === rowValue);
+        const noneN = this.normalize(COLUMN_FILTER_NONE_VALUE);
+        const selectedNorm = selectedValues.map((value) => this.normalize(value));
+        const details: string[] = [];
+        if (selectedNorm.includes(noneN) && rowValue === '') {
+          details.push('None');
+        }
+        const matched = selectedValues.find(
+          (value) => this.normalize(value) !== noneN && this.normalize(value) === rowValue
+        );
         if (matched) {
+          details.push(matched);
+        }
+        if (details.length > 0) {
           reasons.push({
             label: `${column.label} (SELECT)`,
-            detail: matched
+            detail: details.join(', ')
           });
         }
       }
@@ -1176,6 +1202,18 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     return tokens.some((token) => rowValues.some((value) => value.includes(token)));
   }
 
+  private columnFilterChipValueLabel(value: string): string {
+    return value === COLUMN_FILTER_NONE_VALUE ? 'None' : value;
+  }
+
+  /** Non-empty normalized tokens for list columns (allowed scopes, editable by). */
+  private listColumnNormalizedTokenSet(row: ConfigRow, columnKey: string): Set<string> {
+    const list = columnKey === 'allowedScopes' ? row.allowedScopesTokens : row.editableByTokens;
+    return new Set(
+      list.map((token) => this.normalize(token)).filter((token) => token.length > 0)
+    );
+  }
+
   private rowMatchesColumnFilter(row: ConfigRow, column: ColumnDefinition): boolean {
     const textMode = this.getTextMode(column.key);
     const textTokens = this.splitFilterTokens(this.textFilters[column.key] ?? '', textMode);
@@ -1195,15 +1233,25 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     if (column.filterType === 'list') {
       const listKey = this.toListColumnKey(column.key);
       const selectedNormalized = selectedValues.map((value) => this.normalize(value));
-      const tokens = new Set((listKey === 'allowedScopes' ? row.allowedScopesTokens : row.editableByTokens).map((value) =>
-        this.normalize(value)
-      ));
+      const noneN = this.normalize(COLUMN_FILTER_NONE_VALUE);
+      const tokens = this.listColumnNormalizedTokenSet(row, column.key);
+      const rowIsNone = tokens.size === 0;
 
       if (this.listModes[listKey] === 'and') {
-        return selectedNormalized.every((selected) => tokens.has(selected));
+        return selectedNormalized.every((selected) => {
+          if (selected === noneN) {
+            return rowIsNone;
+          }
+          return tokens.has(selected);
+        });
       }
 
-      return selectedNormalized.some((selected) => tokens.has(selected));
+      return selectedNormalized.some((selected) => {
+        if (selected === noneN) {
+          return rowIsNone;
+        }
+        return tokens.has(selected);
+      });
     }
 
     if (column.filterType === 'text') {
@@ -1211,7 +1259,12 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     }
 
     const rowValue = this.normalize(this.getCellValue(row, column.key));
-    return selectedValues.map((value) => this.normalize(value)).includes(rowValue);
+    const noneN = this.normalize(COLUMN_FILTER_NONE_VALUE);
+    const selectedNormalized = selectedValues.map((value) => this.normalize(value));
+    if (selectedNormalized.includes(noneN) && rowValue === '') {
+      return true;
+    }
+    return selectedNormalized.some((s) => s !== noneN && s === rowValue);
   }
 
   private sanitizeFilters(): void {
@@ -1252,9 +1305,15 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
         }
       }
 
-      optionsMap[column.key] = [...values]
+      const sorted = [...values]
         .sort((left, right) => left.localeCompare(right))
         .map((value) => ({ label: value, value }));
+
+      if (column.key === 'allowedScopes' || column.key === 'visibility' || column.key === 'editableBy') {
+        optionsMap[column.key] = [...sorted, { label: 'None', value: COLUMN_FILTER_NONE_VALUE }];
+      } else {
+        optionsMap[column.key] = sorted;
+      }
     }
 
     return optionsMap;
