@@ -67,12 +67,32 @@
       (change)="onImportConfigFileSelected($event)"
     />
     <span
-      *ngIf="lastConfigImportMeta as meta"
+      *ngIf="lastConfigImport as imp"
       class="config-import-file-label text-muted small me-2 align-self-center"
-      [attr.title]="'Last imported: ' + meta.fileName + ' (' + meta.keyCount + ' keys)'"
+      [attr.title]="'Last imported: ' + imp.fileName + ' (' + lastConfigImportKeyCount + ' keys)'"
     >
-      {{ meta.fileName }} ({{ meta.keyCount }})
+      {{ imp.fileName }} ({{ lastConfigImportKeyCount }})
     </span>
+    <button
+      type="button"
+      class="btn btn-sm btn-outline-secondary align-self-center"
+      (click)="onRemoveImportedConfigClick()"
+      [disabled]="!lastConfigImport"
+      title="Clear remembered import, reset every Value to Default, and clear Error cells"
+      aria-label="Remove imported config"
+    >
+      <span>Remove</span>
+    </button>
+    <button
+      type="button"
+      class="btn btn-sm btn-outline-secondary align-self-center"
+      (click)="onResetImportedConfigClick()"
+      [disabled]="!lastConfigImport"
+      title="Apply the last imported JSON again (same as re-importing the file)"
+      aria-label="Reset values from last JSON import"
+    >
+      <span>Reset</span>
+    </button>
     <button
       type="button"
       class="btn btn-sm btn-utransfer"
@@ -250,7 +270,7 @@
             [style.width.%]="getColumnWidthPercent(column.key)"
           >
             <div class="header-content" [class.header-content--value]="column.key === 'value'">
-              <ng-container *ngIf="column.key === 'value'; else tplHeaderDefaultLabel">
+              <ng-container *ngIf="column.key === 'value'; else tplHeaderErrorOrDefault">
                 <span class="header-content-value-leading">
                   <span>{{ column.label }}</span>
                   <p-sortIcon [field]="column.key" />
@@ -265,9 +285,15 @@
                   select diffs ({{ valueColumnChangeRowCount }})
                 </button>
               </ng-container>
-              <ng-template #tplHeaderDefaultLabel>
-                <span>{{ column.label }}</span>
-                <p-sortIcon [field]="column.key" />
+              <ng-template #tplHeaderErrorOrDefault>
+                <ng-container *ngIf="column.key === 'configImportError'; else tplHeaderDefaultLabel">
+                  <span>{{ column.label }} ({{ configImportErrorCount }})</span>
+                  <p-sortIcon [field]="column.key" />
+                </ng-container>
+                <ng-template #tplHeaderDefaultLabel>
+                  <span>{{ column.label }}</span>
+                  <p-sortIcon [field]="column.key" />
+                </ng-template>
               </ng-template>
             </div>
           </th>

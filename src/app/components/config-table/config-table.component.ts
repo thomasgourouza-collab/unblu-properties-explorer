@@ -156,8 +156,10 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   private readonly emptyFilterValues: string[] = [];
   /** Last successful clipboard copy id (property, default value, dialog lines, …). */
   lastCopiedClipboardId: string | null = null;
-  /** Shown next to Import config after a successful JSON apply; cleared when `rows` input changes. */
-  lastConfigImportMeta: { fileName: string; keyCount: number } | null = null;
+  /**
+   * Last successful JSON import (snapshot for Reset); cleared on Remove or when `rows` input changes.
+   */
+  lastConfigImport: { fileName: string; snapshot: Record<string, unknown> } | null = null;
   private copyResetTimerId?: ReturnType<typeof globalThis.setTimeout>;
 
   @ViewChild('cellDetailDialog') private cellDetailDialogEl?: ElementRef<HTMLDialogElement>;
@@ -462,6 +464,44 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.importConfigInputRef?.nativeElement?.click();
   }
 
+  /** Rows with a non-empty import error message (trimmed). */
+  get configImportErrorCount(): number {
+    let n = 0;
+    for (const row of this.rows) {
+      if ((row.configImportError ?? '').trim().length > 0) {
+        n += 1;
+      }
+    }
+    return n;
+  }
+
+  get lastConfigImportKeyCount(): number {
+    return this.lastConfigImport ? Object.keys(this.lastConfigImport.snapshot).length : 0;
+  }
+
+  onRemoveImportedConfigClick(): void {
+    this.lastConfigImport = null;
+    for (const row of this.rows) {
+      row.value = row.defaultValue ?? '';
+      row.configImportError = '';
+      this.valueColumnMultiModelCache.delete(row.rowKey);
+    }
+    this.clearSelectedOnlyIfNoSelection();
+    this.syncMatchInspectorToDisplayedTable();
+    this.safeMarkForCheck();
+    this.persistState();
+  }
+
+  onResetImportedConfigClick(): void {
+    if (!this.lastConfigImport) {
+      return;
+    }
+    this.applyJsonConfigImport(
+      this.clonePlainJsonObject(this.lastConfigImport.snapshot),
+      this.lastConfigImport.fileName
+    );
+  }
+
   onImportConfigFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
@@ -489,6 +529,10 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     reader.readAsText(file, 'UTF-8');
   }
 
+  private clonePlainJsonObject(obj: Record<string, unknown>): Record<string, unknown> {
+    return JSON.parse(JSON.stringify(obj)) as Record<string, unknown>;
+  }
+
   private applyJsonConfigImport(obj: Record<string, unknown>, importedFileName: string): void {
     for (const row of this.rows) {
       row.configImportError = '';
@@ -508,9 +552,9 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
         }
       }
     }
-    this.lastConfigImportMeta = {
+    this.lastConfigImport = {
       fileName: importedFileName,
-      keyCount: Object.keys(obj).length
+      snapshot: this.clonePlainJsonObject(obj)
     };
     this.clearSelectedOnlyIfNoSelection();
     this.syncMatchInspectorToDisplayedTable();
@@ -636,7 +680,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       return;
     }
 
-    this.lastConfigImportMeta = null;
+    this.lastConfigImport = null;
     this.valueColumnMultiModelCache.clear();
     this.valueColumnSelectOptionsCache.clear();
 
