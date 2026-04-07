@@ -491,6 +491,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
   onRemoveImportedConfigClick(): void {
     this.lastConfigImport = null;
+    this.selectedRowKeys.clear();
     for (const row of this.rows) {
       row.value = row.defaultValue ?? '';
       row.configImportError = '';
@@ -541,6 +542,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   }
 
   private applyJsonConfigImport(obj: Record<string, unknown>, importedFileName: string): void {
+    this.selectedRowKeys.clear();
     const unmatchedKeys: string[] = [];
     for (const k of Object.keys(obj)) {
       const trimmedKey = k.trim();
