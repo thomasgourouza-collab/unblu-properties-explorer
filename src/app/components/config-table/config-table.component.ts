@@ -1442,16 +1442,21 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
           }
         }
       } else {
-        const rawTokens = this.splitRawFilterTokens(globalInput);
-        const normalizedTokens = this.splitFilterTokens(globalInput, this.globalFilterMode);
+        const { positives, negatives } = this.parseGlobalFilterPosNeg(globalInput, this.globalFilterMode);
+        const rowValues = columnsToSearch.map((column) => this.normalize(this.getCellValue(row, column.key)));
+        const rowContains = (t: string): boolean => rowValues.some((v) => v.includes(t));
         const tokenMatches: string[] = [];
-        for (let index = 0; index < normalizedTokens.length; index += 1) {
-          const token = normalizedTokens[index];
+        for (const p of positives) {
           const matchedColumns = columnsToSearch
-            .filter((column) => this.normalize(this.getCellValue(row, column.key)).includes(token))
+            .filter((column) => this.normalize(this.getCellValue(row, column.key)).includes(p))
             .map((column) => column.label);
           if (matchedColumns.length > 0) {
-            tokenMatches.push(`${rawTokens[index] ?? token} -> ${matchedColumns.join(', ')}`);
+            tokenMatches.push(`${p} -> ${matchedColumns.join(', ')}`);
+          }
+        }
+        for (const n of negatives) {
+          if (!rowContains(n)) {
+            tokenMatches.push(`!${n} (no column contains "${n}")`);
           }
         }
         if (tokenMatches.length > 0) {
@@ -1638,11 +1643,14 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   }
 
   private applyFilters(): void {
-    const globalTokens = this.splitFilterTokens(this.globalFilter, this.globalFilterMode);
+    const globalPosNeg = this.parseGlobalFilterPosNeg(this.globalFilter, this.globalFilterMode);
     const globalRegex = this.globalFilterMode === 'regex' ? this.tryParseRegexInput(this.globalFilter) : null;
 
     this.filteredRows = this.rows.filter((row) => {
-      if ((globalTokens.length > 0 || globalRegex) && !this.rowMatchesGlobalFilter(row, globalTokens, globalRegex)) {
+      if (
+        (globalPosNeg.positives.length > 0 || globalPosNeg.negatives.length > 0 || globalRegex) &&
+        !this.rowMatchesGlobalFilter(row, globalPosNeg.positives, globalPosNeg.negatives, globalRegex)
+      ) {
         return false;
       }
 
@@ -1710,7 +1718,12 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     el.classList.toggle('chips-scroll-area--overflowing', overflowing);
   }
 
-  private rowMatchesGlobalFilter(row: ConfigRow, tokens: string[], regex: RegExp | null): boolean {
+  private rowMatchesGlobalFilter(
+    row: ConfigRow,
+    positives: string[],
+    negatives: string[],
+    regex: RegExp | null
+  ): boolean {
     const columnsToSearch = this.globalFilterScope === 'visible' ? this.visibleColumns : this.columns;
     const rawValues = columnsToSearch.map((column) => this.getCellValue(row, column.key));
     if (this.globalFilterMode === 'regex') {
@@ -1721,10 +1734,55 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     }
 
     const rowValues = rawValues.map((value) => this.normalize(value));
-    if (this.globalFilterMode === 'and') {
-      return tokens.every((token) => rowValues.some((value) => value.includes(token)));
+    const rowContains = (token: string): boolean => rowValues.some((value) => value.includes(token));
+
+    const negOk = negatives.every((n) => !rowContains(n));
+    if (!negOk) {
+      return false;
     }
-    return tokens.some((token) => rowValues.some((value) => value.includes(token)));
+
+    if (positives.length === 0) {
+      return true;
+    }
+
+    if (this.globalFilterMode === 'and') {
+      return positives.every((p) => rowContains(p));
+    }
+    return positives.some((p) => rowContains(p));
+  }
+
+  /**
+   * Comma-separated global filter (non-regex): `!token` means “no visible/all column contains this substring”.
+   * Mixed `blue,!smoke`: (OR/AND over positives per mode) AND all negative clauses.
+   */
+  private parseGlobalFilterPosNeg(input: string, mode: TextMatchMode): { positives: string[]; negatives: string[] } {
+    if (mode === 'regex') {
+      return { positives: [], negatives: [] };
+    }
+    const positives: string[] = [];
+    const negatives: string[] = [];
+    for (const part of input.split(',')) {
+      const trimmed = part.trim();
+      if (!trimmed) {
+        continue;
+      }
+      let negated = false;
+      let body = trimmed;
+      if (body.startsWith('!')) {
+        negated = true;
+        body = body.slice(1).trim();
+      }
+      const n = this.normalize(body);
+      if (!n) {
+        continue;
+      }
+      if (negated) {
+        negatives.push(n);
+      } else {
+        positives.push(n);
+      }
+    }
+    return { positives, negatives };
   }
 
   private columnFilterChipValueLabel(value: string): string {
@@ -2266,7 +2324,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       return [{ text: '', kind: 'none' }];
     }
 
-    const globalTokens = this.splitFilterTokens(this.globalFilter, this.globalFilterMode);
+    const globalPosNeg = this.parseGlobalFilterPosNeg(this.globalFilter, this.globalFilterMode);
     const globalRegex = this.globalFilterMode === 'regex' ? this.tryParseRegexInput(this.globalFilter) : null;
     const columnTokens =
       columnKey && this.columns.some((column) => column.key === columnKey && column.filterType === 'text')
@@ -2279,14 +2337,21 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
         ? this.tryParseRegexInput(this.textFilters[columnKey] ?? '')
         : null;
 
-    if (globalTokens.length === 0 && columnTokens.length === 0 && !globalRegex && !columnRegex) {
+    if (
+      globalPosNeg.positives.length === 0 &&
+      globalPosNeg.negatives.length === 0 &&
+      columnTokens.length === 0 &&
+      !globalRegex &&
+      !columnRegex
+    ) {
       return [{ text: source, kind: 'none' }];
     }
 
     const sourceLower = source.toLowerCase();
     const levels = new Array<number>(source.length).fill(0);
 
-    this.applyTokenHighlights(source, sourceLower, globalTokens, globalRegex, levels, 1);
+    // Only positive global substrings get green highlights; `!term` is exclusion (no highlight for the term).
+    this.applyTokenHighlights(source, sourceLower, globalPosNeg.positives, globalRegex, levels, 1);
     this.applyTokenHighlights(source, sourceLower, columnTokens, columnRegex, levels, 2);
 
     const parts: HighlightPart[] = [];

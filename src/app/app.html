@@ -210,6 +210,12 @@
             <li>Use comma-separated values for multi-token text search in OR/AND modes.</li>
             <li>Switch to <strong>Regex</strong> mode for advanced matching patterns.</li>
             <li>Global scope can target either <strong>all columns</strong> or <strong>visible columns</strong>.</li>
+            <li>
+              In the global filter (text modes), a leading <strong>!</strong> on a comma-separated token means
+              <strong>not</strong>: e.g. <code>!blue</code> keeps rows where <strong>no</strong> searched column contains
+              “blue”. With several tokens, exclusions apply together with positives (positives use OR/AND per mode; every
+              <code>!term</code> must hold).
+            </li>
             <li>Global highlights are green; column-specific highlights are blue.</li>
             <li>Click chips to remove active filters quickly.</li>
           </ul>
