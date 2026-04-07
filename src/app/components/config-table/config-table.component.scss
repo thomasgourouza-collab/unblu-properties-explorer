@@ -136,10 +136,18 @@ $toolbar-accent-border-hover: color-mix(in srgb, var(--accent) 94%, var(--surfac
   .filter-text-option-btn.filter-text-option-btn--active {
     border-color: $toolbar-accent-border;
     border-width: 1px;
+
+    .codicon {
+      color: #fff;
+    }
   }
 
   .filter-text-option-btn.filter-text-option-btn--active:hover {
     border-color: $toolbar-accent-border-hover;
+
+    .codicon {
+      color: #fff;
+    }
   }
 }
 
