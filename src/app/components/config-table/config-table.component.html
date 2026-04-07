@@ -7,46 +7,66 @@
 >
   <div class="table-export-bar-inner">
     <div class="table-export-bar-leading">
-      <button
-        type="button"
-        class="btn btn-sm btn-export-csv"
-        (click)="exportSelectedToCsv()"
-        [disabled]="selectedDatasetCount === 0"
-        title="Download selected rows as CSV using visible columns only, in the same order as the table (UTF-8). Selection is kept when you change filters or pages."
-      >
-        <i class="pi pi-download" aria-hidden="true"></i>
-        <span>Export CSV</span>
-      </button>
-      <button
-        type="button"
-        class="btn btn-sm btn-export-json"
-        (click)="exportSelectedToJson()"
-        [disabled]="selectedDatasetCount === 0"
-        title="Download selected rows as JSON: each Property is a key and the editable Value is the string value (UTF-8). Rows with an empty Property are skipped; duplicate properties keep the last selected row."
-      >
-        <i class="pi pi-download" aria-hidden="true"></i>
-        <span>Export JSON</span>
-      </button>
-      <button
-        type="button"
-        class="btn btn-sm btn-export-yaml"
-        (click)="exportSelectedToYaml()"
-        [disabled]="selectedDatasetCount === 0"
-        title="Download selected rows as YAML: each Property is a key and the editable Value is the string value (UTF-8). Rows with an empty Property are skipped; duplicate properties keep the last selected row."
-      >
-        <i class="pi pi-download" aria-hidden="true"></i>
-        <span>Export YAML</span>
-      </button>
-      <button
-        type="button"
-        class="btn btn-sm btn-export-properties"
-        (click)="exportSelectedToProperties()"
-        [disabled]="selectedDatasetCount === 0"
-        title="Download selected rows as Java .properties: key=value per line (UTF-8). Rows with an empty Property are skipped; duplicate properties keep the last selected row."
-      >
-        <i class="pi pi-download" aria-hidden="true"></i>
-        <span>Export .properties</span>
-      </button>
+      <div class="export-format-dropdown" #exportFormatMenuHost>
+        <button
+          type="button"
+          class="btn btn-sm export-format-dropdown__toggle"
+          [class.export-format-dropdown__toggle--open]="exportFormatMenuOpen"
+          (click)="toggleExportFormatMenu($event)"
+          [disabled]="selectedDatasetCount === 0"
+          [attr.aria-expanded]="exportFormatMenuOpen"
+          aria-haspopup="true"
+          aria-label="Export selected rows"
+          title="Export selected rows to a file (CSV, JSON, YAML, or Java .properties)."
+        >
+          <i class="pi pi-download" aria-hidden="true"></i>
+          <span>Export</span>
+          <i class="pi pi-angle-down export-format-dropdown__caret" aria-hidden="true"></i>
+        </button>
+        <div
+          *ngIf="exportFormatMenuOpen"
+          class="export-format-dropdown__menu"
+          role="menu"
+          aria-label="Export format"
+        >
+          <button
+            type="button"
+            class="export-format-dropdown__item"
+            role="menuitem"
+            title="Download selected rows as CSV using visible columns only, in the same order as the table (UTF-8). Selection is kept when you change filters or pages."
+            (click)="onExportFormatChosen('csv', $event)"
+          >
+            .csv
+          </button>
+          <button
+            type="button"
+            class="export-format-dropdown__item"
+            role="menuitem"
+            title="Download selected rows as JSON: each Property is a key and the editable Value is the string value (UTF-8). Rows with an empty Property are skipped; duplicate properties keep the last selected row."
+            (click)="onExportFormatChosen('json', $event)"
+          >
+            .json
+          </button>
+          <button
+            type="button"
+            class="export-format-dropdown__item"
+            role="menuitem"
+            title="Download selected rows as YAML: each Property is a key and the editable Value is the string value (UTF-8). Rows with an empty Property are skipped; duplicate properties keep the last selected row."
+            (click)="onExportFormatChosen('yaml', $event)"
+          >
+            .yaml
+          </button>
+          <button
+            type="button"
+            class="export-format-dropdown__item"
+            role="menuitem"
+            title="Download selected rows as Java .properties: key=value per line (UTF-8). Rows with an empty Property are skipped; duplicate properties keep the last selected row."
+            (click)="onExportFormatChosen('properties', $event)"
+          >
+            .properties
+          </button>
+        </div>
+      </div>
       <div class="table-export-bar-column-visibility">
         <p-multiselect
           inputId="columnVisibility"

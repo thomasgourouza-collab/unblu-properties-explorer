@@ -69,7 +69,7 @@
   flex: 0 1 auto;
 }
 
-// Match Export CSV / Selected only (btn-sm): stretch multiselect to the row’s cross size.
+// Match Export / Selected only (btn-sm): stretch multiselect to the row’s cross size.
 :host ::ng-deep .table-export-bar-column-visibility p-multiselect {
   display: flex !important;
   flex: 1 1 auto;
@@ -120,14 +120,74 @@
   color: var(--text-primary);
 }
 
-// Match Bootstrap .btn-sm (0.875rem) used by Export CSV in the same bar.
+// Match Bootstrap .btn-sm (0.875rem) used by Export in the same bar.
 $export-bar-control-font-size: 0.875rem;
 
-// Export CSV / JSON / YAML + utransfer: same chrome (icon + label).
-.btn-export-csv,
-.btn-export-json,
-.btn-export-yaml,
-.btn-export-properties,
+// Export dropdown toggle + utransfer: same chrome (icon + label).
+.export-format-dropdown {
+  position: relative;
+  flex: 0 0 auto;
+  align-self: stretch;
+}
+
+.export-format-dropdown__toggle {
+  height: 100%;
+}
+
+.export-format-dropdown__caret {
+  margin-left: 0.1rem;
+  font-size: 0.72rem;
+  opacity: 0.88;
+  transition: transform 0.15s ease;
+}
+
+.export-format-dropdown__toggle--open .export-format-dropdown__caret {
+  transform: rotate(180deg);
+}
+
+.export-format-dropdown__menu {
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin: 0.2rem 0 0;
+  padding: 0.25rem 0;
+  min-width: 100%;
+  z-index: 1700;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--surface-border));
+  border-radius: 0.45rem;
+  background: var(--surface-elevated);
+  box-shadow:
+    0 0.35rem 1rem color-mix(in srgb, var(--surface-border) 35%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--surface-border) 12%, transparent);
+}
+
+.export-format-dropdown__item {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0.4rem 0.75rem;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: $export-bar-control-font-size;
+  font-weight: 500;
+  line-height: 1.25;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background: color-mix(in srgb, var(--accent-soft) 32%, var(--surface-elevated));
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 0.15rem color-mix(in srgb, var(--accent-soft) 55%, transparent);
+  }
+}
+
+.export-format-dropdown__toggle,
 .btn-utransfer {
   display: inline-flex;
   align-items: center;
@@ -159,16 +219,14 @@ $export-bar-control-font-size: 0.875rem;
   }
 }
 
-.table-export-bar .btn.btn-sm.btn-export-csv,
-.table-export-bar .btn.btn-sm.btn-export-json,
-.table-export-bar .btn.btn-sm.btn-export-yaml,
-.table-export-bar .btn.btn-sm.btn-export-properties,
+.table-export-bar .btn.btn-sm.export-format-dropdown__toggle,
 .table-export-bar .btn.btn-sm.btn-utransfer {
   font-size: $export-bar-control-font-size;
   font-weight: 500;
   line-height: 1.25;
 }
 
+.table-export-bar .btn.btn-sm.export-format-dropdown__toggle,
 .table-export-bar .btn.btn-sm.btn-utransfer {
   flex: 0 0 auto;
 }

@@ -128,6 +128,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   @Input({ required: true }) rows: ConfigRow[] = [];
   @ViewChild('globalFilterInputRef') globalFilterInputRef?: ElementRef<HTMLInputElement>;
   @ViewChild('importConfigInput') private readonly importConfigInputRef?: ElementRef<HTMLInputElement>;
+  @ViewChild('exportFormatMenuHost') private readonly exportFormatMenuHost?: ElementRef<HTMLElement>;
   @ViewChildren('valueCellMulti', { read: MultiSelect })
   private valueCellMultiselects?: QueryList<MultiSelect>;
   private chipsScrollHost: HTMLElement | null = null;
@@ -145,6 +146,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   filteredRows: ConfigRow[] = [];
   /** When true, the table lists only rows that are selected within the current filter. */
   showSelectedRowsOnly = false;
+  /** Angular-driven export format menu (no Bootstrap JS). */
+  exportFormatMenuOpen = false;
   /** Row identity for selection / CSV export (stable across duplicate property codes). */
   private readonly selectedRowKeys = new Set<string>();
   globalFilter = '';
@@ -784,6 +787,35 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       return resolved ?? t;
     }
     return raw;
+  }
+
+  toggleExportFormatMenu(event: MouseEvent): void {
+    event.stopPropagation();
+    if (this.selectedDatasetCount === 0) {
+      return;
+    }
+    this.exportFormatMenuOpen = !this.exportFormatMenuOpen;
+    this.safeMarkForCheck();
+  }
+
+  onExportFormatChosen(format: 'csv' | 'json' | 'yaml' | 'properties', event: MouseEvent): void {
+    event.stopPropagation();
+    this.exportFormatMenuOpen = false;
+    switch (format) {
+      case 'csv':
+        this.exportSelectedToCsv();
+        break;
+      case 'json':
+        this.exportSelectedToJson();
+        break;
+      case 'yaml':
+        this.exportSelectedToYaml();
+        break;
+      case 'properties':
+        this.exportSelectedToProperties();
+        break;
+    }
+    this.safeMarkForCheck();
   }
 
   exportSelectedToCsv(): void {
@@ -2424,8 +2456,29 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     return key === 'allowedScopes' ? 'allowedScopes' : 'editableBy';
   }
 
+  @HostListener('document:click', ['$event'])
+  onDocumentClickCloseExportMenu(event: MouseEvent): void {
+    if (!this.exportFormatMenuOpen) {
+      return;
+    }
+    const host = this.exportFormatMenuHost?.nativeElement;
+    const t = event.target;
+    if (host && t instanceof Node && host.contains(t)) {
+      return;
+    }
+    this.exportFormatMenuOpen = false;
+    this.safeMarkForCheck();
+  }
+
   @HostListener('document:keydown', ['$event'])
   onDocumentKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Escape' && this.exportFormatMenuOpen) {
+      event.preventDefault();
+      this.exportFormatMenuOpen = false;
+      this.safeMarkForCheck();
+      return;
+    }
+
     if (event.key === 'Escape' && this.importMissingKeysDialogVisible) {
       event.preventDefault();
       this.closeImportMissingKeysDialog();
