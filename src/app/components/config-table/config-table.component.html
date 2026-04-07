@@ -870,7 +870,10 @@
                 </span>
               </ng-container>
               <ng-template #standardTextCell>
-                <div class="cell-x-scroll">
+                <div
+                  class="cell-plain-ellipsis"
+                  [attr.title]="getCellValue(row, column.key) || ''"
+                >
                   <ng-container *ngFor="let part of getHighlightedParts(getCellValue(row, column.key), column.key); trackBy: trackByHighlightPart">
                     <mark
                       *ngIf="part.kind !== 'none'"
@@ -890,7 +893,7 @@
         </tr>
       </ng-template>
       <ng-template pTemplate="emptymessage" let-columns>
-        <tr>
+        <tr class="datatable-empty-state-row">
           <td [attr.colspan]="columns.length + 1" class="text-center py-4">
             {{ emptyTableMessage }}
           </td>

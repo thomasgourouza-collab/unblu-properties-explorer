@@ -482,6 +482,9 @@ $export-bar-control-font-size: 0.875rem;
 }
 
 .global-filter-highlight {
+  display: inline;
+  vertical-align: baseline;
+  line-height: 1;
   background: color-mix(in srgb, var(--accent) 72%, transparent);
   color: var(--text-primary);
   border-radius: 0.2rem;
@@ -492,6 +495,9 @@ $export-bar-control-font-size: 0.875rem;
 }
 
 .column-filter-highlight {
+  display: inline;
+  vertical-align: baseline;
+  line-height: 1;
   background: color-mix(in srgb, #2ecc71 42%, transparent);
   color: inherit;
   font-weight: inherit;
@@ -520,16 +526,18 @@ $export-bar-control-font-size: 0.875rem;
   display: inline-flex;
   flex-direction: row;
   flex-wrap: nowrap;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.35rem;
   min-width: min-content;
+  max-height: 100%;
 }
 
 .property-code-wrap {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.28rem;
   min-width: 0;
+  max-height: 100%;
   width: 100%;
 }
 
@@ -948,7 +956,7 @@ $export-bar-control-font-size: 0.875rem;
 .body-cell {
   min-width: 0;
   overflow: hidden;
-  vertical-align: top;
+  vertical-align: middle;
 }
 
 $value-cell-control-pad-y: 0.16rem;
@@ -956,18 +964,39 @@ $value-cell-control-pad-x: 0.32rem;
 $value-cell-control-min-height: 1.58rem;
 $value-cell-font-size: 0.8125rem;
 
+/* Body rows: fixed height; cell contents clip with ellipsis (see .cell-plain-ellipsis, value free-text stack). */
+$table-body-cell-pad-y: 0.38rem;
+$table-body-row-height: calc(
+  #{$value-cell-control-min-height} + #{$table-body-cell-pad-y} + #{$table-body-cell-pad-y} + 0.12rem
+);
+
+:host ::ng-deep .fixed-columns-table .p-datatable-tbody > tr:not(.datatable-empty-state-row) {
+  height: $table-body-row-height;
+}
+
+:host ::ng-deep .fixed-columns-table .p-datatable-tbody > tr:not(.datatable-empty-state-row) > td {
+  padding-top: $table-body-cell-pad-y;
+  padding-bottom: $table-body-cell-pad-y;
+  overflow: hidden;
+  vertical-align: middle;
+}
+
 .value-cell-wrap {
   width: 100%;
   min-width: 0;
+  max-height: 100%;
+  overflow: hidden;
 }
 
 .value-cell-row {
   display: flex;
   flex-direction: row;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 0.28rem;
   width: 100%;
   min-width: 0;
+  max-height: 100%;
 }
 
 .value-cell-control-slot {
@@ -1039,18 +1068,22 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
   min-width: 0;
   box-sizing: border-box;
   min-height: $value-cell-control-min-height;
+  max-height: $value-cell-control-min-height;
   padding: $value-cell-control-pad-y $value-cell-control-pad-x;
   line-height: 1.2;
   font-size: $value-cell-font-size;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Free-text Value: mirror under transparent input (highlights align with `row.value`). */
 .value-cell-free-text-stack {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: minmax($value-cell-control-min-height, auto);
+  grid-template-rows: $value-cell-control-min-height;
   width: 100%;
   min-width: 0;
+  max-height: $value-cell-control-min-height;
 }
 
 .value-cell-free-text-stack > * {
@@ -1062,22 +1095,18 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
   z-index: 0;
   box-sizing: border-box;
   min-height: $value-cell-control-min-height;
+  max-height: $value-cell-control-min-height;
   padding: $value-cell-control-pad-y $value-cell-control-pad-x;
   line-height: 1.2;
   font-size: $value-cell-font-size;
   font-family: inherit;
-  white-space: pre;
+  white-space: nowrap;
   overflow: hidden;
-  overflow-x: auto;
+  text-overflow: ellipsis;
   pointer-events: none;
   background: var(--surface-elevated);
   color: var(--text-secondary);
   border-radius: var(--bs-border-radius, 0.25rem);
-  scrollbar-width: none;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
 }
 
 .value-cell-input--with-highlight-mirror {
@@ -1106,6 +1135,8 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
   position: relative;
   width: 100%;
   min-width: 0;
+  max-height: $value-cell-control-min-height;
+  overflow: hidden;
 }
 
 .value-cell-select-face {
@@ -1188,12 +1219,14 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
   display: flex !important;
   width: 100% !important;
   max-width: 100%;
+  max-height: $value-cell-control-min-height;
   flex-direction: row !important;
   flex-wrap: nowrap !important;
   align-items: center;
   min-width: 0;
   min-height: $value-cell-control-min-height;
   font-size: $value-cell-font-size;
+  overflow: hidden;
 }
 
 :host ::ng-deep .value-cell-multiselect-inner .p-multiselect-label-container {
@@ -1237,6 +1270,16 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
   @include thin-overlay-scrollbar;
 }
 
+/* Plain read-only text cells: one line + ellipsis (JSON/long strings). */
+.cell-plain-ellipsis {
+  display: block;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 :host ::ng-deep .p-datatable {
   border: 1px solid var(--surface-border);
   border-radius: 0.75rem;
@@ -1266,7 +1309,7 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
   color: var(--text-secondary);
   border-color: var(--surface-border);
   background: color-mix(in srgb, #0a0d12 86%, var(--bg-main));
-  vertical-align: top;
+  vertical-align: middle;
 }
 
 :host ::ng-deep .p-datatable-tbody > tr > td.row-select-cell {
