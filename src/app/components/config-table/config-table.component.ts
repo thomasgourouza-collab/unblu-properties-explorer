@@ -475,9 +475,9 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
     if (meta.length !== 1) {
       this.tableSortTriStateAnchor = null;
-      if (meta.length === 0) {
-        this.applyFilters();
-      } else {
+      // Only multi-column (Ctrl/Cmd) sorts reach here with length > 1.
+      // length === 0: Prime used to re-emit here after we set multiSortMeta = [] (array is truthy → sortMultiple → this handler → applyFilters). Use null when clearing instead; ignore empty.
+      if (meta.length > 1) {
         this.sortFilteredRowsBySortMeta(meta);
       }
       this.safeMarkForCheck();
@@ -495,10 +495,11 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       order === 1
     ) {
       this.tableSortTriStateAnchor = null;
-      if (this.configTableRef) {
-        this.configTableRef.multiSortMeta = [];
-      }
       this.restoreFilteredRowsDatasetOrder();
+      // `[]` is truthy: Prime’s ngOnChanges would call sortMultiple() again and re-fire sortFunction (empty), which used to run applyFilters() and grind the app. `null` skips that path.
+      if (this.configTableRef) {
+        this.configTableRef.multiSortMeta = null;
+      }
       this.safeMarkForCheck();
       return;
     }
