@@ -226,16 +226,6 @@
       <div class="global-filter-inline">
         <div class="global-filter-controls-row">
           <div class="mode-toggle mode-toggle-inline global-filter-mode-toggle">
-            <input
-              class="btn-check"
-              type="radio"
-              id="global-filter-expr"
-              name="global-filter-mode"
-              value="expr"
-              [ngModel]="globalFilterMode"
-              (ngModelChange)="setGlobalFilterMode($event)"
-            />
-            <label class="btn btn-outline-secondary btn-xs filter-mode-expr-label" for="global-filter-expr">Expression</label>
             <button
               type="button"
               class="btn btn-outline-secondary btn-xs filter-text-option-btn"
@@ -258,16 +248,21 @@
             >
               <span class="codicon codicon-whole-word" aria-hidden="true"></span>
             </button>
-            <input
-              class="btn-check"
-              type="radio"
-              id="global-filter-regex"
-              name="global-filter-mode"
-              value="regex"
-              [ngModel]="globalFilterMode"
-              (ngModelChange)="setGlobalFilterMode($event)"
-            />
-            <label class="btn btn-outline-secondary btn-xs filter-mode-regex-label" for="global-filter-regex">Regex</label>
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-xs filter-text-option-btn"
+              [class.filter-text-option-btn--active]="globalFilterMode === 'regex'"
+              [attr.aria-pressed]="globalFilterMode === 'regex'"
+              [attr.aria-label]="globalFilterMode === 'regex' ? 'Regular expression mode on' : 'Use regular expression mode'"
+              [title]="
+                globalFilterMode === 'regex'
+                  ? 'Regular expression mode: whole field is one pattern (click to use expression syntax)'
+                  : 'Expression mode by default (&& || ! ( )). Click to match with a regular expression instead.'
+              "
+              (click)="toggleGlobalFilterRegex()"
+            >
+              <span class="codicon codicon-regex" aria-hidden="true"></span>
+            </button>
           </div>
           <select
             class="form-select form-select-sm global-filter-scope-select"
@@ -475,19 +470,6 @@
                     role="group"
                     [attr.aria-label]="column.label + ' filter match mode'"
                   >
-                    <input
-                      class="btn-check"
-                      type="radio"
-                      [id]="column.key + '-text-expr'"
-                      [name]="column.key + '-text-mode'"
-                      value="expr"
-                      [ngModel]="getTextMode(column.key)"
-                      (ngModelChange)="setTextMode(column.key, $event)"
-                    />
-                    <label
-                      class="btn btn-outline-secondary btn-xs filter-mode-expr-label"
-                      [for]="column.key + '-text-expr'"
-                      >Expression</label>
                     <button
                       type="button"
                       class="btn btn-outline-secondary btn-xs filter-text-option-btn"
@@ -510,19 +492,25 @@
                     >
                       <span class="codicon codicon-whole-word" aria-hidden="true"></span>
                     </button>
-                    <input
-                      class="btn-check"
-                      type="radio"
-                      [id]="column.key + '-text-regex'"
-                      [name]="column.key + '-text-mode'"
-                      value="regex"
-                      [ngModel]="getTextMode(column.key)"
-                      (ngModelChange)="setTextMode(column.key, $event)"
-                    />
-                    <label
-                      class="btn btn-outline-secondary btn-xs filter-mode-regex-label"
-                      [for]="column.key + '-text-regex'"
-                      >Regex</label>
+                    <button
+                      type="button"
+                      class="btn btn-outline-secondary btn-xs filter-text-option-btn"
+                      [class.filter-text-option-btn--active]="getTextMode(column.key) === 'regex'"
+                      [attr.aria-pressed]="getTextMode(column.key) === 'regex'"
+                      [attr.aria-label]="
+                        getTextMode(column.key) === 'regex'
+                          ? 'Regular expression mode on for ' + column.label
+                          : 'Use regular expression mode for ' + column.label
+                      "
+                      [title]="
+                        getTextMode(column.key) === 'regex'
+                          ? 'Regular expression mode (click to use expression syntax)'
+                          : 'Expression mode by default. Click for regular expression.'
+                      "
+                      (click)="toggleTextFilterRegex(column.key)"
+                    >
+                      <span class="codicon codicon-regex" aria-hidden="true"></span>
+                    </button>
                   </div>
                   <input
                     type="text"

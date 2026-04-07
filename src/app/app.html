@@ -232,27 +232,32 @@
           <h3 class="help-section-title">Filter Tips</h3>
           <ul class="help-list">
             <li>
-              In <strong>Expression</strong> mode (global filter and text columns), build conditions with
-              <code>&amp;&amp;</code> (AND), <code>||</code> (OR), unary <code>!</code> (NOT), and parentheses. Operands can include spaces (e.g.
-              <code>green land &amp;&amp; blue sky</code>); only the start and end of each operand are trimmed, and spaces
-              around operators are optional. Example: <code>(red || blue) &amp;&amp; orange</code>.
+              By default (regex icon off), the global filter and text columns use <strong>expression</strong> syntax: build
+              conditions with <code>&amp;&amp;</code> (AND), <code>||</code> (OR), unary <code>!</code> (NOT), and parentheses.
+              Operands can include spaces (e.g. <code>green land &amp;&amp; blue sky</code>); only the start and end of each
+              operand are trimmed, and spaces around operators are optional. Example:
+              <code>(red || blue) &amp;&amp; orange</code>.
             </li>
             <li>
               Without quoted operands, you cannot search for the literal substrings <code>&amp;&amp;</code>, <code>||</code>,
               or parentheses inside a single term (a future improvement could add quoting).
             </li>
             <li>
-              Between <strong>Expression</strong> and <strong>Regex</strong>, the case-sensitive and whole-word icon
-              toggles (same icons as in VS Code) apply to <em>both</em> modes: expression operands respect them, and bare
-              regex patterns use them for default flags and word boundaries (explicit <code>/pattern/flags</code> keeps your
-              flags; whole-word still wraps the pattern). Active toggles use the same accent border as the mode buttons.
+              The case-sensitive and whole-word icon toggles (same icons as in VS Code) apply whether you use expression
+              syntax or regex: expression operands respect them, and bare regex patterns use them for default flags and word
+              boundaries (explicit <code>/pattern/flags</code> keeps your flags; whole-word still wraps the pattern). Active
+              toggles use the same accent border as the regex icon button when it is on.
             </li>
             <li>
-              <strong>Regex</strong> mode treats the whole field as one pattern. The active mode toggle (Expression or
-              Regex) uses the same border color as the Export / Import config toolbar buttons (global and per text column).
+              Turn on the <strong>regex</strong> icon (next to case / whole word) to treat the whole field as one pattern.
+              That button uses the same accent border as the Export / Import config toolbar when active (global and per text
+              column).
             </li>
             <li>List-style column filters still use comma-separated tokens with their own OR/AND row (unchanged).</li>
-            <li>Global scope can target either <strong>all columns</strong> or <strong>visible columns</strong>.</li>
+            <li>
+              Global scope defaults to <strong>visible columns</strong>; use the scope dropdown to search <strong>all
+              columns</strong> instead.
+            </li>
             <li>
               Invalid expression syntax matches no rows until you fix the filter (unbalanced parentheses, stray operators,
               etc.).

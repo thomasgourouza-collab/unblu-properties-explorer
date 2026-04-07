@@ -177,7 +177,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   private readonly selectedRowKeys = new Set<string>();
   globalFilter = '';
   globalFilterMode: TextMatchMode = 'expr';
-  globalFilterScope: GlobalFilterScope = 'all';
+  globalFilterScope: GlobalFilterScope = 'visible';
   globalFilterMatchCase = false;
   globalFilterWholeWord = false;
   textFilters: Partial<Record<string, string>> = {};
@@ -1195,13 +1195,18 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     return mode === 'regex' ? 'regex' : 'expr';
   }
 
-  setTextMode(key: string, mode: string): void {
-    this.textModes[key] = mode === 'regex' ? 'regex' : 'expr';
+  toggleGlobalFilterRegex(): void {
+    this.globalFilterMode = this.globalFilterMode === 'regex' ? 'expr' : 'regex';
     this.onFiltersChanged();
   }
 
-  setGlobalFilterMode(mode: string): void {
-    this.globalFilterMode = mode === 'regex' ? 'regex' : 'expr';
+  toggleTextFilterRegex(key: string): void {
+    const next = this.getTextMode(key) === 'regex' ? 'expr' : 'regex';
+    if (next === 'expr') {
+      delete this.textModes[key];
+    } else {
+      this.textModes[key] = 'regex';
+    }
     this.onFiltersChanged();
   }
 
@@ -1744,7 +1749,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
     this.globalFilter = '';
     this.globalFilterMode = 'expr';
-    this.globalFilterScope = 'all';
+    this.globalFilterScope = 'visible';
     this.globalFilterMatchCase = false;
     this.globalFilterWholeWord = false;
     this.textFilters = {};
@@ -1775,7 +1780,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   clearFilters(): void {
     this.globalFilter = '';
     this.globalFilterMode = 'expr';
-    this.globalFilterScope = 'all';
+    this.globalFilterScope = 'visible';
     this.globalFilterMatchCase = false;
     this.globalFilterWholeWord = false;
     this.textFilters = {};
@@ -3060,7 +3065,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       this.globalFilter = parsed.globalFilter ?? '';
       this.globalFilterMode =
         parsed.globalFilterMode === 'regex' ? 'regex' : 'expr';
-      this.globalFilterScope = parsed.globalFilterScope === 'visible' ? 'visible' : 'all';
+      this.globalFilterScope = parsed.globalFilterScope === 'all' ? 'all' : 'visible';
       this.globalFilterMatchCase = !!parsed.globalFilterMatchCase;
       this.globalFilterWholeWord = !!parsed.globalFilterWholeWord;
       this.textFilters = parsed.textFilters ?? {};
