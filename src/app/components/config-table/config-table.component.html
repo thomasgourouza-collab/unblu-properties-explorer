@@ -37,6 +37,16 @@
         <i class="pi pi-download" aria-hidden="true"></i>
         <span>Export YAML</span>
       </button>
+      <button
+        type="button"
+        class="btn btn-sm btn-export-properties"
+        (click)="exportSelectedToProperties()"
+        [disabled]="selectedDatasetCount === 0"
+        title="Download selected rows as Java .properties: key=value per line (UTF-8). Rows with an empty Property are skipped; duplicate properties keep the last selected row."
+      >
+        <i class="pi pi-download" aria-hidden="true"></i>
+        <span>Export .properties</span>
+      </button>
       <div class="table-export-bar-column-visibility">
         <p-multiselect
           inputId="columnVisibility"
@@ -80,7 +90,7 @@
     <input
       #importConfigInput
       type="file"
-      accept="application/json,.json,application/x-yaml,text/yaml,text/x-yaml,.yaml,.yml"
+      accept="application/json,.json,application/x-yaml,text/yaml,text/x-yaml,.yaml,.yml,.properties,text/x-java-properties"
       class="visually-hidden"
       tabindex="-1"
       aria-hidden="true"
@@ -108,7 +118,7 @@
       class="btn btn-sm btn-outline-secondary align-self-center"
       (click)="onResetImportedConfigClick()"
       [disabled]="!lastConfigImport"
-      title="Apply the last imported config again (same as re-importing the file)"
+      title="Re-apply the last imported config snapshot (JSON/YAML/.properties)"
       aria-label="Reset values from last config import"
     >
       <span>Reset</span>
@@ -117,8 +127,8 @@
       type="button"
       class="btn btn-sm btn-utransfer"
       (click)="onUtransferClick()"
-      title="Import configuration from a JSON or YAML file (root must be a plain object)"
-      aria-label="Import config from JSON or YAML"
+      title="Import configuration from JSON, YAML, or Java .properties (root must be a flat key/value map)"
+      aria-label="Import config from JSON, YAML, or .properties"
     >
       <i class="pi pi-upload" aria-hidden="true"></i>
       <span>Import config</span>

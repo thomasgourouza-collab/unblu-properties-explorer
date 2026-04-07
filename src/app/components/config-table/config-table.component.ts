@@ -20,6 +20,7 @@ import { TableColumnReorderEvent, TableModule } from 'primeng/table';
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 
 import { ColumnDefinition, ConfigRow, EXTRA_COLUMN_PREFIX, FilterMode } from '../../models/config-row.model';
+import { parseJavaPropertiesFile, stringifyJavaPropertiesFile } from '../../utils/java-properties-config.util';
 import unbluScopeEditorsJson from '../../data/unblu-scope-editors.json';
 
 interface SelectOption {
@@ -519,7 +520,10 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     const reader = new FileReader();
     reader.onload = () => {
       const text = typeof reader.result === 'string' ? reader.result : '';
-      const parsed = this.parseImportedConfigFileText(text);
+      const nameLower = file.name.toLowerCase();
+      const parsed = nameLower.endsWith('.properties')
+        ? this.parseImportedPropertiesFileText(text)
+        : this.parseImportedConfigFileText(text);
       if (parsed === 'not-object') {
         globalThis.alert(
           'Config import requires a plain object at the root (not an array). Use a JSON object or YAML mapping.'
@@ -528,7 +532,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       }
       if (parsed === null) {
         globalThis.alert(
-          'Could not parse as JSON or YAML. Use UTF-8 and a root object, e.g. {"key":"value"} or YAML `key: value` lines.'
+          'Could not parse this file. For .properties use key=value lines (UTF-8). For other files use JSON or YAML with a root object.'
         );
         return;
       }
@@ -538,6 +542,20 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       globalThis.alert('Could not read the selected file.');
     };
     reader.readAsText(file, 'UTF-8');
+  }
+
+  /** `.properties` files → string map as `Record<string, unknown>` for the same import pipeline. */
+  private parseImportedPropertiesFileText(text: string): Record<string, unknown> | null {
+    const body = text.replace(/^\uFEFF/, '').trim();
+    if (!body) {
+      return {};
+    }
+    const map = parseJavaPropertiesFile(text);
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(map)) {
+      out[k] = v;
+    }
+    return out;
   }
 
   /**
@@ -793,6 +811,21 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     const anchor = document.createElement('a');
     anchor.href = url;
     anchor.download = this.buildSelectionExportFilename('yaml');
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
+  exportSelectedToProperties(): void {
+    if (this.selectedDatasetCount === 0) {
+      return;
+    }
+    const out = this.buildSelectionExportPropertyValueMap();
+    const body = stringifyJavaPropertiesFile(out);
+    const blob = new Blob([body], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = this.buildSelectionExportFilename('properties');
     anchor.click();
     URL.revokeObjectURL(url);
   }
@@ -1710,7 +1743,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     return s;
   }
 
-  private buildSelectionExportFilename(extension: 'csv' | 'json' | 'yaml'): string {
+  private buildSelectionExportFilename(extension: 'csv' | 'json' | 'yaml' | 'properties'): string {
     const d = new Date();
     const day = String(d.getDate()).padStart(2, '0');
     const m = String(d.getMonth() + 1).padStart(2, '0');

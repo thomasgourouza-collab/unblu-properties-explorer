@@ -127,6 +127,7 @@ $export-bar-control-font-size: 0.875rem;
 .btn-export-csv,
 .btn-export-json,
 .btn-export-yaml,
+.btn-export-properties,
 .btn-utransfer {
   display: inline-flex;
   align-items: center;
@@ -161,6 +162,7 @@ $export-bar-control-font-size: 0.875rem;
 .table-export-bar .btn.btn-sm.btn-export-csv,
 .table-export-bar .btn.btn-sm.btn-export-json,
 .table-export-bar .btn.btn-sm.btn-export-yaml,
+.table-export-bar .btn.btn-sm.btn-export-properties,
 .table-export-bar .btn.btn-sm.btn-utransfer {
   font-size: $export-bar-control-font-size;
   font-weight: 500;
