@@ -1417,6 +1417,20 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
   word-break: break-word;
 }
 
+.match-inspector-detail-bullets {
+  margin: 0;
+  padding-left: 1.15rem;
+  list-style-type: disc;
+}
+
+.match-inspector-detail-bullets li {
+  margin: 0.12rem 0 0;
+
+  &:first-child {
+    margin-top: 0;
+  }
+}
+
 .cell-detail-dialog {
   padding: 0;
   border: none;

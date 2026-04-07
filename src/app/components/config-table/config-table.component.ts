@@ -47,6 +47,8 @@ interface ActiveFilterChip {
 interface MatchReason {
   label: string;
   detail: string;
+  /** When set, the match inspector renders these as a bullet list (global filter breakdown). */
+  detailBullets?: string[];
 }
 
 interface CellDetailAllowedScopeRow {
@@ -1462,7 +1464,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
         if (tokenMatches.length > 0) {
           reasons.push({
             label: `Global (${this.globalFilterMode.toUpperCase()}, ${this.globalFilterScope})`,
-            detail: tokenMatches.join(' | ')
+            detail: '',
+            detailBullets: tokenMatches
           });
         }
       }

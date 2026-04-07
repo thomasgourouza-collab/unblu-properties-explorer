@@ -778,7 +778,12 @@
       <div class="match-inspector-tooltip-content">
         <div class="match-inspector-entry" *ngFor="let reason of matchInspectorReasons">
           <div class="match-inspector-entry-label">{{ reason.label }}</div>
-          <div class="match-inspector-entry-detail">{{ reason.detail }}</div>
+          <div class="match-inspector-entry-detail">
+            <ul *ngIf="reason.detailBullets?.length" class="match-inspector-detail-bullets">
+              <li *ngFor="let line of reason.detailBullets">{{ line }}</li>
+            </ul>
+            <ng-container *ngIf="!reason.detailBullets?.length">{{ reason.detail }}</ng-container>
+          </div>
         </div>
       </div>
     </div>
