@@ -1215,11 +1215,28 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.onFiltersChanged();
   }
 
+  isColumnTextFilterClearable(key: string): boolean {
+    if ((this.textFilters[key] ?? '').trim()) {
+      return true;
+    }
+    if (this.textModes[key] === 'regex') {
+      return true;
+    }
+    if (this.textFilterMatchCase[key]) {
+      return true;
+    }
+    if (this.textFilterWholeWord[key]) {
+      return true;
+    }
+    return false;
+  }
+
   clearTextFilterInput(key: string): void {
-    if (!this.textFilters[key]) {
+    if (!this.isColumnTextFilterClearable(key)) {
       return;
     }
-    this.textFilters[key] = '';
+    delete this.textFilters[key];
+    delete this.textModes[key];
     delete this.textFilterMatchCase[key];
     delete this.textFilterWholeWord[key];
     this.onFiltersChanged();
@@ -1808,7 +1825,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     }
 
     if (chip.kind === 'text') {
-      this.textFilters[chip.columnKey] = '';
+      delete this.textFilters[chip.columnKey];
+      delete this.textModes[chip.columnKey];
       delete this.textFilterMatchCase[chip.columnKey];
       delete this.textFilterWholeWord[chip.columnKey];
       this.onFiltersChanged();

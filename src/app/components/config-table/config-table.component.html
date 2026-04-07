@@ -504,21 +504,33 @@
                       <span class="codicon codicon-regex" aria-hidden="true"></span>
                     </button>
                   </div>
-                  <input
-                    type="text"
-                    class="form-control form-control-sm header-filter-input"
-                    placeholder="&amp;&amp; || ! ( )"
-                    title="Expression: &amp;&amp; AND, || OR, ! NOT, ( ). Regex: one pattern."
-                    autocomplete="off"
-                    autocapitalize="off"
-                    spellcheck="false"
-                    data-bwignore
-                    data-1p-ignore
-                    data-lpignore="true"
-                    [ngModel]="getTextFilter(column.key)"
-                    (ngModelChange)="setTextFilter(column.key, $event)"
-                    (keydown.escape)="clearTextFilterInput(column.key)"
-                  />
+                  <div class="header-text-filter-input-row">
+                    <input
+                      type="text"
+                      class="form-control form-control-sm header-filter-input"
+                      placeholder="&amp;&amp; || ! ( )"
+                      title="Expression: &amp;&amp; AND, || OR, ! NOT, ( ). Regex: one pattern."
+                      autocomplete="off"
+                      autocapitalize="off"
+                      spellcheck="false"
+                      data-bwignore
+                      data-1p-ignore
+                      data-lpignore="true"
+                      [ngModel]="getTextFilter(column.key)"
+                      (ngModelChange)="setTextFilter(column.key, $event)"
+                      (keydown.escape)="clearTextFilterInput(column.key)"
+                    />
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-secondary header-text-filter-clear-btn"
+                      (click)="clearTextFilterInput(column.key)"
+                      [disabled]="!isColumnTextFilterClearable(column.key)"
+                      [title]="'Clear ' + column.label + ' filter (Esc)'"
+                      [attr.aria-label]="'Clear ' + column.label + ' text filter'"
+                    >
+                      Clear
+                    </button>
+                  </div>
                 </div>
               </ng-container>
 

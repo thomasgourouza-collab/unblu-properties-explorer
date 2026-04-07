@@ -810,6 +810,21 @@ $export-bar-control-font-size: 0.875rem;
   min-width: 120px;
 }
 
+.header-text-filter-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.28rem;
+  min-width: 0;
+  width: 100%;
+}
+
+.header-text-filter-clear-btn {
+  flex: 0 0 auto;
+  padding-inline: 0.35rem;
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
 .column-filter-stack {
   display: flex;
   flex-direction: column;
@@ -844,6 +859,12 @@ $export-bar-control-font-size: 0.875rem;
   padding-bottom: var(--filter-control-pad-y);
   line-height: 1.25;
   box-sizing: border-box;
+}
+
+.text-header-filter .header-text-filter-input-row .header-filter-input {
+  width: auto;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .mode-toggle {
