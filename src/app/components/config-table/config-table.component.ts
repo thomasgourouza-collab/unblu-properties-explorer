@@ -227,8 +227,6 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   private pointerContextClientY = 0;
 
   private readonly settingsStorageKey = 'unblu-properties-explorer-table-settings';
-  /** Previous key; still read on load, removed when saving. */
-  private readonly legacySettingsStorageKey = 'unblu-properties-explorer-table-settings';
   private restoredSettings = false;
 
   get visibleColumns(): ColumnDefinition[] {
@@ -1670,7 +1668,6 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       }
       try {
         localStorage.setItem(this.settingsStorageKey, JSON.stringify(parsed));
-        localStorage.removeItem(this.legacySettingsStorageKey);
       } catch {
         globalThis.alert('Could not write to local storage.');
         return;
@@ -1690,7 +1687,6 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   resetTableSettings(): void {
     try {
       localStorage.removeItem(this.settingsStorageKey);
-      localStorage.removeItem(this.legacySettingsStorageKey);
     } catch {
       /* ignore quota / private mode */
     }
@@ -2856,9 +2852,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   }
 
   private readRawTableSettings(): string | null {
-    return (
-      localStorage.getItem(this.settingsStorageKey) ?? localStorage.getItem(this.legacySettingsStorageKey)
-    );
+    return localStorage.getItem(this.settingsStorageKey);
   }
 
   private restoreSettings(): void {
@@ -2921,7 +2915,6 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
     try {
       localStorage.setItem(this.settingsStorageKey, JSON.stringify(settings));
-      localStorage.removeItem(this.legacySettingsStorageKey);
     } catch {
       /* ignore quota / private mode */
     }
