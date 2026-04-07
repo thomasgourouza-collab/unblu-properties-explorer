@@ -404,6 +404,20 @@
                 <span class="header-content-value-leading">
                   <span>{{ column.label }}</span>
                   <p-sortIcon [field]="column.key" />
+                </span>
+                <span *ngIf="configImportErrorCount > 0" class="value-header-error-count text-muted small">
+                  ({{ configImportErrorCount }} errors)
+                </span>
+                <span class="value-header-diff-reset-group" role="group" aria-label="Select value diffs and reset all to default">
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary value-header-select-changes-btn"
+                    (click)="onSelectValueChangesClick($event)"
+                    [disabled]="valueColumnChangeRowCount === 0"
+                    title="Clear row selection, then select only loaded rows whose Value differs from Default (order ignored for lists)"
+                  >
+                    select diffs ({{ valueColumnChangeRowCount }})
+                  </button>
                   <button
                     type="button"
                     class="btn btn-sm btn-outline-secondary value-cell-reset-btn value-header-reset-all-btn"
@@ -415,18 +429,6 @@
                     <i class="pi pi-undo" aria-hidden="true"></i>
                   </button>
                 </span>
-                <span *ngIf="configImportErrorCount > 0" class="value-header-error-count text-muted small">
-                  ({{ configImportErrorCount }} errors)
-                </span>
-                <button
-                  type="button"
-                  class="btn btn-sm btn-outline-secondary value-header-select-changes-btn"
-                  (click)="onSelectValueChangesClick($event)"
-                  [disabled]="valueColumnChangeRowCount === 0"
-                  title="Clear row selection, then select only loaded rows whose Value differs from Default (order ignored for lists)"
-                >
-                  select diffs ({{ valueColumnChangeRowCount }})
-                </button>
               </ng-container>
               <ng-template #tplHeaderDefaultLabel>
                 <span>{{ column.label }}</span>

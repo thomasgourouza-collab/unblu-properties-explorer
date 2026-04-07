@@ -620,9 +620,15 @@ $export-bar-control-font-size: 0.875rem;
   overflow: hidden;
 }
 
+.value-header-diff-reset-group {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 0.3rem;
+}
+
 .value-header-reset-all-btn {
   flex-shrink: 0;
-  margin-left: 0.45rem;
 }
 
 .value-header-error-count {
@@ -956,6 +962,14 @@ $value-cell-font-size: 0.8125rem;
   .pi {
     font-size: 0.78rem;
   }
+}
+
+.value-header-diff-reset-group .value-header-select-changes-btn {
+  min-height: $value-cell-control-min-height;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
 }
 
 $value-column-divergent-border: color-mix(in srgb, var(--accent) 72%, var(--surface-border));
