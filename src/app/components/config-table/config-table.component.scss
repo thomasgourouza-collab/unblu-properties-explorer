@@ -128,6 +128,18 @@
   }
 }
 
+// Allowed scopes / Editable by: OR vs AND (list column header).
+.list-header-filter .text-filter-mode-row {
+  .btn-check:checked + .btn.btn-outline-secondary {
+    border-color: #34d399;
+    border-width: 1px;
+  }
+
+  .btn-check:checked + .btn.btn-outline-secondary:hover {
+    border-color: #4ade80;
+  }
+}
+
 .table-export-bar-label {
   font-size: 0.78rem;
   font-weight: 600;
