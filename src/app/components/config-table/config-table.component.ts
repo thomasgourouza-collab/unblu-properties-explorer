@@ -1650,10 +1650,10 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
   private buildSelectionExportFilename(extension: 'csv' | 'json'): string {
     const d = new Date();
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
-    return `configuration-selection-${y}-${m}-${day}.${extension}`;
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const y = d.getFullYear();
+    return `configuration-${day}-${m}-${y}.${extension}`;
   }
 
   getDefaultValueParts(value = ''): string[] {
