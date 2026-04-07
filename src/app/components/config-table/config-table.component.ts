@@ -76,8 +76,12 @@ interface TableSettings {
   globalFilter: string;
   globalFilterMode?: TextMatchMode;
   globalFilterScope?: GlobalFilterScope;
+  globalFilterMatchCase?: boolean;
+  globalFilterWholeWord?: boolean;
   textFilters: Partial<Record<string, string>>;
   textModes?: Partial<Record<string, TextMatchMode>>;
+  textFilterMatchCase?: Partial<Record<string, boolean>>;
+  textFilterWholeWord?: Partial<Record<string, boolean>>;
   valueFilters: Partial<Record<string, string[]>>;
   listModes: Record<ListColumnKey, FilterMode>;
   visibleColumnKeys: string[];
@@ -174,8 +178,12 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   globalFilter = '';
   globalFilterMode: TextMatchMode = 'expr';
   globalFilterScope: GlobalFilterScope = 'all';
+  globalFilterMatchCase = false;
+  globalFilterWholeWord = false;
   textFilters: Partial<Record<string, string>> = {};
   textModes: Partial<Record<string, TextMatchMode>> = {};
+  textFilterMatchCase: Partial<Record<string, boolean>> = {};
+  textFilterWholeWord: Partial<Record<string, boolean>> = {};
   valueFilters: Partial<Record<string, string[]>> = {};
   listModes: Record<ListColumnKey, FilterMode> = {
     allowedScopes: 'or',
@@ -1141,6 +1149,44 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
   setTextFilter(key: string, value: string): void {
     this.textFilters[key] = value;
+    if (!value.trim()) {
+      delete this.textFilterMatchCase[key];
+      delete this.textFilterWholeWord[key];
+    }
+    this.onFiltersChanged();
+  }
+
+  getTextFilterMatchCase(key: string): boolean {
+    return !!this.textFilterMatchCase[key];
+  }
+
+  getTextFilterWholeWord(key: string): boolean {
+    return !!this.textFilterWholeWord[key];
+  }
+
+  toggleGlobalFilterMatchCase(): void {
+    this.globalFilterMatchCase = !this.globalFilterMatchCase;
+    this.onFiltersChanged();
+  }
+
+  toggleGlobalFilterWholeWord(): void {
+    this.globalFilterWholeWord = !this.globalFilterWholeWord;
+    this.onFiltersChanged();
+  }
+
+  toggleTextFilterMatchCase(key: string): void {
+    this.textFilterMatchCase[key] = !this.textFilterMatchCase[key];
+    if (!this.textFilterMatchCase[key]) {
+      delete this.textFilterMatchCase[key];
+    }
+    this.onFiltersChanged();
+  }
+
+  toggleTextFilterWholeWord(key: string): void {
+    this.textFilterWholeWord[key] = !this.textFilterWholeWord[key];
+    if (!this.textFilterWholeWord[key]) {
+      delete this.textFilterWholeWord[key];
+    }
     this.onFiltersChanged();
   }
 
@@ -1172,6 +1218,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       return;
     }
     this.textFilters[key] = '';
+    delete this.textFilterMatchCase[key];
+    delete this.textFilterWholeWord[key];
     this.onFiltersChanged();
   }
 
@@ -1452,7 +1500,10 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     if (globalInput) {
       const columnsToSearch = this.globalFilterScope === 'visible' ? this.visibleColumns : this.columns;
       if (this.globalFilterMode === 'regex') {
-        const regex = this.tryParseRegexInput(globalInput);
+        const regex = this.tryParseRegexInput(globalInput, {
+          matchCase: this.globalFilterMatchCase,
+          wholeWord: this.globalFilterWholeWord
+        });
         if (regex) {
           const matchedColumns = columnsToSearch
             .filter((column) => this.matchesRegex(this.getCellValue(row, column.key), regex))
@@ -1467,8 +1518,14 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       } else {
         const pr = parseFilterExpression(globalInput);
         if (pr.ok) {
-          const rowValues = columnsToSearch.map((column) => this.normalize(this.getCellValue(row, column.key)));
-          const rowContains = (t: string): boolean => rowValues.some((v) => v.includes(t));
+          const rowValues = columnsToSearch.map((column) => this.getCellValue(row, column.key) ?? '');
+          const rowContains = (t: string): boolean =>
+            rowValues.some((v) =>
+              this.textFilterAtomMatches(v, t, {
+                matchCase: this.globalFilterMatchCase,
+                wholeWord: this.globalFilterWholeWord
+              })
+            );
           const lines = formatExpressionMatchLines(pr.ast, rowContains);
           if (lines.length > 0) {
             reasons.push({
@@ -1490,7 +1547,10 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
         const mode = this.getTextMode(column.key);
         const value = this.getCellValue(row, column.key);
         if (mode === 'regex') {
-          const regex = this.tryParseRegexInput(input);
+          const regex = this.tryParseRegexInput(input, {
+            matchCase: this.getTextFilterMatchCase(column.key),
+            wholeWord: this.getTextFilterWholeWord(column.key)
+          });
           if (regex && this.matchesRegex(value, regex)) {
             reasons.push({
               label: `${column.label} (${mode.toUpperCase()})`,
@@ -1502,8 +1562,12 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
         const pr = parseFilterExpression(input);
         if (pr.ok) {
-          const hay = this.normalize(value);
-          const lines = formatExpressionMatchLines(pr.ast, (op) => hay.includes(op));
+          const lines = formatExpressionMatchLines(pr.ast, (op) =>
+            this.textFilterAtomMatches(value, op, {
+              matchCase: this.getTextFilterMatchCase(column.key),
+              wholeWord: this.getTextFilterWholeWord(column.key)
+            })
+          );
           if (lines.length > 0) {
             reasons.push({
               label: `${column.label} (EXPR)`,
@@ -1681,8 +1745,12 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.globalFilter = '';
     this.globalFilterMode = 'expr';
     this.globalFilterScope = 'all';
+    this.globalFilterMatchCase = false;
+    this.globalFilterWholeWord = false;
     this.textFilters = {};
     this.textModes = {};
+    this.textFilterMatchCase = {};
+    this.textFilterWholeWord = {};
     this.valueFilters = {};
     this.listModes = {
       allowedScopes: 'or',
@@ -1708,8 +1776,12 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.globalFilter = '';
     this.globalFilterMode = 'expr';
     this.globalFilterScope = 'all';
+    this.globalFilterMatchCase = false;
+    this.globalFilterWholeWord = false;
     this.textFilters = {};
     this.textModes = {};
+    this.textFilterMatchCase = {};
+    this.textFilterWholeWord = {};
     this.valueFilters = {};
     this.listModes = {
       allowedScopes: 'or',
@@ -1735,6 +1807,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
     if (chip.kind === 'text') {
       this.textFilters[chip.columnKey] = '';
+      delete this.textFilterMatchCase[chip.columnKey];
+      delete this.textFilterWholeWord[chip.columnKey];
       this.onFiltersChanged();
       return;
     }
@@ -1798,10 +1872,13 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
           this.globalExprRowPredicate = () => false;
         } else {
           const ast = pr.ast;
+          const gCase = this.globalFilterMatchCase;
+          const gWord = this.globalFilterWholeWord;
           this.globalExprRowPredicate = (row: ConfigRow) => {
             const columnsToSearch = this.globalFilterScope === 'visible' ? this.visibleColumns : this.columns;
-            const rowValues = columnsToSearch.map((column) => this.normalize(this.getCellValue(row, column.key)));
-            const rowContains = (s: string): boolean => rowValues.some((value) => value.includes(s));
+            const rowValues = columnsToSearch.map((column) => this.getCellValue(row, column.key) ?? '');
+            const rowContains = (s: string): boolean =>
+              rowValues.some((value) => this.textFilterAtomMatches(value, s, { matchCase: gCase, wholeWord: gWord }));
             return evaluateFilterAst(ast, rowContains);
           };
         }
@@ -1825,9 +1902,12 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
         this.columnTextExprPredicates.set(column.key, () => false);
       } else {
         const ast = pr.ast;
+        const cCase = this.getTextFilterMatchCase(column.key);
+        const cWord = this.getTextFilterWholeWord(column.key);
         this.columnTextExprPredicates.set(column.key, (value: string) => {
-          const hay = this.normalize(value);
-          return evaluateFilterAst(ast, (op) => hay.includes(op));
+          return evaluateFilterAst(ast, (op) =>
+            this.textFilterAtomMatches(value, op, { matchCase: cCase, wholeWord: cWord })
+          );
         });
       }
     }
@@ -1839,7 +1919,10 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       if (!t) {
         return true;
       }
-      const regex = this.tryParseRegexInput(this.globalFilter);
+      const regex = this.tryParseRegexInput(this.globalFilter, {
+        matchCase: this.globalFilterMatchCase,
+        wholeWord: this.globalFilterWholeWord
+      });
       if (!regex) {
         return true;
       }
@@ -1870,7 +1953,10 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       const raw = (this.textFilters[column.key] ?? '').trim();
       if (textMode === 'regex') {
         if (raw) {
-          const textRegex = this.tryParseRegexInput(this.textFilters[column.key] ?? '');
+          const textRegex = this.tryParseRegexInput(this.textFilters[column.key] ?? '', {
+            matchCase: this.getTextFilterMatchCase(column.key),
+            wholeWord: this.getTextFilterWholeWord(column.key)
+          });
           if (textRegex) {
             const value = this.getCellValue(row, column.key);
             if (!this.matchesRegex(value, textRegex)) {
@@ -1933,6 +2019,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       if (column.filterType !== 'text') {
         delete this.textFilters[column.key];
         delete this.textModes[column.key];
+        delete this.textFilterMatchCase[column.key];
+        delete this.textFilterWholeWord[column.key];
       }
     }
 
@@ -2419,7 +2507,13 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       return [{ text: '', kind: 'none' }];
     }
 
-    const globalRegex = this.globalFilterMode === 'regex' ? this.tryParseRegexInput(this.globalFilter) : null;
+    const globalRegex =
+      this.globalFilterMode === 'regex'
+        ? this.tryParseRegexInput(this.globalFilter, {
+            matchCase: this.globalFilterMatchCase,
+            wholeWord: this.globalFilterWholeWord
+          })
+        : null;
     let globalExprHighlightTokens: string[] = [];
     if (this.globalFilterMode === 'expr' && this.globalFilter.trim()) {
       const gpr = parseFilterExpression(this.globalFilter);
@@ -2433,7 +2527,10 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       columnKey &&
       this.columns.some((column) => column.key === columnKey && column.filterType === 'text') &&
       this.getTextMode(columnKey) === 'regex'
-        ? this.tryParseRegexInput(this.textFilters[columnKey] ?? '')
+        ? this.tryParseRegexInput(this.textFilters[columnKey] ?? '', {
+            matchCase: this.getTextFilterMatchCase(columnKey),
+            wholeWord: this.getTextFilterWholeWord(columnKey)
+          })
         : null;
 
     if (
@@ -2459,8 +2556,14 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     const sourceLower = source.toLowerCase();
     const levels = new Array<number>(source.length).fill(0);
 
-    this.applyTokenHighlights(source, sourceLower, globalExprHighlightTokens, globalRegex, levels, 1);
-    this.applyTokenHighlights(source, sourceLower, columnTokens, columnRegex, levels, 2);
+    this.applyTokenHighlights(source, sourceLower, globalExprHighlightTokens, globalRegex, levels, 1, {
+      matchCase: this.globalFilterMatchCase,
+      wholeWord: this.globalFilterWholeWord
+    });
+    this.applyTokenHighlights(source, sourceLower, columnTokens, columnRegex, levels, 2, {
+      matchCase: columnKey ? this.getTextFilterMatchCase(columnKey) : false,
+      wholeWord: columnKey ? this.getTextFilterWholeWord(columnKey) : false
+    });
 
     const parts: HighlightPart[] = [];
     let buffer = '';
@@ -2489,7 +2592,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     tokens: string[],
     regex: RegExp | null,
     levels: number[],
-    level: number
+    level: number,
+    tokenOpts?: { matchCase: boolean; wholeWord: boolean }
   ): void {
     if (regex) {
       const workingRegex = this.toGlobalRegex(regex);
@@ -2512,21 +2616,60 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       }
     }
 
+    const opts = tokenOpts ?? { matchCase: false, wholeWord: false };
+
     for (const token of tokens) {
       if (!token) {
         continue;
       }
-      let cursor = 0;
-      while (cursor < sourceLower.length) {
-        const matchIndex = sourceLower.indexOf(token, cursor);
-        if (matchIndex < 0) {
-          break;
+      if (!opts.wholeWord && !opts.matchCase) {
+        const tl = token.toLowerCase();
+        let cursor = 0;
+        while (cursor < sourceLower.length) {
+          const matchIndex = sourceLower.indexOf(tl, cursor);
+          if (matchIndex < 0) {
+            break;
+          }
+          const matchEnd = matchIndex + token.length;
+          for (let index = matchIndex; index < matchEnd && index < levels.length; index += 1) {
+            levels[index] = Math.max(levels[index], level);
+          }
+          cursor = matchIndex + 1;
         }
-        const matchEnd = matchIndex + token.length;
-        for (let index = matchIndex; index < matchEnd && index < levels.length; index += 1) {
-          levels[index] = Math.max(levels[index], level);
+      } else if (!opts.wholeWord && opts.matchCase) {
+        let cursor = 0;
+        while (cursor < source.length) {
+          const matchIndex = source.indexOf(token, cursor);
+          if (matchIndex < 0) {
+            break;
+          }
+          const matchEnd = matchIndex + token.length;
+          for (let index = matchIndex; index < matchEnd && index < levels.length; index += 1) {
+            levels[index] = Math.max(levels[index], level);
+          }
+          cursor = matchIndex + 1;
         }
-        cursor = matchIndex + 1;
+      } else {
+        try {
+          const inner = this.escapeRegExp(token);
+          const flags = opts.matchCase ? 'g' : 'gi';
+          const re = new RegExp(`\\b${inner}\\b`, flags);
+          let m: RegExpExecArray | null;
+          while ((m = re.exec(source)) !== null) {
+            const start = m.index;
+            const len = m[0]?.length ?? 0;
+            const end = start + len;
+            if (len === 0) {
+              re.lastIndex += 1;
+              continue;
+            }
+            for (let index = start; index < end && index < levels.length; index += 1) {
+              levels[index] = Math.max(levels[index], level);
+            }
+          }
+        } catch {
+          /* ignore invalid token for highlight */
+        }
       }
     }
   }
@@ -2645,11 +2788,50 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     return value.toLowerCase().trim();
   }
 
-  private tryParseRegexInput(input: string): RegExp | null {
+  private escapeRegExp(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  /**
+   * Expression-mode atom: substring or whole-word match; case depends on `matchCase`.
+   */
+  private textFilterAtomMatches(
+    hayRaw: string,
+    operand: string,
+    opts: { matchCase: boolean; wholeWord: boolean }
+  ): boolean {
+    const hay = hayRaw.trim();
+    if (!operand) {
+      return false;
+    }
+    const { matchCase, wholeWord } = opts;
+    if (!wholeWord) {
+      if (!matchCase) {
+        return hay.toLowerCase().includes(operand.toLowerCase());
+      }
+      return hay.includes(operand);
+    }
+    try {
+      const inner = this.escapeRegExp(operand);
+      const flags = matchCase ? '' : 'i';
+      return new RegExp(`\\b${inner}\\b`, flags).test(hay);
+    } catch {
+      return false;
+    }
+  }
+
+  private tryParseRegexInput(
+    input: string,
+    options?: { matchCase?: boolean; wholeWord?: boolean }
+  ): RegExp | null {
+    const matchCase = !!options?.matchCase;
+    const wholeWord = !!options?.wholeWord;
     const trimmed = input.trim();
     if (!trimmed) {
       return null;
     }
+
+    let base: RegExp | null = null;
 
     if (trimmed.startsWith('/')) {
       const lastSlash = trimmed.lastIndexOf('/');
@@ -2658,16 +2840,30 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
         const flags = trimmed.slice(lastSlash + 1);
         if (/^[dgimsuy]*$/.test(flags)) {
           try {
-            return new RegExp(pattern, flags);
+            base = new RegExp(pattern, flags);
           } catch {
             return null;
           }
         }
       }
+      if (!base) {
+        return null;
+      }
+    } else {
+      try {
+        const flags = matchCase ? '' : 'i';
+        base = new RegExp(trimmed, flags);
+      } catch {
+        return null;
+      }
     }
 
+    if (!wholeWord) {
+      return base;
+    }
     try {
-      return new RegExp(trimmed, 'i');
+      const flagsNoG = base.flags.replaceAll('g', '');
+      return new RegExp(`\\b(?:${base.source})\\b`, flagsNoG);
     } catch {
       return null;
     }
@@ -2840,6 +3036,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       this.globalFilterMode =
         parsed.globalFilterMode === 'regex' ? 'regex' : 'expr';
       this.globalFilterScope = parsed.globalFilterScope === 'visible' ? 'visible' : 'all';
+      this.globalFilterMatchCase = !!parsed.globalFilterMatchCase;
+      this.globalFilterWholeWord = !!parsed.globalFilterWholeWord;
       this.textFilters = parsed.textFilters ?? {};
       this.textModes = Object.entries(parsed.textModes ?? {}).reduce(
         (acc, [key, mode]) => {
@@ -2847,6 +3045,24 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
           return acc;
         },
         {} as Partial<Record<string, TextMatchMode>>
+      );
+      this.textFilterMatchCase = Object.entries(parsed.textFilterMatchCase ?? {}).reduce(
+        (acc, [key, v]) => {
+          if (v) {
+            acc[key] = true;
+          }
+          return acc;
+        },
+        {} as Partial<Record<string, boolean>>
+      );
+      this.textFilterWholeWord = Object.entries(parsed.textFilterWholeWord ?? {}).reduce(
+        (acc, [key, v]) => {
+          if (v) {
+            acc[key] = true;
+          }
+          return acc;
+        },
+        {} as Partial<Record<string, boolean>>
       );
       this.valueFilters = parsed.valueFilters ?? {};
       this.listModes = {
@@ -2875,9 +3091,15 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     const settings: TableSettings = {
       globalFilter: this.globalFilter,
       globalFilterScope: this.globalFilterScope,
+      globalFilterMatchCase: this.globalFilterMatchCase || undefined,
+      globalFilterWholeWord: this.globalFilterWholeWord || undefined,
       textFilters: this.textFilters,
       globalFilterMode: this.globalFilterMode,
       textModes: this.textModes,
+      textFilterMatchCase:
+        Object.keys(this.textFilterMatchCase).length > 0 ? this.textFilterMatchCase : undefined,
+      textFilterWholeWord:
+        Object.keys(this.textFilterWholeWord).length > 0 ? this.textFilterWholeWord : undefined,
       valueFilters: this.valueFilters,
       listModes: this.listModes,
       visibleColumnKeys: this.visibleColumnKeys,

@@ -20,6 +20,7 @@
     "@angular/router": "^21.2.0",
     "@primeuix/themes": "^2.0.3",
     "@types/papaparse": "^5.5.2",
+    "@vscode/codicons": "^0.0.45",
     "bootstrap": "^5.3.8",
     "papaparse": "^5.5.3",
     "primeicons": "^7.0.0",

@@ -2,7 +2,7 @@
  * JavaScript-like boolean filter expressions over substring atoms:
  * && (tighter), ||, unary !, parentheses.
  * Operands may contain internal spaces; only leading/trailing whitespace per operand is trimmed.
- * Whitespace before an operator ends the operand (e.g. `a b && c d` → two atoms). Matching uses caller normalize + includes.
+ * Whitespace before an operator ends the operand (e.g. `a b && c d` → two atoms). Atoms are edge-trimmed only (case preserved); callers fold case when needed.
  */
 
 export type FilterExprNode =
@@ -91,16 +91,21 @@ function readOperandToken(
     j += 1;
   }
   const raw = input.slice(i, j);
-  const norm = normalizeFilterOperand(raw);
+  const norm = trimFilterOperand(raw);
   if (!norm) {
     return { ok: false, error: `Empty operand near ${i}` };
   }
   return { ok: true, end: j, value: norm };
 }
 
-/** Lowercase + trim (same idea as table normalize for operands). */
+/** Edge-trim only; preserves internal spaces and character case for match-case filtering. */
+export function trimFilterOperand(raw: string): string {
+  return raw.trim();
+}
+
+/** @deprecated Use trimFilterOperand; kept for compatibility (same as trimFilterOperand). */
 export function normalizeFilterOperand(raw: string): string {
-  return raw.toLowerCase().trim();
+  return trimFilterOperand(raw);
 }
 
 /**

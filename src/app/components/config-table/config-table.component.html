@@ -236,6 +236,28 @@
               (ngModelChange)="setGlobalFilterMode($event)"
             />
             <label class="btn btn-outline-secondary btn-xs filter-mode-expr-label" for="global-filter-expr">Expression</label>
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-xs filter-text-option-btn"
+              [class.filter-text-option-btn--active]="globalFilterMatchCase"
+              [attr.aria-pressed]="globalFilterMatchCase"
+              aria-label="Match case"
+              title="Match case"
+              (click)="toggleGlobalFilterMatchCase()"
+            >
+              <span class="codicon codicon-case-sensitive" aria-hidden="true"></span>
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-xs filter-text-option-btn"
+              [class.filter-text-option-btn--active]="globalFilterWholeWord"
+              [attr.aria-pressed]="globalFilterWholeWord"
+              aria-label="Match whole word"
+              title="Match whole word"
+              (click)="toggleGlobalFilterWholeWord()"
+            >
+              <span class="codicon codicon-whole-word" aria-hidden="true"></span>
+            </button>
             <input
               class="btn-check"
               type="radio"
@@ -466,6 +488,28 @@
                       class="btn btn-outline-secondary btn-xs filter-mode-expr-label"
                       [for]="column.key + '-text-expr'"
                       >Expression</label>
+                    <button
+                      type="button"
+                      class="btn btn-outline-secondary btn-xs filter-text-option-btn"
+                      [class.filter-text-option-btn--active]="getTextFilterMatchCase(column.key)"
+                      [attr.aria-pressed]="getTextFilterMatchCase(column.key)"
+                      aria-label="Match case"
+                      title="Match case"
+                      (click)="toggleTextFilterMatchCase(column.key)"
+                    >
+                      <span class="codicon codicon-case-sensitive" aria-hidden="true"></span>
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-outline-secondary btn-xs filter-text-option-btn"
+                      [class.filter-text-option-btn--active]="getTextFilterWholeWord(column.key)"
+                      [attr.aria-pressed]="getTextFilterWholeWord(column.key)"
+                      aria-label="Match whole word"
+                      title="Match whole word"
+                      (click)="toggleTextFilterWholeWord(column.key)"
+                    >
+                      <span class="codicon codicon-whole-word" aria-hidden="true"></span>
+                    </button>
                     <input
                       class="btn-check"
                       type="radio"

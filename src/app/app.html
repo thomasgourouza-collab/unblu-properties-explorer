@@ -242,6 +242,12 @@
               or parentheses inside a single term (a future improvement could add quoting).
             </li>
             <li>
+              Between <strong>Expression</strong> and <strong>Regex</strong>, the case-sensitive and whole-word icon
+              toggles (same icons as in VS Code) apply to <em>both</em> modes: expression operands respect them, and bare
+              regex patterns use them for default flags and word boundaries (explicit <code>/pattern/flags</code> keeps your
+              flags; whole-word still wraps the pattern). Active toggles use the same accent border as the mode buttons.
+            </li>
+            <li>
               <strong>Regex</strong> mode treats the whole field as one pattern. The active mode toggle (Expression or
               Regex) uses the same border color as the Export / Import config toolbar buttons (global and per text column).
             </li>
