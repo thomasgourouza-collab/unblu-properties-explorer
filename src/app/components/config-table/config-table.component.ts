@@ -91,18 +91,18 @@ interface TableSettings {
 const UNBLU_SCOPE_EDITORS: Record<string, string[]> = unbluScopeEditorsJson as Record<string, string[]>;
 
 const BASE_COLUMN_DEFINITIONS: ColumnDefinition[] = [
+  { key: 'source', label: 'Source', filterType: 'select' },
   { key: 'category', label: 'Category', filterType: 'select' },
   { key: 'propertyTitle', label: 'Property title', filterType: 'text' },
   { key: 'property', label: 'Property', filterType: 'text' },
-  { key: 'source', label: 'Source', filterType: 'select' },
-  { key: 'defaultValue', label: 'Default value', filterType: 'text' },
   { key: 'value', label: 'Value', filterType: 'text' },
-  { key: 'type', label: 'Type', filterType: 'select' },
+  { key: 'defaultValue', label: 'Default value', filterType: 'text' },
   { key: 'allowedValues', label: 'Allowed values', filterType: 'text' },
+  { key: 'type', label: 'Type', filterType: 'select' },
+  { key: 'description', label: 'Description', filterType: 'text' },
   { key: 'allowedScopes', label: 'Allowed scopes', filterType: 'list' },
-  { key: 'visibility', label: 'Visibility', filterType: 'select' },
   { key: 'editableBy', label: 'Editable by', filterType: 'list' },
-  { key: 'description', label: 'Description', filterType: 'text' }
+  { key: 'visibility', label: 'Visibility', filterType: 'select' }
 ];
 
 /**
