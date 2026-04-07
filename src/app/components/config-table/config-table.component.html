@@ -263,12 +263,15 @@
 <section class="card shadow-sm" data-bwignore data-1p-ignore data-lpignore="true">
   <div class="card-body p-0">
     <p-table
+      #configTable
       [value]="tableDisplayedRows"
       [columns]="visibleColumns"
       [paginator]="true"
       [rows]="rowsPerPage"
       [first]="tableFirst"
       (firstChange)="onTableFirstChange($event)"
+      [customSort]="true"
+      (sortFunction)="onConfigTableCustomSort($event)"
       [sortMode]="'multiple'"
       [reorderableColumns]="true"
       [scrollable]="true"

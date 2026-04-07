@@ -15,7 +15,9 @@ import {
   ViewChildren
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { SortMeta } from 'primeng/api';
 import { MultiSelect, MultiSelectModule } from 'primeng/multiselect';
+import type { Table } from 'primeng/table';
 import { TableColumnReorderEvent, TableModule } from 'primeng/table';
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 
@@ -129,6 +131,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   @ViewChild('globalFilterInputRef') globalFilterInputRef?: ElementRef<HTMLInputElement>;
   @ViewChild('importConfigInput') private readonly importConfigInputRef?: ElementRef<HTMLInputElement>;
   @ViewChild('exportFormatMenuHost') private readonly exportFormatMenuHost?: ElementRef<HTMLElement>;
+  /** Template ref on `p-table` — avoid `@ViewChild(Table)` (can trip Angular’s injector with PrimeNG 21). */
+  @ViewChild('configTable') private readonly configTableRef?: Table;
   @ViewChildren('valueCellMulti', { read: MultiSelect })
   private valueCellMultiselects?: QueryList<MultiSelect>;
   private chipsScrollHost: HTMLElement | null = null;
@@ -136,6 +140,11 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   /** Stable `ngModel` / `[options]` refs for Value-column multiselect (new arrays each CD freeze PrimeNG). */
   private readonly valueColumnMultiModelCache = new Map<string, { value: string; selected: string[] }>();
   private readonly valueColumnSelectOptionsCache = new Map<string, SelectOption[]>();
+  /**
+   * PrimeNG multi-sort toggles asc ↔ desc only. We treat “desc → asc” on the same column as a 3rd click → unsort.
+   * Ignored when multiSortMeta has more than one entry (Ctrl/Cmd multi-sort).
+   */
+  private tableSortTriStateAnchor: { field: string; order: 1 | -1 } | null = null;
   rowsPerPage = 25;
   readonly rowsPerPageOptions = [10, 25, 50, 100];
   /** Bound to p-table [first]; kept in range when data length or page size changes. */
@@ -455,6 +464,85 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
   onTableFirstChange(first: number): void {
     this.tableFirst = typeof first === 'number' && !Number.isNaN(first) ? first : 0;
+  }
+
+  /**
+   * Custom sort: apply Prime’s multiSortMeta to `filteredRows`, with a 3rd click cycle
+   * (asc → desc → restore default row order) for single-column sorts.
+   */
+  onConfigTableCustomSort(event: { data: ConfigRow[]; mode: string; multiSortMeta: SortMeta[] | null }): void {
+    const meta = event.multiSortMeta ?? [];
+
+    if (meta.length !== 1) {
+      this.tableSortTriStateAnchor = null;
+      if (meta.length === 0) {
+        this.applyFilters();
+      } else {
+        this.sortFilteredRowsBySortMeta(meta);
+      }
+      this.safeMarkForCheck();
+      return;
+    }
+
+    const single = meta[0];
+    const field = String(single.field);
+    const order = single.order;
+
+    if (
+      this.tableSortTriStateAnchor &&
+      this.tableSortTriStateAnchor.field === field &&
+      this.tableSortTriStateAnchor.order === -1 &&
+      order === 1
+    ) {
+      this.tableSortTriStateAnchor = null;
+      if (this.configTableRef) {
+        this.configTableRef.multiSortMeta = [];
+      }
+      this.restoreFilteredRowsDatasetOrder();
+      this.safeMarkForCheck();
+      return;
+    }
+
+    this.tableSortTriStateAnchor = order === 1 || order === -1 ? { field, order: order as 1 | -1 } : null;
+    this.sortFilteredRowsBySortMeta(meta);
+    this.safeMarkForCheck();
+  }
+
+  /**
+   * Put `filteredRows` back in the same order as `this.rows` (subset only). Used when clearing column sort;
+   * avoids `applyFilters()` which re-runs every filter and ancillary UI work.
+   */
+  private restoreFilteredRowsDatasetOrder(): void {
+    if (this.filteredRows.length === 0) {
+      return;
+    }
+    const indexByKey = new Map<string, number>();
+    for (let i = 0; i < this.rows.length; i++) {
+      indexByKey.set(this.rows[i].rowKey, i);
+    }
+    this.filteredRows.sort((a, b) => (indexByKey.get(a.rowKey) ?? 0) - (indexByKey.get(b.rowKey) ?? 0));
+  }
+
+  private sortFilteredRowsBySortMeta(meta: SortMeta[]): void {
+    if (meta.length === 0) {
+      return;
+    }
+    this.filteredRows.sort((a, b) => {
+      for (const m of meta) {
+        const cmp = this.compareConfigRowsForSort(a, b, String(m.field), m.order);
+        if (cmp !== 0) {
+          return cmp;
+        }
+      }
+      return 0;
+    });
+  }
+
+  private compareConfigRowsForSort(a: ConfigRow, b: ConfigRow, field: string, order: number): number {
+    const v1 = this.getCellValue(a, field);
+    const v2 = this.getCellValue(b, field);
+    const cmp = v1.localeCompare(v2, undefined, { numeric: true, sensitivity: 'base' });
+    return order < 0 ? -cmp : cmp;
   }
 
   /** Keep paginator index valid when displayed row count shrinks (filters, selected-only, page size). */
