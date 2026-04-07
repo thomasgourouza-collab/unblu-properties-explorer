@@ -393,7 +393,7 @@ $export-bar-control-font-size: 0.875rem;
 .toolbar-chips-two-thirds {
   min-width: 0;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 0.4rem;
   align-self: end;
 
@@ -405,10 +405,6 @@ $export-bar-control-font-size: 0.875rem;
 }
 
 .chips-scroll-area {
-  // Reserve space under chips when there is no horizontal bar; remove when overflowing so
-  // the native scrollbar occupies that slot and the chip row does not jump (see TS sync).
-  // Match real horizontal scrollbar height (OS varies; tweak if chips still jump).
-  --chips-scrollbar-reserve: 14px;
   min-width: 0;
   flex: 1 1 auto;
   display: flex;
@@ -417,13 +413,8 @@ $export-bar-control-font-size: 0.875rem;
   overflow-x: auto;
   overflow-y: hidden;
   white-space: nowrap;
-  padding-bottom: var(--chips-scrollbar-reserve);
   box-sizing: border-box;
   @include thin-overlay-scrollbar;
-
-  &.chips-scroll-area--overflowing {
-    padding-bottom: 0;
-  }
 }
 
 .no-filters-label {

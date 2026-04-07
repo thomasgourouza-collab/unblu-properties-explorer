@@ -145,8 +145,6 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   @ViewChild('configTable') private readonly configTableRef?: Table;
   @ViewChildren('valueCellMulti', { read: MultiSelect })
   private valueCellMultiselects?: QueryList<MultiSelect>;
-  private chipsScrollHost: HTMLElement | null = null;
-  private chipsScrollResizeObserver: ResizeObserver | null = null;
   /** Stable `ngModel` / `[options]` refs for Value-column multiselect (new arrays each CD freeze PrimeNG). */
   private readonly valueColumnMultiModelCache = new Map<string, { value: string; selected: string[] }>();
   private readonly valueColumnSelectOptionsCache = new Map<string, SelectOption[]>();
@@ -1023,16 +1021,6 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     return out;
   }
 
-  @ViewChild('chipsScrollArea')
-  set chipsScrollAreaRef(ref: ElementRef<HTMLElement> | undefined) {
-    this.teardownChipsScrollOverflowTracking();
-    const el = ref?.nativeElement ?? null;
-    this.chipsScrollHost = el;
-    if (el) {
-      this.setupChipsScrollOverflowTracking(el);
-    }
-  }
-
   ngOnChanges(changes: SimpleChanges): void {
     if (!changes['rows']) {
       return;
@@ -1095,7 +1083,6 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.teardownChipsScrollOverflowTracking();
     if (this.copyResetTimerId !== undefined) {
       globalThis.clearTimeout(this.copyResetTimerId);
     }
@@ -1779,8 +1766,6 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.pruneSelectionToDatasetRows();
     this.clearSelectedOnlyIfNoSelection();
 
-    this.scheduleChipsScrollOverflowSync();
-
     if (this.isMatchInspectorOpen && this.matchInspectorRow) {
       if (!this.filteredRows.includes(this.matchInspectorRow) || !this.hasActiveFilters) {
         this.closeMatchInspector();
@@ -1796,39 +1781,6 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
     this.syncMatchInspectorToDisplayedTable();
     this.clampTableFirstToDisplayedData();
-  }
-
-  private setupChipsScrollOverflowTracking(el: HTMLElement): void {
-    const run = () => this.syncChipsScrollOverflowClass(el);
-    if (typeof ResizeObserver !== 'undefined') {
-      const ro = new ResizeObserver(() => run());
-      ro.observe(el);
-      this.chipsScrollResizeObserver = ro;
-    }
-    requestAnimationFrame(run);
-  }
-
-  private teardownChipsScrollOverflowTracking(): void {
-    this.chipsScrollResizeObserver?.disconnect();
-    this.chipsScrollResizeObserver = null;
-    this.chipsScrollHost = null;
-  }
-
-  private scheduleChipsScrollOverflowSync(): void {
-    // Run after Angular has attached *ngIf chips (ViewChild setter) and laid out widths.
-    globalThis.setTimeout(() => {
-      requestAnimationFrame(() => {
-        const el = this.chipsScrollHost;
-        if (el?.isConnected) {
-          this.syncChipsScrollOverflowClass(el);
-        }
-      });
-    }, 0);
-  }
-
-  private syncChipsScrollOverflowClass(el: HTMLElement): void {
-    const overflowing = el.scrollWidth > el.clientWidth + 1;
-    el.classList.toggle('chips-scroll-area--overflowing', overflowing);
   }
 
   /** Rebuild expression predicates used by `passesGlobalFilter` / text column filters (call from `applyFilters`). */
