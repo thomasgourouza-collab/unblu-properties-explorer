@@ -722,25 +722,43 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     return JSON.stringify(value);
   }
 
+  /**
+   * Match import token to an allowed Value option with case-insensitive comparison;
+   * returns the spelling from the allowed list, or `null` if no match (empty token → `null`).
+   */
+  private resolveImportTokenToAllowedSpelling(allowedList: string[], candidate: string): string | null {
+    const t = candidate.trim();
+    if (t === '') {
+      return null;
+    }
+    const down = t.toLowerCase();
+    for (const opt of allowedList) {
+      if (opt.toLowerCase() === down) {
+        return opt;
+      }
+    }
+    return null;
+  }
+
   private jsonImportValueIsValid(row: ConfigRow, raw: string): boolean {
     if (this.isValueColumnBooleanType(row)) {
       const t = raw.trim().toLowerCase();
       return t === '' || t === 'true' || t === 'false';
     }
     if (this.valueColumnUsesMultiSelect(row)) {
-      const allowed = new Set(this.getValueColumnAllowedOptionValues(row));
+      const allowed = this.getValueColumnAllowedOptionValues(row);
       const tokens = this.parseListStyleCellToTokens(raw);
       if (tokens.length === 0) {
         return true;
       }
-      return tokens.every((tok) => allowed.has(tok));
+      return tokens.every((tok) => this.resolveImportTokenToAllowedSpelling(allowed, tok) !== null);
     }
     if (this.valueColumnUsesSingleSelectFromAllowed(row)) {
       const t = raw.trim();
       if (t === '') {
         return true;
       }
-      return this.getValueColumnAllowedOptionValues(row).includes(t);
+      return this.resolveImportTokenToAllowedSpelling(this.getValueColumnAllowedOptionValues(row), t) !== null;
     }
     return true;
   }
@@ -751,12 +769,19 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       return t === '' ? '' : t;
     }
     if (this.valueColumnUsesMultiSelect(row)) {
-      const allowed = new Set(this.getValueColumnAllowedOptionValues(row));
-      const tokens = this.parseListStyleCellToTokens(raw).filter((tok) => allowed.has(tok));
-      return [...tokens].sort((a, b) => a.localeCompare(b)).join(',');
+      const allowed = this.getValueColumnAllowedOptionValues(row);
+      const canonical = this.parseListStyleCellToTokens(raw)
+        .map((tok) => this.resolveImportTokenToAllowedSpelling(allowed, tok))
+        .filter((x): x is string => x !== null);
+      return [...canonical].sort((a, b) => a.localeCompare(b)).join(',');
     }
     if (this.valueColumnUsesSingleSelectFromAllowed(row)) {
-      return raw.trim();
+      const t = raw.trim();
+      if (t === '') {
+        return '';
+      }
+      const resolved = this.resolveImportTokenToAllowedSpelling(this.getValueColumnAllowedOptionValues(row), t);
+      return resolved ?? t;
     }
     return raw;
   }
