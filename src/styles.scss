@@ -53,10 +53,33 @@ body {
 }
 
 .form-control:focus,
+.form-control:focus-visible,
 .form-select:focus,
+.form-select:focus-visible {
+  background-color: var(--surface-elevated);
+  color: var(--text-secondary);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 0.18rem color-mix(in srgb, var(--accent-soft) 60%, transparent);
+}
+
 .btn:focus-visible {
   border-color: var(--accent);
   box-shadow: 0 0 0 0.18rem color-mix(in srgb, var(--accent-soft) 60%, transparent);
+}
+
+// PrimeNG fields (multiselect filter, etc.): keep dark surface when focused.
+// Use :enabled:focus to match theme specificity; !important so injected Aura styles do not win.
+.p-inputtext:enabled:focus,
+.p-inputtext:enabled:focus-visible,
+.p-inputtextarea:enabled:focus,
+.p-inputtextarea:enabled:focus-visible {
+  background: var(--surface-elevated) !important;
+  color: var(--text-secondary) !important;
+}
+
+.p-inputtext.p-variant-filled:enabled:focus,
+.p-inputtext.p-variant-filled:enabled:focus-visible {
+  background: var(--surface-elevated) !important;
 }
 
 .btn-outline-secondary {
