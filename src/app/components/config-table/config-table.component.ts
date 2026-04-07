@@ -80,7 +80,7 @@ const BASE_COLUMN_DEFINITIONS: ColumnDefinition[] = [
   { key: 'category', label: 'Category', filterType: 'select' },
   { key: 'propertyTitle', label: 'Property title', filterType: 'text' },
   { key: 'property', label: 'Property', filterType: 'text' },
-  { key: 'source', label: 'Source', filterType: 'text' },
+  { key: 'source', label: 'Source', filterType: 'select' },
   { key: 'defaultValue', label: 'Default value', filterType: 'text' },
   { key: 'value', label: 'Value', filterType: 'text' },
   { key: 'type', label: 'Type', filterType: 'select' },
@@ -1640,13 +1640,15 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   }
 
   private rowMatchesColumnFilter(row: ConfigRow, column: ColumnDefinition): boolean {
-    const textMode = this.getTextMode(column.key);
-    const textTokens = this.splitFilterTokens(this.textFilters[column.key] ?? '', textMode);
-    const textRegex = textMode === 'regex' ? this.tryParseRegexInput(this.textFilters[column.key] ?? '') : null;
-    if (textTokens.length > 0 || textRegex) {
-      const value = this.getCellValue(row, column.key);
-      if (!this.matchesTokens(value, textTokens, textMode, textRegex)) {
-        return false;
+    if (column.filterType === 'text') {
+      const textMode = this.getTextMode(column.key);
+      const textTokens = this.splitFilterTokens(this.textFilters[column.key] ?? '', textMode);
+      const textRegex = textMode === 'regex' ? this.tryParseRegexInput(this.textFilters[column.key] ?? '') : null;
+      if (textTokens.length > 0 || textRegex) {
+        const value = this.getCellValue(row, column.key);
+        if (!this.matchesTokens(value, textTokens, textMode, textRegex)) {
+          return false;
+        }
       }
     }
 
@@ -1694,6 +1696,13 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
   private sanitizeFilters(): void {
     for (const column of this.columns) {
+      if (column.filterType !== 'text') {
+        delete this.textFilters[column.key];
+        delete this.textModes[column.key];
+      }
+    }
+
+    for (const column of this.columns) {
       if (column.filterType === 'text') {
         continue;
       }
@@ -1734,7 +1743,12 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
         .sort((left, right) => left.localeCompare(right))
         .map((value) => ({ label: value, value }));
 
+      const hasEmptySource =
+        column.key === 'source' && rows.some((row) => !this.getCellValue(row, 'source').trim());
+
       if (column.key === 'allowedScopes' || column.key === 'visibility' || column.key === 'editableBy') {
+        optionsMap[column.key] = [...sorted, { label: 'None', value: COLUMN_FILTER_NONE_VALUE }];
+      } else if (hasEmptySource) {
         optionsMap[column.key] = [...sorted, { label: 'None', value: COLUMN_FILTER_NONE_VALUE }];
       } else {
         optionsMap[column.key] = sorted;
