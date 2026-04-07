@@ -18,6 +18,34 @@ npm start
 
 Open [http://localhost:4200](http://localhost:4200).
 
+## Docker
+
+Build a production image (multi-stage: `npm run build`, then serve static files with nginx):
+
+```bash
+docker build -t unblu-properties-explorer .
+```
+
+Run the app (maps container port 80 to **3000** on your machine):
+
+```bash
+docker run -d --name unblu-properties-explorer -p 3000:80 unblu-properties-explorer:latest
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+To stop, use:
+
+```bash
+docker stop unblu-properties-explorer
+```
+
+To start use:
+
+```bash
+docker start unblu-properties-explorer
+```
+
 ## Build
 
 ```bash
