@@ -72,7 +72,7 @@ type ListColumnKey = 'allowedScopes' | 'editableBy';
 type GlobalFilterScope = 'all' | 'visible';
 type TextMatchMode = 'expr' | 'regex';
 
-interface TableState {
+interface TableSettings {
   globalFilter: string;
   globalFilterMode?: TextMatchMode;
   globalFilterScope?: GlobalFilterScope;
@@ -138,9 +138,9 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   @Input({ required: true }) rows: ConfigRow[] = [];
   @ViewChild('globalFilterInputRef') globalFilterInputRef?: ElementRef<HTMLInputElement>;
   @ViewChild('importConfigInput') private readonly importConfigInputRef?: ElementRef<HTMLInputElement>;
-  @ViewChild('importTableStateInput') private readonly importTableStateInputRef?: ElementRef<HTMLInputElement>;
+  @ViewChild('importTableSettingsInput') private readonly importTableSettingsInputRef?: ElementRef<HTMLInputElement>;
   @ViewChild('exportFormatMenuHost') private readonly exportFormatMenuHost?: ElementRef<HTMLElement>;
-  @ViewChild('tableStateMenuHost') private readonly tableStateMenuHost?: ElementRef<HTMLElement>;
+  @ViewChild('tableSettingsMenuHost') private readonly tableSettingsMenuHost?: ElementRef<HTMLElement>;
   /** Template ref on `p-table` — avoid `@ViewChild(Table)` (can trip Angular’s injector with PrimeNG 21). */
   @ViewChild('configTable') private readonly configTableRef?: Table;
   @ViewChildren('valueCellMulti', { read: MultiSelect })
@@ -169,8 +169,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   showSelectedRowsOnly = false;
   /** Angular-driven export format menu (no Bootstrap JS). */
   exportFormatMenuOpen = false;
-  /** Table state dropdown (reset / export / import persisted UI state). */
-  tableStateMenuOpen = false;
+  /** Table settings dropdown (reset / export / import persisted UI). */
+  tableSettingsMenuOpen = false;
   /** Row identity for selection / CSV export (stable across duplicate property codes). */
   private readonly selectedRowKeys = new Set<string>();
   globalFilter = '';
@@ -226,8 +226,10 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   private pointerContextClientX = 0;
   private pointerContextClientY = 0;
 
-  private readonly stateStorageKey = 'unblu-properties-explorer-table-state';
-  private restoredState = false;
+  private readonly settingsStorageKey = 'unblu-properties-explorer-table-settings';
+  /** Previous key; still read on load, removed when saving. */
+  private readonly legacySettingsStorageKey = 'unblu-properties-explorer-table-settings';
+  private restoredSettings = false;
 
   get visibleColumns(): ColumnDefinition[] {
     return this.visibleColumnKeys
@@ -596,7 +598,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.clearSelectedOnlyIfNoSelection();
     this.syncMatchInspectorToDisplayedTable();
     this.safeMarkForCheck();
-    this.persistState();
+    this.persistSettings();
   }
 
   onResetImportedConfigClick(): void {
@@ -727,7 +729,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.clearSelectedOnlyIfNoSelection();
     this.syncMatchInspectorToDisplayedTable();
     this.safeMarkForCheck();
-    this.persistState();
+    this.persistSettings();
 
     if (unmatchedKeys.length > 0) {
       const dialogRows = this.buildImportMissingKeyDialogRows(unmatchedKeys, obj);
@@ -889,37 +891,37 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     }
     this.exportFormatMenuOpen = !this.exportFormatMenuOpen;
     if (this.exportFormatMenuOpen) {
-      this.tableStateMenuOpen = false;
+      this.tableSettingsMenuOpen = false;
     }
     this.safeMarkForCheck();
   }
 
-  toggleTableStateMenu(event: MouseEvent): void {
+  toggleTableSettingsMenu(event: MouseEvent): void {
     event.stopPropagation();
-    this.tableStateMenuOpen = !this.tableStateMenuOpen;
-    if (this.tableStateMenuOpen) {
+    this.tableSettingsMenuOpen = !this.tableSettingsMenuOpen;
+    if (this.tableSettingsMenuOpen) {
       this.exportFormatMenuOpen = false;
     }
     this.safeMarkForCheck();
   }
 
-  onTableStateResetChosen(event: MouseEvent): void {
+  onTableSettingsResetChosen(event: MouseEvent): void {
     event.stopPropagation();
-    this.tableStateMenuOpen = false;
-    this.resetTableState();
+    this.tableSettingsMenuOpen = false;
+    this.resetTableSettings();
   }
 
-  onTableStateExportChosen(event: MouseEvent): void {
+  onTableSettingsExportChosen(event: MouseEvent): void {
     event.stopPropagation();
-    this.tableStateMenuOpen = false;
-    this.exportTableStateToJsonFile();
+    this.tableSettingsMenuOpen = false;
+    this.exportTableSettingsToJsonFile();
     this.safeMarkForCheck();
   }
 
-  onTableStateImportChosen(event: MouseEvent): void {
+  onTableSettingsImportChosen(event: MouseEvent): void {
     event.stopPropagation();
-    this.tableStateMenuOpen = false;
-    this.triggerImportTableStateFile();
+    this.tableSettingsMenuOpen = false;
+    this.triggerImportTableSettingsFile();
     this.safeMarkForCheck();
   }
 
@@ -1047,9 +1049,9 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
     this.rebuildColumnsFromRows();
 
-    if (!this.restoredState) {
-      this.restoreState();
-      this.restoredState = true;
+    if (!this.restoredSettings) {
+      this.restoreSettings();
+      this.restoredSettings = true;
     } else {
       this.syncColumnKeysWithNewDataset();
     }
@@ -1135,12 +1137,12 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     );
 
     this.syncColumnOrderFromVisibleOrder(this.visibleColumnKeys);
-    this.persistState();
+    this.persistSettings();
   }
 
   onFiltersChanged(): void {
     this.applyFilters();
-    this.persistState();
+    this.persistSettings();
   }
 
   onGlobalFilterInputChange(value: string): void {
@@ -1621,31 +1623,31 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     }
   }
 
-  exportTableStateToJsonFile(): void {
-    this.persistState();
-    const raw = localStorage.getItem(this.stateStorageKey);
+  exportTableSettingsToJsonFile(): void {
+    this.persistSettings();
+    const raw = this.readRawTableSettings();
     let body: string;
     try {
       const obj = raw ? JSON.parse(raw) : {};
       body = JSON.stringify(obj, null, 2);
     } catch {
-      globalThis.alert('Stored table state is not valid JSON; export aborted.');
+      globalThis.alert('Stored table settings are not valid JSON; export aborted.');
       return;
     }
     const blob = new Blob([body], { type: 'application/json;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = 'unblu-properties-explorer-table-state.json';
+    anchor.download = 'unblu-properties-explorer-table-settings.json';
     anchor.click();
     URL.revokeObjectURL(url);
   }
 
-  triggerImportTableStateFile(): void {
-    this.importTableStateInputRef?.nativeElement?.click();
+  triggerImportTableSettingsFile(): void {
+    this.importTableSettingsInputRef?.nativeElement?.click();
   }
 
-  onImportTableStateFileSelected(event: Event): void {
+  onImportTableSettingsFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     input.value = '';
@@ -1663,11 +1665,17 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
         return;
       }
       if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
-        globalThis.alert('Table state file must be a JSON object at the root.');
+        globalThis.alert('Table settings file must be a JSON object at the root.');
         return;
       }
-      localStorage.setItem(this.stateStorageKey, JSON.stringify(parsed));
-      this.restoreState();
+      try {
+        localStorage.setItem(this.settingsStorageKey, JSON.stringify(parsed));
+        localStorage.removeItem(this.legacySettingsStorageKey);
+      } catch {
+        globalThis.alert('Could not write to local storage.');
+        return;
+      }
+      this.restoreSettings();
       this.sanitizeFilters();
       this.onFiltersChanged();
       this.safeMarkForCheck();
@@ -1678,10 +1686,11 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     reader.readAsText(file, 'UTF-8');
   }
 
-  /** Clear persisted state, filters/columns, and all row selections (as when localStorage has no entry). */
-  resetTableState(): void {
+  /** Clear persisted settings, filters/columns, and all row selections (as when localStorage has no entry). */
+  resetTableSettings(): void {
     try {
-      localStorage.removeItem(this.stateStorageKey);
+      localStorage.removeItem(this.settingsStorageKey);
+      localStorage.removeItem(this.legacySettingsStorageKey);
     } catch {
       /* ignore quota / private mode */
     }
@@ -2742,10 +2751,10 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
         changed = true;
       }
     }
-    if (this.tableStateMenuOpen) {
-      const host = this.tableStateMenuHost?.nativeElement;
+    if (this.tableSettingsMenuOpen) {
+      const host = this.tableSettingsMenuHost?.nativeElement;
       if (!host || !(t instanceof Node) || !host.contains(t)) {
-        this.tableStateMenuOpen = false;
+        this.tableSettingsMenuOpen = false;
         changed = true;
       }
     }
@@ -2756,10 +2765,10 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
   @HostListener('document:keydown', ['$event'])
   onDocumentKeydown(event: KeyboardEvent): void {
-    if (event.key === 'Escape' && (this.exportFormatMenuOpen || this.tableStateMenuOpen)) {
+    if (event.key === 'Escape' && (this.exportFormatMenuOpen || this.tableSettingsMenuOpen)) {
       event.preventDefault();
       this.exportFormatMenuOpen = false;
-      this.tableStateMenuOpen = false;
+      this.tableSettingsMenuOpen = false;
       this.safeMarkForCheck();
       return;
     }
@@ -2846,36 +2855,42 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     return uniqueOrdered;
   }
 
-  private restoreState(): void {
+  private readRawTableSettings(): string | null {
+    return (
+      localStorage.getItem(this.settingsStorageKey) ?? localStorage.getItem(this.legacySettingsStorageKey)
+    );
+  }
+
+  private restoreSettings(): void {
     try {
-      const rawState = localStorage.getItem(this.stateStorageKey);
-      if (!rawState) {
+      const raw = this.readRawTableSettings();
+      if (!raw) {
         this.columnOrderKeys = this.columns.map((column) => column.key);
         this.visibleColumnKeys = this.ensurePropertyVisible([...this.columnOrderKeys]);
         return;
       }
 
-      const parsedState = JSON.parse(rawState) as TableState;
-      this.globalFilter = parsedState.globalFilter ?? '';
+      const parsed = JSON.parse(raw) as TableSettings;
+      this.globalFilter = parsed.globalFilter ?? '';
       this.globalFilterMode =
-        parsedState.globalFilterMode === 'regex' ? 'regex' : 'expr';
-      this.globalFilterScope = parsedState.globalFilterScope === 'visible' ? 'visible' : 'all';
-      this.textFilters = parsedState.textFilters ?? {};
-      this.textModes = Object.entries(parsedState.textModes ?? {}).reduce(
+        parsed.globalFilterMode === 'regex' ? 'regex' : 'expr';
+      this.globalFilterScope = parsed.globalFilterScope === 'visible' ? 'visible' : 'all';
+      this.textFilters = parsed.textFilters ?? {};
+      this.textModes = Object.entries(parsed.textModes ?? {}).reduce(
         (acc, [key, mode]) => {
           acc[key] = mode === 'regex' ? 'regex' : 'expr';
           return acc;
         },
         {} as Partial<Record<string, TextMatchMode>>
       );
-      this.valueFilters = parsedState.valueFilters ?? {};
+      this.valueFilters = parsed.valueFilters ?? {};
       this.listModes = {
-        allowedScopes: parsedState.listModes?.allowedScopes === 'and' ? 'and' : 'or',
-        editableBy: parsedState.listModes?.editableBy === 'and' ? 'and' : 'or'
+        allowedScopes: parsed.listModes?.allowedScopes === 'and' ? 'and' : 'or',
+        editableBy: parsed.listModes?.editableBy === 'and' ? 'and' : 'or'
       };
-      this.columnOrderKeys = this.normalizeColumnOrderKeys(parsedState.columnOrderKeys);
+      this.columnOrderKeys = this.normalizeColumnOrderKeys(parsed.columnOrderKeys);
 
-      const validColumns = (parsedState.visibleColumnKeys ?? []).filter((key: string) =>
+      const validColumns = (parsed.visibleColumnKeys ?? []).filter((key: string) =>
         this.columns.some((column) => column.key === key)
       );
       const selectedSet = new Set(validColumns);
@@ -2891,8 +2906,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     }
   }
 
-  private persistState(): void {
-    const state: TableState = {
+  private persistSettings(): void {
+    const settings: TableSettings = {
       globalFilter: this.globalFilter,
       globalFilterScope: this.globalFilterScope,
       textFilters: this.textFilters,
@@ -2904,7 +2919,12 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       columnOrderKeys: this.columnOrderKeys
     };
 
-    localStorage.setItem(this.stateStorageKey, JSON.stringify(state));
+    try {
+      localStorage.setItem(this.settingsStorageKey, JSON.stringify(settings));
+      localStorage.removeItem(this.legacySettingsStorageKey);
+    } catch {
+      /* ignore quota / private mode */
+    }
   }
 
   private ensurePropertyVisible(keys: string[]): string[] {

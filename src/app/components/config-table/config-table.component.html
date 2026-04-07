@@ -1,6 +1,6 @@
 <section
   class="table-export-bar mb-2"
-  aria-label="Export table, export config, column visibility, and selection"
+  aria-label="Export table, export config, table settings, column visibility, and selection"
   data-bwignore
   data-1p-ignore
   data-lpignore="true"
@@ -69,67 +69,67 @@
           </button>
         </div>
       </div>
-      <div class="export-format-dropdown table-state-dropdown" #tableStateMenuHost>
+      <div class="export-format-dropdown table-settings-dropdown" #tableSettingsMenuHost>
         <button
           type="button"
           class="btn btn-sm export-format-dropdown__toggle"
-          [class.export-format-dropdown__toggle--open]="tableStateMenuOpen"
-          (click)="toggleTableStateMenu($event)"
-          [attr.aria-expanded]="tableStateMenuOpen"
+          [class.export-format-dropdown__toggle--open]="tableSettingsMenuOpen"
+          (click)="toggleTableSettingsMenu($event)"
+          [attr.aria-expanded]="tableSettingsMenuOpen"
           aria-haspopup="true"
-          aria-label="Table state: reset, export, or import"
-          title="Reset (clears filters, columns, selection), export, or import saved UI state (localStorage)"
+          aria-label="Table settings: reset, export, or import"
+          title="Reset (clears filters, columns, selection), export, or import saved UI settings (localStorage)"
         >
           <i class="pi pi-sliders-h" aria-hidden="true"></i>
-          <span>State</span>
+          <span>Settings</span>
           <i class="pi pi-angle-down export-format-dropdown__caret" aria-hidden="true"></i>
         </button>
         <div
-          *ngIf="tableStateMenuOpen"
+          *ngIf="tableSettingsMenuOpen"
           class="export-format-dropdown__menu"
           role="menu"
-          aria-label="Table state actions"
+          aria-label="Table settings actions"
         >
           <button
             type="button"
-            class="export-format-dropdown__item table-state-dropdown__item"
+            class="export-format-dropdown__item table-settings-dropdown__item"
             role="menuitem"
-            title="Clear saved table state (filters, columns, list OR/AND), clear all row checkboxes, and remove localStorage until you change something"
-            (click)="onTableStateResetChosen($event)"
+            title="Clear saved settings (filters, columns, list OR/AND), clear all row checkboxes, and remove localStorage until you change something"
+            (click)="onTableSettingsResetChosen($event)"
           >
             <i class="pi pi-refresh" aria-hidden="true"></i>
-            <span>Reset state</span>
+            <span>Reset settings</span>
           </button>
           <button
             type="button"
-            class="export-format-dropdown__item table-state-dropdown__item"
+            class="export-format-dropdown__item table-settings-dropdown__item"
             role="menuitem"
             title="Download table filters and column layout as JSON (same as localStorage)"
-            (click)="onTableStateExportChosen($event)"
+            (click)="onTableSettingsExportChosen($event)"
           >
             <i class="pi pi-download" aria-hidden="true"></i>
-            <span>Export state</span>
+            <span>Export settings</span>
           </button>
           <button
             type="button"
-            class="export-format-dropdown__item table-state-dropdown__item"
+            class="export-format-dropdown__item table-settings-dropdown__item"
             role="menuitem"
-            title="Load table state from a JSON file into localStorage"
-            (click)="onTableStateImportChosen($event)"
+            title="Load table settings from a JSON file into localStorage"
+            (click)="onTableSettingsImportChosen($event)"
           >
             <i class="pi pi-upload" aria-hidden="true"></i>
-            <span>Import state</span>
+            <span>Import settings</span>
           </button>
         </div>
       </div>
       <input
-        #importTableStateInput
+        #importTableSettingsInput
         type="file"
         class="visually-hidden"
         accept=".json,application/json"
         tabindex="-1"
         aria-hidden="true"
-        (change)="onImportTableStateFileSelected($event)"
+        (change)="onImportTableSettingsFileSelected($event)"
       />
       <div class="table-export-bar-column-visibility">
         <p-multiselect

@@ -50,4 +50,4 @@ The upload expects a header row with these columns (case-insensitive):
   - AND: all selected values must be present in row list
 - Hide/show columns
 - Reorder visible columns with drag-and-drop
-- Table state persistence (filters, list modes, visible columns) in local storage
+- Table settings persistence (filters, list modes, visible columns) in local storage
