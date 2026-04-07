@@ -30,7 +30,7 @@ export interface ConfigRow {
   value: string;
   /** UI-only: last JSON import rejected value for this row (empty when none). Not a table column. */
   configImportError: string;
-  /** UI-only: green border after user fixes an import-invalid value (cleared on new error / remove / reset). */
+  /** UI-only: blue divergent border after user fixes an import-invalid value (cleared on new error / remove / reset). */
   valueImportResolvedHighlight: boolean;
   type: string;
   allowedValues: string;

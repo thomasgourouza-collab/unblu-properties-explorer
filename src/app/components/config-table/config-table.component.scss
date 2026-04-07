@@ -964,7 +964,7 @@ $value-cell-font-size: 0.8125rem;
   }
 }
 
-$value-column-divergent-border: color-mix(in srgb, #22c55e 72%, var(--surface-border));
+$value-column-divergent-border: color-mix(in srgb, var(--accent) 72%, var(--surface-border));
 $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-border));
 
 :host .value-cell-wrap.value-cell-diverges {

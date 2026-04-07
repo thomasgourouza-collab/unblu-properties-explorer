@@ -437,7 +437,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.syncMatchInspectorToDisplayedTable();
   }
 
-  /** Rows in the loaded dataset where Value ≠ Default (same rules as the green border). */
+  /** Rows in the loaded dataset where Value ≠ Default (same rules as the blue divergent border). */
   get valueColumnChangeRowCount(): number {
     return this.rows.filter((row) => this.valueColumnDiffersFromDefault(row)).length;
   }
@@ -2311,7 +2311,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.safeMarkForCheck();
   }
 
-  /** Import / validity border: red (invalid), green (fixed after import error), or neutral. */
+  /** Import / validity border: red (invalid), blue when resolved but still off default, or neutral. */
   valueColumnImportBorderState(row: ConfigRow): 'invalid' | 'resolved' | null {
     const raw = row.value ?? '';
     if ((row.configImportError ?? '').trim().length > 0 || !this.jsonImportValueIsValid(row, raw)) {
