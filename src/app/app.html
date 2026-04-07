@@ -207,14 +207,26 @@
         <div class="help-card">
           <h3 class="help-section-title">Filter Tips</h3>
           <ul class="help-list">
-            <li>Use comma-separated values for multi-token text search in OR/AND modes.</li>
-            <li>Switch to <strong>Regex</strong> mode for advanced matching patterns.</li>
+            <li>
+              In <strong>Expression</strong> mode (global filter and text columns), build conditions with
+              <code>&amp;&amp;</code> (AND), <code>||</code> (OR), unary <code>!</code> (NOT), and parentheses. Commas are
+              literal characters, not separators. Operands can include spaces (e.g.
+              <code>red color &amp;&amp; blue one</code>); only the start and end of each operand are trimmed, and spaces
+              around operators are optional. Example: <code>(red||blue)&amp;&amp;orange</code>.
+            </li>
+            <li>
+              Without quoted operands, you cannot search for the literal substrings <code>&amp;&amp;</code>, <code>||</code>,
+              or parentheses inside a single term (a future improvement could add quoting).
+            </li>
+            <li>
+              <strong>Regex</strong> mode treats the whole field as one pattern. The active mode toggle (Expression or
+              Regex) shows a green outline (global and per text column).
+            </li>
+            <li>List-style column filters still use comma-separated tokens with their own OR/AND row (unchanged).</li>
             <li>Global scope can target either <strong>all columns</strong> or <strong>visible columns</strong>.</li>
             <li>
-              In the global filter (text modes), a leading <strong>!</strong> on a comma-separated token means
-              <strong>not</strong>: e.g. <code>!blue</code> keeps rows where <strong>no</strong> searched column contains
-              “blue”. With several tokens, exclusions apply together with positives (positives use OR/AND per mode; every
-              <code>!term</code> must hold).
+              Invalid expression syntax matches no rows until you fix the filter (unbalanced parentheses, stray operators,
+              etc.).
             </li>
             <li>Global highlights are green; column-specific highlights are blue.</li>
             <li>Click chips to remove active filters quickly.</li>

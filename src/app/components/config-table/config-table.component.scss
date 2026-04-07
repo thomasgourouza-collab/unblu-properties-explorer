@@ -114,6 +114,20 @@
   }
 }
 
+.global-filter-mode-toggle,
+.text-filter-mode-row {
+  .btn-check:checked + .filter-mode-expr-label.btn-outline-secondary,
+  .btn-check:checked + .filter-mode-regex-label.btn-outline-secondary {
+    border-color: #34d399;
+    border-width: 1px;
+  }
+
+  .btn-check:checked + .filter-mode-expr-label.btn-outline-secondary:hover,
+  .btn-check:checked + .filter-mode-regex-label.btn-outline-secondary:hover {
+    border-color: #4ade80;
+  }
+}
+
 .table-export-bar-label {
   font-size: 0.78rem;
   font-weight: 600;

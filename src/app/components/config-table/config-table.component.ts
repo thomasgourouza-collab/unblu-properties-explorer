@@ -22,6 +22,12 @@ import { TableColumnReorderEvent, TableModule } from 'primeng/table';
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 
 import { ColumnDefinition, ConfigRow, EXTRA_COLUMN_PREFIX, FilterMode } from '../../models/config-row.model';
+import {
+  collectHighlightOperands,
+  evaluateFilterAst,
+  formatExpressionMatchLines,
+  parseFilterExpression
+} from '../../utils/filter-expression.util';
 import { parseJavaPropertiesFile, stringifyJavaPropertiesFile } from '../../utils/java-properties-config.util';
 import unbluScopeEditorsJson from '../../data/unblu-scope-editors.json';
 
@@ -64,7 +70,7 @@ interface ImportMissingKeyDialogRow {
 
 type ListColumnKey = 'allowedScopes' | 'editableBy';
 type GlobalFilterScope = 'all' | 'visible';
-type TextMatchMode = 'or' | 'and' | 'regex';
+type TextMatchMode = 'expr' | 'regex';
 
 interface TableState {
   globalFilter: string;
@@ -142,6 +148,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   /** Stable `ngModel` / `[options]` refs for Value-column multiselect (new arrays each CD freeze PrimeNG). */
   private readonly valueColumnMultiModelCache = new Map<string, { value: string; selected: string[] }>();
   private readonly valueColumnSelectOptionsCache = new Map<string, SelectOption[]>();
+  private globalExprRowPredicate: ((row: ConfigRow) => boolean) | null = null;
+  private readonly columnTextExprPredicates = new Map<string, (value: string) => boolean>();
   /**
    * PrimeNG multi-sort toggles asc ↔ desc only. We treat “desc → asc” on the same column as a 3rd click → unsort.
    * Ignored when multiSortMeta has more than one entry (Ctrl/Cmd multi-sort).
@@ -162,7 +170,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   /** Row identity for selection / CSV export (stable across duplicate property codes). */
   private readonly selectedRowKeys = new Set<string>();
   globalFilter = '';
-  globalFilterMode: TextMatchMode = 'or';
+  globalFilterMode: TextMatchMode = 'expr';
   globalFilterScope: GlobalFilterScope = 'all';
   textFilters: Partial<Record<string, string>> = {};
   textModes: Partial<Record<string, TextMatchMode>> = {};
@@ -1125,16 +1133,16 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
   getTextMode(key: string): TextMatchMode {
     const mode = this.textModes[key];
-    return mode === 'and' || mode === 'regex' ? mode : 'or';
+    return mode === 'regex' ? 'regex' : 'expr';
   }
 
   setTextMode(key: string, mode: string): void {
-    this.textModes[key] = mode === 'and' || mode === 'regex' ? mode : 'or';
+    this.textModes[key] = mode === 'regex' ? 'regex' : 'expr';
     this.onFiltersChanged();
   }
 
   setGlobalFilterMode(mode: string): void {
-    this.globalFilterMode = mode === 'and' || mode === 'regex' ? mode : 'or';
+    this.globalFilterMode = mode === 'regex' ? 'regex' : 'expr';
     this.onFiltersChanged();
   }
 
@@ -1444,29 +1452,18 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
           }
         }
       } else {
-        const { positives, negatives } = this.parseGlobalFilterPosNeg(globalInput, this.globalFilterMode);
-        const rowValues = columnsToSearch.map((column) => this.normalize(this.getCellValue(row, column.key)));
-        const rowContains = (t: string): boolean => rowValues.some((v) => v.includes(t));
-        const tokenMatches: string[] = [];
-        for (const p of positives) {
-          const matchedColumns = columnsToSearch
-            .filter((column) => this.normalize(this.getCellValue(row, column.key)).includes(p))
-            .map((column) => column.label);
-          if (matchedColumns.length > 0) {
-            tokenMatches.push(`${p} -> ${matchedColumns.join(', ')}`);
+        const pr = parseFilterExpression(globalInput);
+        if (pr.ok) {
+          const rowValues = columnsToSearch.map((column) => this.normalize(this.getCellValue(row, column.key)));
+          const rowContains = (t: string): boolean => rowValues.some((v) => v.includes(t));
+          const lines = formatExpressionMatchLines(pr.ast, rowContains);
+          if (lines.length > 0) {
+            reasons.push({
+              label: `Global (EXPR, ${this.globalFilterScope})`,
+              detail: '',
+              detailBullets: lines
+            });
           }
-        }
-        for (const n of negatives) {
-          if (!rowContains(n)) {
-            tokenMatches.push(`!${n} (no column contains "${n}")`);
-          }
-        }
-        if (tokenMatches.length > 0) {
-          reasons.push({
-            label: `Global (${this.globalFilterMode.toUpperCase()}, ${this.globalFilterScope})`,
-            detail: '',
-            detailBullets: tokenMatches
-          });
         }
       }
     }
@@ -1490,15 +1487,17 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
           continue;
         }
 
-        const rawTokens = this.splitRawFilterTokens(input);
-        const normalizedTokens = this.splitFilterTokens(input, mode);
-        const normalizedValue = this.normalize(value);
-        const matched = rawTokens.filter((_, idx) => normalizedValue.includes(normalizedTokens[idx]));
-        if (matched.length > 0) {
-          reasons.push({
-            label: `${column.label} (${mode.toUpperCase()})`,
-            detail: matched.join(', ')
-          });
+        const pr = parseFilterExpression(input);
+        if (pr.ok) {
+          const hay = this.normalize(value);
+          const lines = formatExpressionMatchLines(pr.ast, (op) => hay.includes(op));
+          if (lines.length > 0) {
+            reasons.push({
+              label: `${column.label} (EXPR)`,
+              detail: '',
+              detailBullets: lines
+            });
+          }
         }
         continue;
       }
@@ -1598,7 +1597,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
   clearFilters(): void {
     this.globalFilter = '';
-    this.globalFilterMode = 'or';
+    this.globalFilterMode = 'expr';
     this.globalFilterScope = 'all';
     this.textFilters = {};
     this.textModes = {};
@@ -1646,14 +1645,10 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   }
 
   private applyFilters(): void {
-    const globalPosNeg = this.parseGlobalFilterPosNeg(this.globalFilter, this.globalFilterMode);
-    const globalRegex = this.globalFilterMode === 'regex' ? this.tryParseRegexInput(this.globalFilter) : null;
+    this.syncExprPredicates();
 
     this.filteredRows = this.rows.filter((row) => {
-      if (
-        (globalPosNeg.positives.length > 0 || globalPosNeg.negatives.length > 0 || globalRegex) &&
-        !this.rowMatchesGlobalFilter(row, globalPosNeg.positives, globalPosNeg.negatives, globalRegex)
-      ) {
+      if (!this.passesGlobalFilter(row)) {
         return false;
       }
 
@@ -1721,71 +1716,73 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     el.classList.toggle('chips-scroll-area--overflowing', overflowing);
   }
 
-  private rowMatchesGlobalFilter(
-    row: ConfigRow,
-    positives: string[],
-    negatives: string[],
-    regex: RegExp | null
-  ): boolean {
-    const columnsToSearch = this.globalFilterScope === 'visible' ? this.visibleColumns : this.columns;
-    const rawValues = columnsToSearch.map((column) => this.getCellValue(row, column.key));
-    if (this.globalFilterMode === 'regex') {
-      if (!regex) {
-        return false;
+  /** Rebuild expression predicates used by `passesGlobalFilter` / text column filters (call from `applyFilters`). */
+  private syncExprPredicates(): void {
+    this.globalExprRowPredicate = null;
+    this.columnTextExprPredicates.clear();
+
+    if (this.globalFilterMode === 'expr') {
+      const t = this.globalFilter.trim();
+      if (!t) {
+        this.globalExprRowPredicate = () => true;
+      } else {
+        const pr = parseFilterExpression(this.globalFilter);
+        if (!pr.ok) {
+          this.globalExprRowPredicate = () => false;
+        } else {
+          const ast = pr.ast;
+          this.globalExprRowPredicate = (row: ConfigRow) => {
+            const columnsToSearch = this.globalFilterScope === 'visible' ? this.visibleColumns : this.columns;
+            const rowValues = columnsToSearch.map((column) => this.normalize(this.getCellValue(row, column.key)));
+            const rowContains = (s: string): boolean => rowValues.some((value) => value.includes(s));
+            return evaluateFilterAst(ast, rowContains);
+          };
+        }
       }
+    }
+
+    for (const column of this.columns) {
+      if (column.filterType !== 'text') {
+        continue;
+      }
+      if (this.getTextMode(column.key) !== 'expr') {
+        continue;
+      }
+      const raw = (this.textFilters[column.key] ?? '').trim();
+      if (!raw) {
+        this.columnTextExprPredicates.set(column.key, () => true);
+        continue;
+      }
+      const pr = parseFilterExpression(this.textFilters[column.key] ?? '');
+      if (!pr.ok) {
+        this.columnTextExprPredicates.set(column.key, () => false);
+      } else {
+        const ast = pr.ast;
+        this.columnTextExprPredicates.set(column.key, (value: string) => {
+          const hay = this.normalize(value);
+          return evaluateFilterAst(ast, (op) => hay.includes(op));
+        });
+      }
+    }
+  }
+
+  private passesGlobalFilter(row: ConfigRow): boolean {
+    if (this.globalFilterMode === 'regex') {
+      const t = this.globalFilter.trim();
+      if (!t) {
+        return true;
+      }
+      const regex = this.tryParseRegexInput(this.globalFilter);
+      if (!regex) {
+        return true;
+      }
+      const columnsToSearch = this.globalFilterScope === 'visible' ? this.visibleColumns : this.columns;
+      const rawValues = columnsToSearch.map((column) => this.getCellValue(row, column.key));
       return rawValues.some((value) => this.matchesRegex(value, regex));
     }
 
-    const rowValues = rawValues.map((value) => this.normalize(value));
-    const rowContains = (token: string): boolean => rowValues.some((value) => value.includes(token));
-
-    const negOk = negatives.every((n) => !rowContains(n));
-    if (!negOk) {
-      return false;
-    }
-
-    if (positives.length === 0) {
-      return true;
-    }
-
-    if (this.globalFilterMode === 'and') {
-      return positives.every((p) => rowContains(p));
-    }
-    return positives.some((p) => rowContains(p));
-  }
-
-  /**
-   * Comma-separated global filter (non-regex): `!token` means “no visible/all column contains this substring”.
-   * Mixed `blue,!smoke`: (OR/AND over positives per mode) AND all negative clauses.
-   */
-  private parseGlobalFilterPosNeg(input: string, mode: TextMatchMode): { positives: string[]; negatives: string[] } {
-    if (mode === 'regex') {
-      return { positives: [], negatives: [] };
-    }
-    const positives: string[] = [];
-    const negatives: string[] = [];
-    for (const part of input.split(',')) {
-      const trimmed = part.trim();
-      if (!trimmed) {
-        continue;
-      }
-      let negated = false;
-      let body = trimmed;
-      if (body.startsWith('!')) {
-        negated = true;
-        body = body.slice(1).trim();
-      }
-      const n = this.normalize(body);
-      if (!n) {
-        continue;
-      }
-      if (negated) {
-        negatives.push(n);
-      } else {
-        positives.push(n);
-      }
-    }
-    return { positives, negatives };
+    const pred = this.globalExprRowPredicate;
+    return pred ? pred(row) : true;
   }
 
   private columnFilterChipValueLabel(value: string): string {
@@ -1803,11 +1800,20 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   private rowMatchesColumnFilter(row: ConfigRow, column: ColumnDefinition): boolean {
     if (column.filterType === 'text') {
       const textMode = this.getTextMode(column.key);
-      const textTokens = this.splitFilterTokens(this.textFilters[column.key] ?? '', textMode);
-      const textRegex = textMode === 'regex' ? this.tryParseRegexInput(this.textFilters[column.key] ?? '') : null;
-      if (textTokens.length > 0 || textRegex) {
-        const value = this.getCellValue(row, column.key);
-        if (!this.matchesTokens(value, textTokens, textMode, textRegex)) {
+      const raw = (this.textFilters[column.key] ?? '').trim();
+      if (textMode === 'regex') {
+        if (raw) {
+          const textRegex = this.tryParseRegexInput(this.textFilters[column.key] ?? '');
+          if (textRegex) {
+            const value = this.getCellValue(row, column.key);
+            if (!this.matchesRegex(value, textRegex)) {
+              return false;
+            }
+          }
+        }
+      } else {
+        const pred = this.columnTextExprPredicates.get(column.key);
+        if (pred && !pred(this.getCellValue(row, column.key))) {
           return false;
         }
       }
@@ -2327,12 +2333,16 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       return [{ text: '', kind: 'none' }];
     }
 
-    const globalPosNeg = this.parseGlobalFilterPosNeg(this.globalFilter, this.globalFilterMode);
     const globalRegex = this.globalFilterMode === 'regex' ? this.tryParseRegexInput(this.globalFilter) : null;
-    const columnTokens =
-      columnKey && this.columns.some((column) => column.key === columnKey && column.filterType === 'text')
-        ? this.splitFilterTokens(this.textFilters[columnKey] ?? '', this.getTextMode(columnKey))
-        : [];
+    let globalExprHighlightTokens: string[] = [];
+    if (this.globalFilterMode === 'expr' && this.globalFilter.trim()) {
+      const gpr = parseFilterExpression(this.globalFilter);
+      if (gpr.ok) {
+        globalExprHighlightTokens = collectHighlightOperands(gpr.ast);
+      }
+    }
+
+    let columnTokens: string[] = [];
     const columnRegex =
       columnKey &&
       this.columns.some((column) => column.key === columnKey && column.filterType === 'text') &&
@@ -2341,8 +2351,18 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
         : null;
 
     if (
-      globalPosNeg.positives.length === 0 &&
-      globalPosNeg.negatives.length === 0 &&
+      columnKey &&
+      this.columns.some((column) => column.key === columnKey && column.filterType === 'text') &&
+      this.getTextMode(columnKey) === 'expr'
+    ) {
+      const cpr = parseFilterExpression(this.textFilters[columnKey] ?? '');
+      if (cpr.ok) {
+        columnTokens = collectHighlightOperands(cpr.ast);
+      }
+    }
+
+    if (
+      globalExprHighlightTokens.length === 0 &&
       columnTokens.length === 0 &&
       !globalRegex &&
       !columnRegex
@@ -2353,8 +2373,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     const sourceLower = source.toLowerCase();
     const levels = new Array<number>(source.length).fill(0);
 
-    // Only positive global substrings get green highlights; `!term` is exclusion (no highlight for the term).
-    this.applyTokenHighlights(source, sourceLower, globalPosNeg.positives, globalRegex, levels, 1);
+    this.applyTokenHighlights(source, sourceLower, globalExprHighlightTokens, globalRegex, levels, 1);
     this.applyTokenHighlights(source, sourceLower, columnTokens, columnRegex, levels, 2);
 
     const parts: HighlightPart[] = [];
@@ -2540,39 +2559,6 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     return value.toLowerCase().trim();
   }
 
-  private splitFilterTokens(input: string, mode: TextMatchMode): string[] {
-    if (mode === 'regex') {
-      return [];
-    }
-    return input
-      .split(',')
-      .map((token) => this.normalize(token))
-      .filter((token) => token.length > 0);
-  }
-
-  private splitRawFilterTokens(input: string): string[] {
-    return input
-      .split(',')
-      .map((token) => token.trim())
-      .filter((token) => token.length > 0);
-  }
-
-  private matchesTokens(value: string, tokens: string[], mode: TextMatchMode, regex: RegExp | null): boolean {
-    if (mode === 'regex') {
-      return this.matchesRegex(value, regex);
-    }
-
-    if (tokens.length === 0) {
-      return true;
-    }
-    // Tokens from splitFilterTokens are lowercased; compare on normalized haystack (same as global filter).
-    const haystack = this.normalize(value);
-    if (mode === 'and') {
-      return tokens.every((token) => haystack.includes(token));
-    }
-    return tokens.some((token) => haystack.includes(token));
-  }
-
   private tryParseRegexInput(input: string): RegExp | null {
     const trimmed = input.trim();
     if (!trimmed) {
@@ -2752,18 +2738,12 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       const parsedState = JSON.parse(rawState) as TableState;
       this.globalFilter = parsedState.globalFilter ?? '';
       this.globalFilterMode =
-        parsedState.globalFilterMode === 'and' || parsedState.globalFilterMode === 'regex'
-          ? parsedState.globalFilterMode
-          : 'or';
+        parsedState.globalFilterMode === 'regex' ? 'regex' : 'expr';
       this.globalFilterScope = parsedState.globalFilterScope === 'visible' ? 'visible' : 'all';
       this.textFilters = parsedState.textFilters ?? {};
       this.textModes = Object.entries(parsedState.textModes ?? {}).reduce(
         (acc, [key, mode]) => {
-          if (mode === 'and' || mode === 'regex') {
-            acc[key] = mode;
-          } else {
-            acc[key] = 'or';
-          }
+          acc[key] = mode === 'regex' ? 'regex' : 'expr';
           return acc;
         },
         {} as Partial<Record<string, TextMatchMode>>
