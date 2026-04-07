@@ -1325,6 +1325,16 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
   order: 6;
 }
 
+// Aura uses primary (green) for selected page; match export / toolbar accent chrome.
+:host ::ng-deep .p-paginator .p-paginator-page.p-paginator-page-selected {
+  background: $toolbar-accent-border !important;
+  color: var(--text-primary) !important;
+}
+
+:host ::ng-deep .p-paginator .p-paginator-page.p-paginator-page-selected:hover:not(.p-disabled) {
+  background: $toolbar-accent-border-hover !important;
+}
+
 .paginator-left-report {
   color: var(--text-muted);
   font-size: 0.78rem;
