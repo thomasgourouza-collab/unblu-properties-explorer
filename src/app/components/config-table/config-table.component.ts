@@ -987,6 +987,17 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.onFiltersChanged();
   }
 
+  /** Header × control: hide column (Property is never closable). Same as clearing it in Visible columns. */
+  hideColumnFromHeader(columnKey: string, event: Event): void {
+    event.stopPropagation();
+    event.preventDefault();
+    if (columnKey === 'property') {
+      return;
+    }
+    this.visibleColumnKeys = this.visibleColumnKeys.filter((key) => key !== columnKey);
+    this.onColumnVisibilityChange();
+  }
+
   onColumnReorder(event: TableColumnReorderEvent): void {
     if (!event.columns) {
       return;

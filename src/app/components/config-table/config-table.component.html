@@ -319,8 +319,20 @@
             [pSortableColumn]="column.key"
             pReorderableColumn
             class="header-cell"
+            [class.header-cell--closable]="column.key !== 'property'"
             [style.width.%]="getColumnWidthPercent(column.key)"
           >
+            <button
+              *ngIf="column.key !== 'property'"
+              type="button"
+              class="header-hide-column-btn"
+              (click)="hideColumnFromHeader(column.key, $event)"
+              (mousedown)="$event.stopPropagation()"
+              [attr.aria-label]="'Hide column: ' + column.label"
+              [title]="'Hide ' + column.label + ' (turn it back on under Visible columns)'"
+            >
+              <i class="pi pi-times" aria-hidden="true"></i>
+            </button>
             <div class="header-content" [class.header-content--value]="column.key === 'value'">
               <ng-container *ngIf="column.key === 'value'; else tplHeaderDefaultLabel">
                 <span class="header-content-value-leading">
