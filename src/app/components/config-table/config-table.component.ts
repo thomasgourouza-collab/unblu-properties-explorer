@@ -45,7 +45,7 @@ interface HighlightPart {
 interface ActiveFilterChip {
   id: string;
   label: string;
-  kind: 'global' | 'text' | 'value' | 'listMode';
+  kind: 'global' | 'text' | 'value';
   columnKey?: string;
   value?: string;
 }
@@ -325,16 +325,6 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
           kind: 'value',
           columnKey: column.key,
           value
-        });
-      }
-
-      if (column.filterType === 'list' && selectedValues.length > 0) {
-        const mode = this.getListMode(column.key).toUpperCase();
-        chips.push({
-          id: `listMode:${column.key}`,
-          label: `${column.label} mode: ${mode}`,
-          kind: 'listMode',
-          columnKey: column.key
         });
       }
     }
@@ -1446,7 +1436,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
             .map((column) => column.label);
           if (matchedColumns.length > 0) {
             reasons.push({
-              label: `Global (${this.globalFilterMode.toUpperCase()}, ${this.globalFilterScope})`,
+              label: 'Global',
               detail: `${globalInput} -> ${matchedColumns.join(', ')}`
             });
           }
@@ -1459,7 +1449,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
           const lines = formatExpressionMatchLines(pr.ast, rowContains);
           if (lines.length > 0) {
             reasons.push({
-              label: `Global (EXPR, ${this.globalFilterScope})`,
+              label: 'Global',
               detail: '',
               detailBullets: lines
             });
@@ -1633,13 +1623,6 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     if (chip.kind === 'value' && chip.value !== undefined) {
       const values = this.valueFilters[chip.columnKey] ?? [];
       this.valueFilters[chip.columnKey] = values.filter((value) => value !== chip.value);
-      this.onFiltersChanged();
-      return;
-    }
-
-    if (chip.kind === 'listMode') {
-      const listKey = this.toListColumnKey(chip.columnKey);
-      this.listModes[listKey] = 'or';
       this.onFiltersChanged();
     }
   }
