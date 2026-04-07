@@ -396,13 +396,6 @@ $export-bar-control-font-size: 0.875rem;
   align-items: flex-end;
   gap: 0.4rem;
   align-self: end;
-
-  &:has(.no-filters-label) {
-    align-self: center;
-    margin-top: 0.5rem;
-    margin-left: 5px;
-    margin-bottom: 0;
-  }
 }
 
 .chips-scroll-area {
@@ -420,7 +413,7 @@ $export-bar-control-font-size: 0.875rem;
 
 .no-filters-label {
   margin: 0;
-  color: var(--accent);
+  color: var(--text-muted);
   font-size: $export-bar-control-font-size;
   font-weight: 400;
   line-height: 1.5;
