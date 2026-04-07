@@ -303,7 +303,7 @@ $export-bar-control-font-size: 0.875rem;
 .global-filter-controls-row {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.35rem 0.5rem;
   flex-wrap: wrap;
 }
 
@@ -340,7 +340,8 @@ $export-bar-control-font-size: 0.875rem;
   font-size: 0.77rem;
 }
 
-.global-clear-btn {
+.global-clear-all-btn,
+.global-clear-input-btn {
   flex: 0 0 auto;
 }
 

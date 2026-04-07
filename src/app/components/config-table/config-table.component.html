@@ -282,9 +282,19 @@
           />
           <button
             type="button"
-            class="btn btn-sm btn-outline-secondary global-clear-btn"
+            class="btn btn-sm btn-outline-secondary global-clear-input-btn"
+            (click)="clearGlobalFilterInput()"
+            [disabled]="!globalFilter.trim()"
+            title="Clear this field only (Esc)"
+          >
+            Clear
+          </button>
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-secondary global-clear-all-btn"
             (click)="clearAllFilters()"
             [disabled]="!hasActiveFilters"
+            title="Clear global text, column filters, and list tokens"
           >
             Clear all
           </button>
