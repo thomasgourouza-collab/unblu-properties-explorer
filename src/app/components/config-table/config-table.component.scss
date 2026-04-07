@@ -2,6 +2,9 @@
   display: block;
 }
 
+$toolbar-accent-border: color-mix(in srgb, var(--accent) 42%, var(--surface-border));
+$toolbar-accent-border-hover: color-mix(in srgb, var(--accent) 65%, var(--surface-border));
+
 // Shared with .cell-x-scroll / .property-code-scroll and the main table scroll container.
 @mixin thin-overlay-scrollbar {
   scrollbar-width: thin;
@@ -105,12 +108,12 @@
   }
 
   .btn-check:checked + .btn.btn-outline-secondary {
-    border-color: #34d399;
+    border-color: $toolbar-accent-border;
     border-width: 1px;
   }
 
   .btn-check:checked + .btn.btn-outline-secondary:hover {
-    border-color: #4ade80;
+    border-color: $toolbar-accent-border-hover;
   }
 }
 
@@ -118,25 +121,25 @@
 .text-filter-mode-row {
   .btn-check:checked + .filter-mode-expr-label.btn-outline-secondary,
   .btn-check:checked + .filter-mode-regex-label.btn-outline-secondary {
-    border-color: #34d399;
+    border-color: $toolbar-accent-border;
     border-width: 1px;
   }
 
   .btn-check:checked + .filter-mode-expr-label.btn-outline-secondary:hover,
   .btn-check:checked + .filter-mode-regex-label.btn-outline-secondary:hover {
-    border-color: #4ade80;
+    border-color: $toolbar-accent-border-hover;
   }
 }
 
 // Allowed scopes / Editable by: OR vs AND (list column header).
 .list-header-filter .text-filter-mode-row {
   .btn-check:checked + .btn.btn-outline-secondary {
-    border-color: #34d399;
+    border-color: $toolbar-accent-border;
     border-width: 1px;
   }
 
   .btn-check:checked + .btn.btn-outline-secondary:hover {
-    border-color: #4ade80;
+    border-color: $toolbar-accent-border-hover;
   }
 }
 
@@ -235,7 +238,7 @@ $export-bar-control-font-size: 0.875rem;
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  border: 1px solid color-mix(in srgb, var(--accent) 42%, var(--surface-border));
+  border: 1px solid $toolbar-accent-border;
   color: var(--text-primary);
   background: color-mix(in srgb, var(--accent-soft) 28%, var(--surface-elevated));
   font-weight: 500;
@@ -247,7 +250,7 @@ $export-bar-control-font-size: 0.875rem;
   }
 
   &:hover:not(:disabled) {
-    border-color: color-mix(in srgb, var(--accent) 65%, var(--surface-border));
+    border-color: $toolbar-accent-border-hover;
     background: color-mix(in srgb, var(--accent-soft) 42%, var(--surface-elevated));
   }
 
