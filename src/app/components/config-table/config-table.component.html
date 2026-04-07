@@ -1,12 +1,23 @@
 <section
   class="table-export-bar mb-2"
-  aria-label="Export, column visibility, and selection"
+  aria-label="Export table, export config, column visibility, and selection"
   data-bwignore
   data-1p-ignore
   data-lpignore="true"
 >
   <div class="table-export-bar-inner">
     <div class="table-export-bar-leading">
+      <button
+        type="button"
+        class="btn btn-sm btn-export-table"
+        (click)="exportSelectedToCsv()"
+        [disabled]="selectedDatasetCount === 0"
+        aria-label="Export selected rows as table CSV"
+        title="Download selected rows as CSV using visible columns only, in the same order as the table (UTF-8). Selection is kept when you change filters or pages."
+      >
+        <i class="pi pi-download" aria-hidden="true"></i>
+        <span>Export table</span>
+      </button>
       <div class="export-format-dropdown" #exportFormatMenuHost>
         <button
           type="button"
@@ -16,28 +27,19 @@
           [disabled]="selectedDatasetCount === 0"
           [attr.aria-expanded]="exportFormatMenuOpen"
           aria-haspopup="true"
-          aria-label="Export selected rows"
-          title="Export selected rows to a file (CSV, JSON, YAML, or Java .properties)."
+          aria-label="Export selected rows as config"
+          title="Export selected rows as JSON, YAML, or Java .properties (Property → Value)."
         >
           <i class="pi pi-download" aria-hidden="true"></i>
-          <span>Export</span>
+          <span>Export config</span>
           <i class="pi pi-angle-down export-format-dropdown__caret" aria-hidden="true"></i>
         </button>
         <div
           *ngIf="exportFormatMenuOpen"
           class="export-format-dropdown__menu"
           role="menu"
-          aria-label="Export format"
+          aria-label="Config export format"
         >
-          <button
-            type="button"
-            class="export-format-dropdown__item"
-            role="menuitem"
-            title="Download selected rows as CSV using visible columns only, in the same order as the table (UTF-8). Selection is kept when you change filters or pages."
-            (click)="onExportFormatChosen('csv', $event)"
-          >
-            .csv
-          </button>
           <button
             type="button"
             class="export-format-dropdown__item"

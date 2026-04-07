@@ -798,13 +798,10 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.safeMarkForCheck();
   }
 
-  onExportFormatChosen(format: 'csv' | 'json' | 'yaml' | 'properties', event: MouseEvent): void {
+  onExportFormatChosen(format: 'json' | 'yaml' | 'properties', event: MouseEvent): void {
     event.stopPropagation();
     this.exportFormatMenuOpen = false;
     switch (format) {
-      case 'csv':
-        this.exportSelectedToCsv();
-        break;
       case 'json':
         this.exportSelectedToJson();
         break;
