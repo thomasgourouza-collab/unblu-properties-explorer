@@ -213,6 +213,22 @@ $export-bar-control-font-size: 0.875rem;
   }
 }
 
+.table-state-dropdown .export-format-dropdown__menu {
+  min-width: 11rem;
+}
+
+.table-state-dropdown__item {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+
+  .pi {
+    flex: 0 0 auto;
+    font-size: 0.85rem;
+    opacity: 0.9;
+  }
+}
+
 .btn-export-table,
 .export-format-dropdown__toggle,
 .btn-utransfer {
@@ -1318,7 +1334,11 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
 
 .paginator-right-select {
   display: inline-flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
   justify-content: flex-end;
+  gap: 0.35rem;
   width: 100%;
 }
 

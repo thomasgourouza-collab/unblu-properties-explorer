@@ -138,7 +138,9 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   @Input({ required: true }) rows: ConfigRow[] = [];
   @ViewChild('globalFilterInputRef') globalFilterInputRef?: ElementRef<HTMLInputElement>;
   @ViewChild('importConfigInput') private readonly importConfigInputRef?: ElementRef<HTMLInputElement>;
+  @ViewChild('importTableStateInput') private readonly importTableStateInputRef?: ElementRef<HTMLInputElement>;
   @ViewChild('exportFormatMenuHost') private readonly exportFormatMenuHost?: ElementRef<HTMLElement>;
+  @ViewChild('tableStateMenuHost') private readonly tableStateMenuHost?: ElementRef<HTMLElement>;
   /** Template ref on `p-table` — avoid `@ViewChild(Table)` (can trip Angular’s injector with PrimeNG 21). */
   @ViewChild('configTable') private readonly configTableRef?: Table;
   @ViewChildren('valueCellMulti', { read: MultiSelect })
@@ -167,6 +169,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   showSelectedRowsOnly = false;
   /** Angular-driven export format menu (no Bootstrap JS). */
   exportFormatMenuOpen = false;
+  /** Table state dropdown (reset / export / import persisted UI state). */
+  tableStateMenuOpen = false;
   /** Row identity for selection / CSV export (stable across duplicate property codes). */
   private readonly selectedRowKeys = new Set<string>();
   globalFilter = '';
@@ -222,7 +226,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   private pointerContextClientX = 0;
   private pointerContextClientY = 0;
 
-  private readonly stateStorageKey = 'csv-explorer-table-state-v3';
+  private readonly stateStorageKey = 'unblu-properties-explorer-table-state';
   private restoredState = false;
 
   get visibleColumns(): ColumnDefinition[] {
@@ -884,6 +888,38 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       return;
     }
     this.exportFormatMenuOpen = !this.exportFormatMenuOpen;
+    if (this.exportFormatMenuOpen) {
+      this.tableStateMenuOpen = false;
+    }
+    this.safeMarkForCheck();
+  }
+
+  toggleTableStateMenu(event: MouseEvent): void {
+    event.stopPropagation();
+    this.tableStateMenuOpen = !this.tableStateMenuOpen;
+    if (this.tableStateMenuOpen) {
+      this.exportFormatMenuOpen = false;
+    }
+    this.safeMarkForCheck();
+  }
+
+  onTableStateResetChosen(event: MouseEvent): void {
+    event.stopPropagation();
+    this.tableStateMenuOpen = false;
+    this.resetTableState();
+  }
+
+  onTableStateExportChosen(event: MouseEvent): void {
+    event.stopPropagation();
+    this.tableStateMenuOpen = false;
+    this.exportTableStateToJsonFile();
+    this.safeMarkForCheck();
+  }
+
+  onTableStateImportChosen(event: MouseEvent): void {
+    event.stopPropagation();
+    this.tableStateMenuOpen = false;
+    this.triggerImportTableStateFile();
     this.safeMarkForCheck();
   }
 
@@ -1583,6 +1619,96 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       this.rowsPerPage = parsed;
       this.clampTableFirstToDisplayedData();
     }
+  }
+
+  exportTableStateToJsonFile(): void {
+    this.persistState();
+    const raw = localStorage.getItem(this.stateStorageKey);
+    let body: string;
+    try {
+      const obj = raw ? JSON.parse(raw) : {};
+      body = JSON.stringify(obj, null, 2);
+    } catch {
+      globalThis.alert('Stored table state is not valid JSON; export aborted.');
+      return;
+    }
+    const blob = new Blob([body], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = 'unblu-properties-explorer-table-state.json';
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
+  triggerImportTableStateFile(): void {
+    this.importTableStateInputRef?.nativeElement?.click();
+  }
+
+  onImportTableStateFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) {
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = typeof reader.result === 'string' ? reader.result : '';
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(text);
+      } catch {
+        globalThis.alert('Could not parse JSON.');
+        return;
+      }
+      if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        globalThis.alert('Table state file must be a JSON object at the root.');
+        return;
+      }
+      localStorage.setItem(this.stateStorageKey, JSON.stringify(parsed));
+      this.restoreState();
+      this.sanitizeFilters();
+      this.onFiltersChanged();
+      this.safeMarkForCheck();
+    };
+    reader.onerror = () => {
+      globalThis.alert('Could not read the selected file.');
+    };
+    reader.readAsText(file, 'UTF-8');
+  }
+
+  /** Clear persisted state and in-memory filters/columns as when localStorage has no entry. */
+  resetTableState(): void {
+    try {
+      localStorage.removeItem(this.stateStorageKey);
+    } catch {
+      /* ignore quota / private mode */
+    }
+
+    this.globalFilter = '';
+    this.globalFilterMode = 'expr';
+    this.globalFilterScope = 'all';
+    this.textFilters = {};
+    this.textModes = {};
+    this.valueFilters = {};
+    this.listModes = {
+      allowedScopes: 'or',
+      editableBy: 'or'
+    };
+    this.columnOrderKeys = this.columns.map((column) => column.key);
+    this.visibleColumnKeys = this.ensurePropertyVisible([...this.columnOrderKeys]);
+
+    this.tableFirst = 0;
+    this.showSelectedRowsOnly = false;
+    this.tableSortTriStateAnchor = null;
+    if (this.configTableRef) {
+      this.configTableRef.multiSortMeta = null;
+    }
+
+    this.applyFilters();
+    this.syncMatchInspectorToDisplayedTable();
+    this.safeMarkForCheck();
   }
 
   clearFilters(): void {
@@ -2606,23 +2732,33 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
   @HostListener('document:click', ['$event'])
   onDocumentClickCloseExportMenu(event: MouseEvent): void {
-    if (!this.exportFormatMenuOpen) {
-      return;
-    }
-    const host = this.exportFormatMenuHost?.nativeElement;
     const t = event.target;
-    if (host && t instanceof Node && host.contains(t)) {
-      return;
+    let changed = false;
+    if (this.exportFormatMenuOpen) {
+      const host = this.exportFormatMenuHost?.nativeElement;
+      if (!host || !(t instanceof Node) || !host.contains(t)) {
+        this.exportFormatMenuOpen = false;
+        changed = true;
+      }
     }
-    this.exportFormatMenuOpen = false;
-    this.safeMarkForCheck();
+    if (this.tableStateMenuOpen) {
+      const host = this.tableStateMenuHost?.nativeElement;
+      if (!host || !(t instanceof Node) || !host.contains(t)) {
+        this.tableStateMenuOpen = false;
+        changed = true;
+      }
+    }
+    if (changed) {
+      this.safeMarkForCheck();
+    }
   }
 
   @HostListener('document:keydown', ['$event'])
   onDocumentKeydown(event: KeyboardEvent): void {
-    if (event.key === 'Escape' && this.exportFormatMenuOpen) {
+    if (event.key === 'Escape' && (this.exportFormatMenuOpen || this.tableStateMenuOpen)) {
       event.preventDefault();
       this.exportFormatMenuOpen = false;
+      this.tableStateMenuOpen = false;
       this.safeMarkForCheck();
       return;
     }
