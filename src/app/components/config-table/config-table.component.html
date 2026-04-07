@@ -899,7 +899,18 @@
       <ng-template pTemplate="paginatorleft" let-state>
         <div class="paginator-left-report">
           <span>
-            Showing {{ state.first + 1 }} to {{ state.first + state.rows > state.totalRecords ? state.totalRecords : state.first + state.rows }} of {{ state.totalRecords }} rows
+            <ng-container *ngIf="state.totalRecords === 0; else paginatorRange">
+              Showing 0 to 0 of 0 rows
+            </ng-container>
+            <ng-template #paginatorRange>
+              Showing {{ state.first + 1 }} to
+              {{
+                state.first + state.rows > state.totalRecords
+                  ? state.totalRecords
+                  : state.first + state.rows
+              }}
+              of {{ state.totalRecords }} rows
+            </ng-template>
             <span *ngIf="selectionCountShowsSplit" class="paginator-selection-hint text-muted">
               · {{ selectedDatasetCount }} selected in full data
             </span>
