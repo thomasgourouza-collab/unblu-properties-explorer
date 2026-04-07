@@ -1041,6 +1041,124 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
   font-size: $value-cell-font-size;
 }
 
+/* Free-text Value: mirror under transparent input (highlights align with `row.value`). */
+.value-cell-free-text-stack {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax($value-cell-control-min-height, auto);
+  width: 100%;
+  min-width: 0;
+}
+
+.value-cell-free-text-stack > * {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.value-cell-highlight-mirror {
+  z-index: 0;
+  box-sizing: border-box;
+  min-height: $value-cell-control-min-height;
+  padding: $value-cell-control-pad-y $value-cell-control-pad-x;
+  line-height: 1.2;
+  font-size: $value-cell-font-size;
+  font-family: inherit;
+  white-space: pre;
+  overflow: hidden;
+  overflow-x: auto;
+  pointer-events: none;
+  background: var(--surface-elevated);
+  color: var(--text-secondary);
+  border-radius: var(--bs-border-radius, 0.25rem);
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.value-cell-input--with-highlight-mirror {
+  position: relative;
+  z-index: 1;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent;
+  caret-color: var(--text-secondary);
+  background: transparent !important;
+}
+
+.value-cell-input--with-highlight-mirror:focus,
+.value-cell-input--with-highlight-mirror:focus-visible {
+  background: transparent !important;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent;
+  caret-color: var(--text-secondary);
+}
+
+.value-cell-input--with-highlight-mirror::selection {
+  background: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+/* Native Value `<select>`: painted label under transparent control (same highlight pipeline as other cells). */
+.value-cell-native-select-stack {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+
+.value-cell-select-face {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+  padding-top: $value-cell-control-pad-y;
+  padding-bottom: $value-cell-control-pad-y;
+  padding-left: $value-cell-control-pad-x;
+  padding-right: 1.65rem;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.value-cell-select-face-text {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.2;
+  font-size: $value-cell-font-size;
+  color: var(--text-secondary);
+}
+
+.value-cell-select-native.value-cell-select-over-face {
+  position: relative;
+  z-index: 1;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent;
+  background: transparent !important;
+  cursor: pointer;
+}
+
+.value-cell-select-native.value-cell-select-over-face:focus,
+.value-cell-select-native.value-cell-select-over-face:focus-visible {
+  color: transparent !important;
+  -webkit-text-fill-color: transparent;
+  background: transparent !important;
+}
+
+/* Multiselect comma label: custom selectedItems template with marks. */
+.value-multiselect-selected-hl {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.25;
+  font-size: $value-cell-font-size;
+}
+
 /* Native <select>: avoid overflow/ellipsis hacks — they add scrollbars or odd chrome in WebKit/Firefox */
 .value-cell-select-native {
   width: 100%;

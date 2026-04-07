@@ -643,21 +643,42 @@
                 <div class="value-cell-row">
                   <div class="value-cell-control-slot">
                     <ng-container *ngIf="isValueColumnBooleanType(row); else tplValueNonBoolean">
-                      <select
-                        class="form-select form-select-sm value-cell-select-native"
-                        [ngModel]="row.value"
-                        (ngModelChange)="onValueColumnSelectChange(row, $event)"
-                        [attr.aria-label]="'Value for ' + row.property"
-                        autocomplete="off"
-                        data-bwignore
-                        data-1p-ignore
-                        data-lpignore="true"
-                      >
-                        <option value=""></option>
-                        <option value="true">true</option>
-                        <option value="false">false</option>
-                        <option *ngIf="valueColumnBooleanShowsInvalidOption(row)" [value]="row.value">{{ row.value }}</option>
-                      </select>
+                      <div class="value-cell-native-select-stack">
+                        <div class="value-cell-select-face" aria-hidden="true">
+                          <span class="value-cell-select-face-text">
+                            <ng-container
+                              *ngFor="
+                                let part of getHighlightedParts(valueColumnNativeSelectHighlightSource(row), 'value');
+                                trackBy: trackByHighlightPart
+                              "
+                            >
+                              <mark
+                                *ngIf="part.kind !== 'none'"
+                                [class.global-filter-highlight]="part.kind === 'global'"
+                                [class.column-filter-highlight]="part.kind === 'column'"
+                              >
+                                {{ part.text }}
+                              </mark>
+                              <span *ngIf="part.kind === 'none'">{{ part.text }}</span>
+                            </ng-container>
+                          </span>
+                        </div>
+                        <select
+                          class="form-select form-select-sm value-cell-select-native value-cell-select-over-face"
+                          [ngModel]="row.value"
+                          (ngModelChange)="onValueColumnSelectChange(row, $event)"
+                          [attr.aria-label]="'Value for ' + row.property"
+                          autocomplete="off"
+                          data-bwignore
+                          data-1p-ignore
+                          data-lpignore="true"
+                        >
+                          <option value=""></option>
+                          <option value="true">true</option>
+                          <option value="false">false</option>
+                          <option *ngIf="valueColumnBooleanShowsInvalidOption(row)" [value]="row.value">{{ row.value }}</option>
+                        </select>
+                      </div>
                     </ng-container>
                     <ng-template #tplValueNonBoolean>
                       <ng-container *ngIf="valueColumnUsesMultiSelect(row); else tplValueSingleOrText">
@@ -675,43 +696,106 @@
                           [filter]="true"
                           [showToggleAll]="true"
                           [appendTo]="'body'"
-                          [maxSelectedLabels]="2"
+                          [maxSelectedLabels]="valueColumnMultiMaxSummaryLabels"
                           [ngModel]="getValueColumnMultiModel(row)"
                           (ngModelChange)="onValueColumnMultiChange(row, $event)"
                           (onPanelShow)="onValueColumnMultiselectPanelShow(valueCellMulti)"
                           [attr.aria-label]="'Values for ' + row.property"
-                        />
+                        >
+                          <ng-template pTemplate="selectedItems">
+                            <span class="value-multiselect-selected-hl" [attr.title]="row.value || ''">
+                              <ng-container *ngIf="valueColumnMultiselectUseSummaryLabel(row); else tplValueMultiHl">
+                                {{ valueColumnMultiselectSummaryLabel(row) }}
+                              </ng-container>
+                              <ng-template #tplValueMultiHl>
+                                <ng-container
+                                  *ngFor="
+                                    let part of getHighlightedParts(row.value ?? '', 'value');
+                                    trackBy: trackByHighlightPart
+                                  "
+                                >
+                                  <mark
+                                    *ngIf="part.kind !== 'none'"
+                                    [class.global-filter-highlight]="part.kind === 'global'"
+                                    [class.column-filter-highlight]="part.kind === 'column'"
+                                  >
+                                    {{ part.text }}
+                                  </mark>
+                                  <span *ngIf="part.kind === 'none'">{{ part.text }}</span>
+                                </ng-container>
+                              </ng-template>
+                            </span>
+                          </ng-template>
+                        </p-multiselect>
                       </ng-container>
                       <ng-template #tplValueSingleOrText>
                         <ng-container *ngIf="valueColumnUsesSingleSelectFromAllowed(row); else tplValueFreeText">
-                          <select
-                            class="form-select form-select-sm value-cell-select-native"
-                            [ngModel]="row.value"
-                            (ngModelChange)="onValueColumnSelectChange(row, $event)"
-                            [attr.aria-label]="'Value for ' + row.property"
-                            autocomplete="off"
-                            data-bwignore
-                            data-1p-ignore
-                            data-lpignore="true"
-                          >
-                            <option value=""></option>
-                            <option *ngFor="let opt of getValueColumnSelectOptions(row)" [value]="opt.value">{{ opt.label }}</option>
-                          </select>
+                          <div class="value-cell-native-select-stack">
+                            <div class="value-cell-select-face" aria-hidden="true">
+                              <span class="value-cell-select-face-text">
+                                <ng-container
+                                  *ngFor="
+                                    let part of getHighlightedParts(valueColumnNativeSelectHighlightSource(row), 'value');
+                                    trackBy: trackByHighlightPart
+                                  "
+                                >
+                                  <mark
+                                    *ngIf="part.kind !== 'none'"
+                                    [class.global-filter-highlight]="part.kind === 'global'"
+                                    [class.column-filter-highlight]="part.kind === 'column'"
+                                  >
+                                    {{ part.text }}
+                                  </mark>
+                                  <span *ngIf="part.kind === 'none'">{{ part.text }}</span>
+                                </ng-container>
+                              </span>
+                            </div>
+                            <select
+                              class="form-select form-select-sm value-cell-select-native value-cell-select-over-face"
+                              [ngModel]="row.value"
+                              (ngModelChange)="onValueColumnSelectChange(row, $event)"
+                              [attr.aria-label]="'Value for ' + row.property"
+                              autocomplete="off"
+                              data-bwignore
+                              data-1p-ignore
+                              data-lpignore="true"
+                            >
+                              <option value=""></option>
+                              <option *ngFor="let opt of getValueColumnSelectOptions(row)" [value]="opt.value">{{ opt.label }}</option>
+                            </select>
+                          </div>
                         </ng-container>
                         <ng-template #tplValueFreeText>
-                          <input
-                            type="text"
-                            class="form-control form-control-sm value-cell-input"
-                            [ngModel]="row.value"
-                            (ngModelChange)="onValueColumnFreeTextChange(row, $event)"
-                            [attr.aria-label]="'Value for ' + row.property"
-                            autocomplete="off"
-                            autocapitalize="off"
-                            spellcheck="false"
-                            data-bwignore
-                            data-1p-ignore
-                            data-lpignore="true"
-                          />
+                          <div class="value-cell-free-text-stack">
+                            <div class="value-cell-highlight-mirror" #valueFreeTextHlMirror aria-hidden="true">
+                              <ng-container
+                                *ngFor="let part of getHighlightedParts(row.value ?? '', 'value'); trackBy: trackByHighlightPart"
+                              >
+                                <mark
+                                  *ngIf="part.kind !== 'none'"
+                                  [class.global-filter-highlight]="part.kind === 'global'"
+                                  [class.column-filter-highlight]="part.kind === 'column'"
+                                >
+                                  {{ part.text }}
+                                </mark>
+                                <span *ngIf="part.kind === 'none'">{{ part.text }}</span>
+                              </ng-container>
+                            </div>
+                            <input
+                              type="text"
+                              class="form-control form-control-sm value-cell-input value-cell-input--with-highlight-mirror"
+                              [ngModel]="row.value"
+                              (ngModelChange)="onValueColumnFreeTextChange(row, $event)"
+                              (scroll)="onValueFreeTextHighlightScroll($event, valueFreeTextHlMirror)"
+                              [attr.aria-label]="'Value for ' + row.property"
+                              autocomplete="off"
+                              autocapitalize="off"
+                              spellcheck="false"
+                              data-bwignore
+                              data-1p-ignore
+                              data-lpignore="true"
+                            />
+                          </div>
                         </ng-template>
                       </ng-template>
                     </ng-template>

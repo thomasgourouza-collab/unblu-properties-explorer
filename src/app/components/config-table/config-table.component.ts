@@ -2399,6 +2399,31 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     event.stopPropagation();
   }
 
+  /** Matches `[maxSelectedLabels]` on Value column multiselect — switch to summary label when exceeded. */
+  readonly valueColumnMultiMaxSummaryLabels = 2;
+
+  /** Source string for filter highlights in native Value selects (stored value matches display tokens). */
+  valueColumnNativeSelectHighlightSource(row: ConfigRow): string {
+    return row.value ?? '';
+  }
+
+  valueColumnMultiselectUseSummaryLabel(row: ConfigRow): boolean {
+    return this.getValueColumnMultiModel(row).length > this.valueColumnMultiMaxSummaryLabels;
+  }
+
+  valueColumnMultiselectSummaryLabel(row: ConfigRow): string {
+    const n = this.getValueColumnMultiModel(row).length;
+    return `${n} selected`;
+  }
+
+  /** Keep free-text highlight mirror aligned on horizontal scroll. */
+  onValueFreeTextHighlightScroll(event: Event, mirror: HTMLDivElement): void {
+    const t = event.target;
+    if (t instanceof HTMLInputElement) {
+      mirror.scrollLeft = t.scrollLeft;
+    }
+  }
+
   /**
    * True when the Value field differs from Default value (for list types, token order is ignored).
    */
