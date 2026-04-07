@@ -467,6 +467,12 @@ $export-bar-control-font-size: 0.875rem;
   overflow: hidden;
 }
 
+.value-header-error-count {
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
 .value-header-select-changes-btn {
   flex-shrink: 0;
   min-height: 1.75rem;
@@ -799,6 +805,7 @@ $value-cell-font-size: 0.8125rem;
 }
 
 $value-column-divergent-border: color-mix(in srgb, #22c55e 72%, var(--surface-border));
+$value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-border));
 
 :host .value-cell-wrap.value-cell-diverges {
   .value-cell-select-native,
@@ -808,6 +815,28 @@ $value-column-divergent-border: color-mix(in srgb, #22c55e 72%, var(--surface-bo
 }
 
 :host ::ng-deep .value-cell-wrap.value-cell-diverges .value-cell-multiselect-inner.p-multiselect {
+  border-color: $value-column-divergent-border;
+}
+
+:host .value-cell-wrap.value-cell-wrap--import-invalid {
+  .value-cell-select-native,
+  .value-cell-input {
+    border-color: $value-import-invalid-border;
+  }
+}
+
+:host ::ng-deep .value-cell-wrap.value-cell-wrap--import-invalid .value-cell-multiselect-inner.p-multiselect {
+  border-color: $value-import-invalid-border;
+}
+
+:host .value-cell-wrap.value-cell-wrap--import-resolved {
+  .value-cell-select-native,
+  .value-cell-input {
+    border-color: $value-column-divergent-border;
+  }
+}
+
+:host ::ng-deep .value-cell-wrap.value-cell-wrap--import-resolved .value-cell-multiselect-inner.p-multiselect {
   border-color: $value-column-divergent-border;
 }
 

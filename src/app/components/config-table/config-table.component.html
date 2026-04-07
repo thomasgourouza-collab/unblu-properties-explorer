@@ -280,10 +280,13 @@
             [style.width.%]="getColumnWidthPercent(column.key)"
           >
             <div class="header-content" [class.header-content--value]="column.key === 'value'">
-              <ng-container *ngIf="column.key === 'value'; else tplHeaderErrorOrDefault">
+              <ng-container *ngIf="column.key === 'value'; else tplHeaderDefaultLabel">
                 <span class="header-content-value-leading">
                   <span>{{ column.label }}</span>
                   <p-sortIcon [field]="column.key" />
+                </span>
+                <span *ngIf="configImportErrorCount > 0" class="value-header-error-count text-muted small">
+                  ({{ configImportErrorCount }} errors)
                 </span>
                 <button
                   type="button"
@@ -295,15 +298,9 @@
                   select diffs ({{ valueColumnChangeRowCount }})
                 </button>
               </ng-container>
-              <ng-template #tplHeaderErrorOrDefault>
-                <ng-container *ngIf="column.key === 'configImportError'; else tplHeaderDefaultLabel">
-                  <span>{{ column.label }} ({{ configImportErrorCount }})</span>
-                  <p-sortIcon [field]="column.key" />
-                </ng-container>
-                <ng-template #tplHeaderDefaultLabel>
-                  <span>{{ column.label }}</span>
-                  <p-sortIcon [field]="column.key" />
-                </ng-template>
+              <ng-template #tplHeaderDefaultLabel>
+                <span>{{ column.label }}</span>
+                <p-sortIcon [field]="column.key" />
               </ng-template>
             </div>
           </th>
@@ -467,6 +464,8 @@
               <div
                 class="value-cell-wrap"
                 [class.value-cell-diverges]="valueColumnDiffersFromDefault(row)"
+                [class.value-cell-wrap--import-invalid]="valueColumnImportBorderState(row) === 'invalid'"
+                [class.value-cell-wrap--import-resolved]="valueColumnImportBorderState(row) === 'resolved'"
                 (click)="onValueCellControlClick($event)"
               >
                 <div class="value-cell-row">
@@ -475,7 +474,7 @@
                       <select
                         class="form-select form-select-sm value-cell-select-native"
                         [ngModel]="row.value"
-                        (ngModelChange)="row.value = $event"
+                        (ngModelChange)="onValueColumnSelectChange(row, $event)"
                         [attr.aria-label]="'Value for ' + row.property"
                         autocomplete="off"
                         data-bwignore
@@ -485,6 +484,7 @@
                         <option value=""></option>
                         <option value="true">true</option>
                         <option value="false">false</option>
+                        <option *ngIf="valueColumnBooleanShowsInvalidOption(row)" [value]="row.value">{{ row.value }}</option>
                       </select>
                     </ng-container>
                     <ng-template #tplValueNonBoolean>
@@ -515,7 +515,7 @@
                           <select
                             class="form-select form-select-sm value-cell-select-native"
                             [ngModel]="row.value"
-                            (ngModelChange)="row.value = $event"
+                            (ngModelChange)="onValueColumnSelectChange(row, $event)"
                             [attr.aria-label]="'Value for ' + row.property"
                             autocomplete="off"
                             data-bwignore
@@ -531,7 +531,7 @@
                             type="text"
                             class="form-control form-control-sm value-cell-input"
                             [ngModel]="row.value"
-                            (ngModelChange)="row.value = $event"
+                            (ngModelChange)="onValueColumnFreeTextChange(row, $event)"
                             [attr.aria-label]="'Value for ' + row.property"
                             autocomplete="off"
                             autocapitalize="off"
@@ -558,10 +558,6 @@
               </div>
             </ng-container>
             <ng-template #tplNotValueColumn>
-            <ng-container *ngIf="column.key === 'configImportError'; else tplNotImportErrorColumn">
-              <span class="text-danger fw-bold text-break config-import-error-cell">{{ row.configImportError }}</span>
-            </ng-container>
-            <ng-template #tplNotImportErrorColumn>
             <ng-container *ngIf="column.key === 'defaultValue'; else tplAllowedOrRest">
               <div *ngIf="isDefaultValueCellVisible(getCellValue(row, column.key))" class="cell-x-scroll cell-chips-row">
                 <ng-container
@@ -652,7 +648,6 @@
                 </div>
               </ng-template>
               </ng-template>
-            </ng-template>
             </ng-template>
             </ng-template>
           </td>

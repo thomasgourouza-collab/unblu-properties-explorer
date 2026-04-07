@@ -81,7 +81,6 @@ const BASE_COLUMN_DEFINITIONS: ColumnDefinition[] = [
   { key: 'source', label: 'Source', filterType: 'text' },
   { key: 'defaultValue', label: 'Default value', filterType: 'text' },
   { key: 'value', label: 'Value', filterType: 'text' },
-  { key: 'configImportError', label: 'Error', filterType: 'text' },
   { key: 'type', label: 'Type', filterType: 'select' },
   { key: 'allowedValues', label: 'Allowed values', filterType: 'text' },
   { key: 'allowedScopes', label: 'Allowed scopes', filterType: 'list' },
@@ -256,9 +255,6 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     }
     if (columnKey === 'value') {
       return 1.2;
-    }
-    if (columnKey === 'configImportError') {
-      return 0.9;
     }
     if (columnKey === 'visibility') {
       return 0.65;
@@ -495,8 +491,10 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     for (const row of this.rows) {
       row.value = row.defaultValue ?? '';
       row.configImportError = '';
+      row.valueImportResolvedHighlight = false;
       this.valueColumnMultiModelCache.delete(row.rowKey);
     }
+    this.valueColumnSelectOptionsCache.clear();
     this.clearSelectedOnlyIfNoSelection();
     this.syncMatchInspectorToDisplayedTable();
     this.safeMarkForCheck();
@@ -554,6 +552,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
     for (const row of this.rows) {
       row.configImportError = '';
+      row.valueImportResolvedHighlight = false;
     }
     for (const k of Object.keys(obj)) {
       const trimmedKey = k.trim();
@@ -564,12 +563,17 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
         if (this.jsonImportValueIsValid(row, raw)) {
           row.value = this.canonicalJsonImportStoredValue(row, raw);
           row.configImportError = '';
+          row.valueImportResolvedHighlight = false;
           this.valueColumnMultiModelCache.delete(row.rowKey);
         } else {
-          row.configImportError = raw.length > 400 ? `${raw.slice(0, 400)}…` : raw;
+          row.value = raw;
+          row.configImportError = raw;
+          row.valueImportResolvedHighlight = false;
+          this.valueColumnMultiModelCache.delete(row.rowKey);
         }
       }
     }
+    this.valueColumnSelectOptionsCache.clear();
     this.lastConfigImport = {
       fileName: importedFileName,
       snapshot: this.clonePlainJsonObject(obj)
@@ -1603,14 +1607,16 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     if (key === 'source') {
       return row.source ?? '';
     }
-    if (key === 'configImportError') {
-      return row.configImportError ?? '';
-    }
     if (key.startsWith(EXTRA_COLUMN_PREFIX)) {
       return row.extra[key] ?? '';
     }
     const field = key as keyof ConfigRow;
-    if (field === 'extra' || field === 'allowedScopesTokens' || field === 'editableByTokens') {
+    if (
+      field === 'extra' ||
+      field === 'allowedScopesTokens' ||
+      field === 'editableByTokens' ||
+      field === 'valueImportResolvedHighlight'
+    ) {
       return '';
     }
     const value = row[field];
@@ -1726,16 +1732,49 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   }
 
   getValueColumnSelectOptions(row: ConfigRow): SelectOption[] {
-    const cacheKey = `${row.rowKey}\0${row.hasAllowedValuesColumn ? row.allowedValues : ''}`;
+    const err = (row.configImportError ?? '').trim();
+    const multi = this.valueColumnUsesMultiSelect(row);
+    const cacheKey = `${row.rowKey}\0${row.hasAllowedValuesColumn ? row.allowedValues : ''}\0${err}\0${row.value ?? ''}\0${multi ? 'm' : 's'}`;
     const hit = this.valueColumnSelectOptionsCache.get(cacheKey);
     if (hit) {
       return hit;
     }
-    const opts = [...this.getValueColumnAllowedOptionValues(row)]
-      .sort((a, b) => a.localeCompare(b))
-      .map((v) => ({ label: v, value: v }));
+    const allowedVals = this.getValueColumnAllowedOptionValues(row);
+    const seen = new Set<string>();
+    const opts: SelectOption[] = [];
+    for (const v of [...allowedVals].sort((a, b) => a.localeCompare(b))) {
+      seen.add(v);
+      opts.push({ label: v, value: v });
+    }
+    if (err.length > 0) {
+      if (multi) {
+        for (const tok of this.parseListStyleCellToTokens(row.value ?? '')) {
+          if (!seen.has(tok)) {
+            seen.add(tok);
+            opts.push({ label: tok, value: tok });
+          }
+        }
+      } else {
+        const v = (row.value ?? '').trim();
+        if (v.length > 0 && !seen.has(v)) {
+          opts.push({ label: v, value: v });
+        }
+      }
+    }
     this.valueColumnSelectOptionsCache.set(cacheKey, opts);
     return opts;
+  }
+
+  /** Extra `<option>` for boolean Value when JSON import left an invalid value. */
+  valueColumnBooleanShowsInvalidOption(row: ConfigRow): boolean {
+    if (!this.isValueColumnBooleanType(row)) {
+      return false;
+    }
+    if (!(row.configImportError ?? '').trim()) {
+      return false;
+    }
+    const t = (row.value ?? '').trim().toLowerCase();
+    return t !== '' && t !== 'true' && t !== 'false';
   }
 
   valueColumnUsesMultiSelect(row: ConfigRow): boolean {
@@ -1751,6 +1790,15 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
   getValueColumnMultiModel(row: ConfigRow): string[] {
     const v = row.value ?? '';
+    if ((row.configImportError ?? '').trim().length > 0) {
+      const cachedErr = this.valueColumnMultiModelCache.get(row.rowKey);
+      if (cachedErr && cachedErr.value === v) {
+        return cachedErr.selected;
+      }
+      const all = this.parseListStyleCellToTokens(v);
+      this.valueColumnMultiModelCache.set(row.rowKey, { value: v, selected: all });
+      return all;
+    }
     const cached = this.valueColumnMultiModelCache.get(row.rowKey);
     if (cached && cached.value === v) {
       return cached.selected;
@@ -1777,11 +1825,65 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   onValueColumnMultiChange(row: ConfigRow, selected: string[] | null | undefined): void {
     const picked = (selected ?? []).filter((p) => p.trim().length > 0);
     const next = picked.join(',');
+    const hadImportError = (row.configImportError ?? '').trim().length > 0;
     row.value = next;
-    const allowed = new Set(this.getValueColumnAllowedOptionValues(row));
-    const normalized = picked.filter((p) => allowed.has(p));
-    this.valueColumnMultiModelCache.set(row.rowKey, { value: next, selected: normalized });
+    if (this.jsonImportValueIsValid(row, next)) {
+      row.configImportError = '';
+      if (hadImportError) {
+        row.valueImportResolvedHighlight = true;
+      }
+    } else {
+      row.valueImportResolvedHighlight = false;
+      row.configImportError = next.trim().length > 0 ? next : 'invalid';
+    }
+    this.valueColumnMultiModelCache.set(row.rowKey, { value: next, selected: picked });
     this.safeMarkForCheck();
+  }
+
+  onValueColumnSelectChange(row: ConfigRow, newValue: string): void {
+    const hadImportError = (row.configImportError ?? '').trim().length > 0;
+    row.value = newValue;
+    if (this.jsonImportValueIsValid(row, newValue)) {
+      row.configImportError = '';
+      if (hadImportError) {
+        row.valueImportResolvedHighlight = true;
+      }
+    } else {
+      row.valueImportResolvedHighlight = false;
+      row.configImportError = newValue.trim().length > 0 ? newValue : 'invalid';
+    }
+    this.valueColumnMultiModelCache.delete(row.rowKey);
+    this.safeMarkForCheck();
+  }
+
+  onValueColumnFreeTextChange(row: ConfigRow, newValue: string): void {
+    const hadImportError = (row.configImportError ?? '').trim().length > 0;
+    row.value = newValue;
+    if (this.jsonImportValueIsValid(row, newValue)) {
+      row.configImportError = '';
+      if (hadImportError) {
+        row.valueImportResolvedHighlight = true;
+      }
+    } else {
+      row.valueImportResolvedHighlight = false;
+      if (hadImportError) {
+        row.configImportError = newValue;
+      }
+    }
+    this.valueColumnMultiModelCache.delete(row.rowKey);
+    this.safeMarkForCheck();
+  }
+
+  /** Import / validity border: red (invalid), green (fixed after import error), or neutral. */
+  valueColumnImportBorderState(row: ConfigRow): 'invalid' | 'resolved' | null {
+    const raw = row.value ?? '';
+    if ((row.configImportError ?? '').trim().length > 0 || !this.jsonImportValueIsValid(row, raw)) {
+      return 'invalid';
+    }
+    if (row.valueImportResolvedHighlight && this.jsonImportValueIsValid(row, raw)) {
+      return 'resolved';
+    }
+    return null;
   }
 
   onResetValueToDefault(event: MouseEvent, row: ConfigRow): void {
@@ -1791,6 +1893,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       return;
     }
     row.value = row.defaultValue ?? '';
+    row.configImportError = '';
+    row.valueImportResolvedHighlight = false;
     this.valueColumnMultiModelCache.delete(row.rowKey);
     this.safeMarkForCheck();
   }

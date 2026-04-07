@@ -234,6 +234,7 @@ export class CsvParserService {
       defaultValue,
       value: defaultValue,
       configImportError: '',
+      valueImportResolvedHighlight: false,
       type: getValue('type'),
       allowedValues: hasAllowedValuesColumn ? getValue('allowedValues') : '',
       allowedScopes,
