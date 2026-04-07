@@ -17,6 +17,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { MultiSelect, MultiSelectModule } from 'primeng/multiselect';
 import { TableColumnReorderEvent, TableModule } from 'primeng/table';
+import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 
 import { ColumnDefinition, ConfigRow, EXTRA_COLUMN_PREFIX, FilterMode } from '../../models/config-row.model';
 import unbluScopeEditorsJson from '../../data/unblu-scope-editors.json';
@@ -517,22 +518,53 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     }
     const reader = new FileReader();
     reader.onload = () => {
-      try {
-        const text = typeof reader.result === 'string' ? reader.result : '';
-        const parsed: unknown = JSON.parse(text);
-        if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-          globalThis.alert('JSON import requires a plain object (not an array).');
-          return;
-        }
-        this.applyJsonConfigImport(parsed as Record<string, unknown>, file.name);
-      } catch {
-        globalThis.alert('Could not parse JSON. Check that the file is valid UTF-8 JSON.');
+      const text = typeof reader.result === 'string' ? reader.result : '';
+      const parsed = this.parseImportedConfigFileText(text);
+      if (parsed === 'not-object') {
+        globalThis.alert(
+          'Config import requires a plain object at the root (not an array). Use a JSON object or YAML mapping.'
+        );
+        return;
       }
+      if (parsed === null) {
+        globalThis.alert(
+          'Could not parse as JSON or YAML. Use UTF-8 and a root object, e.g. {"key":"value"} or YAML `key: value` lines.'
+        );
+        return;
+      }
+      this.applyJsonConfigImport(parsed, file.name);
     };
     reader.onerror = () => {
       globalThis.alert('Could not read the selected file.');
     };
     reader.readAsText(file, 'UTF-8');
+  }
+
+  /**
+   * Parse JSON first, then YAML. Returns a plain object record, `null` if syntax is invalid, or
+   * `'not-object'` if the document root is not a non-null object (e.g. array or scalar).
+   */
+  private parseImportedConfigFileText(
+    text: string
+  ): Record<string, unknown> | null | 'not-object' {
+    const body = text.replace(/^\uFEFF/, '').trim();
+    if (!body) {
+      return null;
+    }
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(body);
+    } catch {
+      try {
+        parsed = parseYaml(body);
+      } catch {
+        return null;
+      }
+    }
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+      return 'not-object';
+    }
+    return parsed as Record<string, unknown>;
   }
 
   private clonePlainJsonObject(obj: Record<string, unknown>): Record<string, unknown> {
@@ -735,18 +767,10 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   }
 
   exportSelectedToJson(): void {
-    const selected = this.rows.filter((row) => this.selectedRowKeys.has(row.rowKey));
-    if (selected.length === 0) {
+    if (this.selectedDatasetCount === 0) {
       return;
     }
-    const out: Record<string, string> = {};
-    for (const row of selected) {
-      const prop = this.getCellValue(row, 'property').trim();
-      if (!prop) {
-        continue;
-      }
-      out[prop] = this.getCellValue(row, 'value');
-    }
+    const out = this.buildSelectionExportPropertyValueMap();
     const body = `${JSON.stringify(out, null, 2)}\n`;
     const blob = new Blob([body], { type: 'application/json;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -755,6 +779,36 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     anchor.download = this.buildSelectionExportFilename('json');
     anchor.click();
     URL.revokeObjectURL(url);
+  }
+
+  exportSelectedToYaml(): void {
+    if (this.selectedDatasetCount === 0) {
+      return;
+    }
+    const out = this.buildSelectionExportPropertyValueMap();
+    const yamlText = stringifyYaml(out, { lineWidth: 0 });
+    const body = yamlText.endsWith('\n') ? yamlText : `${yamlText}\n`;
+    const blob = new Blob([body], { type: 'text/yaml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = this.buildSelectionExportFilename('yaml');
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
+  /** Property → Value strings for JSON/YAML selection export (same rules as CSV selection). */
+  private buildSelectionExportPropertyValueMap(): Record<string, string> {
+    const selected = this.rows.filter((row) => this.selectedRowKeys.has(row.rowKey));
+    const out: Record<string, string> = {};
+    for (const row of selected) {
+      const prop = this.getCellValue(row, 'property').trim();
+      if (!prop) {
+        continue;
+      }
+      out[prop] = this.getCellValue(row, 'value');
+    }
+    return out;
   }
 
   @ViewChild('chipsScrollArea')
@@ -1656,7 +1710,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     return s;
   }
 
-  private buildSelectionExportFilename(extension: 'csv' | 'json'): string {
+  private buildSelectionExportFilename(extension: 'csv' | 'json' | 'yaml'): string {
     const d = new Date();
     const day = String(d.getDate()).padStart(2, '0');
     const m = String(d.getMonth() + 1).padStart(2, '0');

@@ -27,6 +27,16 @@
         <i class="pi pi-download" aria-hidden="true"></i>
         <span>Export JSON</span>
       </button>
+      <button
+        type="button"
+        class="btn btn-sm btn-export-yaml"
+        (click)="exportSelectedToYaml()"
+        [disabled]="selectedDatasetCount === 0"
+        title="Download selected rows as YAML: each Property is a key and the editable Value is the string value (UTF-8). Rows with an empty Property are skipped; duplicate properties keep the last selected row."
+      >
+        <i class="pi pi-download" aria-hidden="true"></i>
+        <span>Export YAML</span>
+      </button>
       <div class="table-export-bar-column-visibility">
         <p-multiselect
           inputId="columnVisibility"
@@ -70,7 +80,7 @@
     <input
       #importConfigInput
       type="file"
-      accept="application/json,.json"
+      accept="application/json,.json,application/x-yaml,text/yaml,text/x-yaml,.yaml,.yml"
       class="visually-hidden"
       tabindex="-1"
       aria-hidden="true"
@@ -98,8 +108,8 @@
       class="btn btn-sm btn-outline-secondary align-self-center"
       (click)="onResetImportedConfigClick()"
       [disabled]="!lastConfigImport"
-      title="Apply the last imported JSON again (same as re-importing the file)"
-      aria-label="Reset values from last JSON import"
+      title="Apply the last imported config again (same as re-importing the file)"
+      aria-label="Reset values from last config import"
     >
       <span>Reset</span>
     </button>
@@ -107,8 +117,8 @@
       type="button"
       class="btn btn-sm btn-utransfer"
       (click)="onUtransferClick()"
-      title="Import configuration from a JSON file"
-      aria-label="Import config"
+      title="Import configuration from a JSON or YAML file (root must be a plain object)"
+      aria-label="Import config from JSON or YAML"
     >
       <i class="pi pi-upload" aria-hidden="true"></i>
       <span>Import config</span>
