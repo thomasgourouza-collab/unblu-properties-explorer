@@ -116,8 +116,7 @@ body {
   transition:
     border-color 0.14s ease,
     background-color 0.14s ease,
-    box-shadow 0.14s ease,
-    transform 0.12s ease;
+    box-shadow 0.14s ease;
 }
 
 .fixed-columns-table .row-select-checkbox.form-check-input:hover:not(:disabled) {
@@ -126,7 +125,6 @@ body {
     inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent),
     0 0 0 1px color-mix(in srgb, #000 42%, transparent),
     0 0 12px color-mix(in srgb, var(--accent) 24%, transparent);
-  transform: scale(1.06);
 }
 
 .fixed-columns-table .row-select-checkbox.form-check-input:checked {
@@ -174,7 +172,6 @@ body {
 .p-multiselect-overlay .p-checkbox.p-checkbox-sm {
   width: 1.14rem;
   height: 1.14rem;
-  transition: transform 0.12s ease;
 }
 
 .p-multiselect-overlay .p-checkbox .p-checkbox-box,
@@ -193,10 +190,6 @@ body {
     border-color 0.14s ease,
     background-color 0.14s ease,
     box-shadow 0.14s ease;
-}
-
-.p-multiselect-overlay .p-checkbox:not(.p-disabled):has(.p-checkbox-input:hover) {
-  transform: scale(1.06);
 }
 
 .p-multiselect-overlay .p-checkbox:not(.p-disabled):has(.p-checkbox-input:hover) .p-checkbox-box {
