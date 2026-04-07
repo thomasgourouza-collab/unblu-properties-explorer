@@ -2,8 +2,9 @@
   display: block;
 }
 
-$toolbar-accent-border: color-mix(in srgb, var(--accent) 42%, var(--surface-border));
-$toolbar-accent-border-hover: color-mix(in srgb, var(--accent) 65%, var(--surface-border));
+/* Stronger accent on selected filter / list-mode toggles (was ~42%/65% accent — too muted on dark UI). */
+$toolbar-accent-border: color-mix(in srgb, var(--accent) 82%, var(--surface-border));
+$toolbar-accent-border-hover: color-mix(in srgb, var(--accent) 94%, var(--surface-border));
 
 // Shared with .cell-x-scroll / .property-code-scroll and the main table scroll container.
 @mixin thin-overlay-scrollbar {
