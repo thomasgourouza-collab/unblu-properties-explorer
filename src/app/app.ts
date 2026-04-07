@@ -87,15 +87,36 @@ export class App {
     this.isHelpOpen = false;
   }
 
+  closeCsvParseErrorDialog(): void {
+    this.parseError = '';
+  }
+
   onHelpModalContentClick(event: MouseEvent): void {
+    event.stopPropagation();
+  }
+
+  onCsvParseErrorBackdropClick(): void {
+    this.closeCsvParseErrorDialog();
+  }
+
+  /** Stop backdrop close when clicking the dialog panel (loading + error). */
+  onCsvImportDialogPanelClick(event: MouseEvent): void {
     event.stopPropagation();
   }
 
   @HostListener('document:keydown', ['$event'])
   onDocumentKeydown(event: KeyboardEvent): void {
-    if (event.key === 'Escape' && this.isHelpOpen) {
+    if (event.key !== 'Escape') {
+      return;
+    }
+    if (this.isHelpOpen) {
       event.preventDefault();
       this.closeHelpModal();
+      return;
+    }
+    if (this.parseError) {
+      event.preventDefault();
+      this.closeCsvParseErrorDialog();
     }
   }
 
@@ -127,15 +148,13 @@ export class App {
         this.fileLabel2 = file.name;
       }
       this.applyMerge();
-      this.cdr.detectChanges();
     } catch (error) {
       this.parseError =
         error instanceof Error ? error.message : 'The CSV file could not be parsed.';
-      this.cdr.detectChanges();
     } finally {
       this.isParsing = false;
-      this.cdr.detectChanges();
     }
+    this.cdr.detectChanges();
   }
 
   private applyMerge(): void {

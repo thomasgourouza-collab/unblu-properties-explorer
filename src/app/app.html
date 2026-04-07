@@ -122,12 +122,6 @@
         </div>
       </div>
 
-      <div class="alert alert-info mt-2 mb-0 loading-alert py-2 px-3" *ngIf="isParsing">
-        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
-        <span>Parsing CSV file...</span>
-      </div>
-      <div class="alert alert-danger mt-2 mb-0 py-2 px-3" *ngIf="parseError">{{ parseError }}</div>
-
       <div class="alert alert-warning mt-2 mb-0 py-2 px-3" *ngIf="parseWarnings.length > 0">
         <strong>Parsing warnings:</strong>
         <ul class="mb-0 mt-2">
@@ -138,6 +132,59 @@
   </section>
 
   <app-config-table *ngIf="rows.length > 0" [rows]="rows" />
+
+  <div
+    class="help-modal-backdrop csv-parse-modal-backdrop"
+    *ngIf="isParsing"
+    tabindex="-1"
+    aria-busy="true"
+    aria-live="polite"
+    aria-label="Loading"
+  >
+    <div
+      class="help-modal csv-import-dialog csv-import-dialog--loading"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="csv-parse-loading-title"
+      (click)="onCsvImportDialogPanelClick($event)"
+    >
+      <div class="csv-import-dialog-body csv-import-dialog-body--loading">
+        <span class="spinner-border csv-import-dialog-spinner" aria-hidden="true"></span>
+        <p id="csv-parse-loading-title" class="csv-import-dialog-loading-text">Parsing CSV file…</p>
+      </div>
+    </div>
+  </div>
+
+  <div
+    class="help-modal-backdrop csv-parse-modal-backdrop"
+    *ngIf="parseError"
+    (click)="onCsvParseErrorBackdropClick()"
+    tabindex="-1"
+  >
+    <div
+      class="help-modal csv-import-dialog csv-import-dialog--error"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="csv-parse-error-title"
+      aria-describedby="csv-parse-error-desc"
+      (click)="onCsvImportDialogPanelClick($event)"
+    >
+      <header class="help-modal-header">
+        <h2 id="csv-parse-error-title" class="help-modal-title">CSV import failed</h2>
+        <button
+          type="button"
+          class="help-close-btn"
+          (click)="closeCsvParseErrorDialog()"
+          aria-label="Close"
+        >
+          <i class="pi pi-times" aria-hidden="true"></i>
+        </button>
+      </header>
+      <div class="csv-import-dialog-body csv-import-dialog-body--error">
+        <p id="csv-parse-error-desc" class="csv-import-dialog-error-text">{{ parseError }}</p>
+      </div>
+    </div>
+  </div>
 
   <div class="help-modal-backdrop" *ngIf="isHelpOpen" (click)="closeHelpModal()" tabindex="0" (keydown.escape)="closeHelpModal()">
     <dialog class="help-modal" open aria-label="Keyboard shortcuts and tips" (click)="onHelpModalContentClick($event)" (keydown.escape)="closeHelpModal()">
