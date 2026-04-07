@@ -215,6 +215,22 @@ body {
     0 0 0 1px color-mix(in srgb, #000 42%, transparent);
 }
 
+// Smaller glyph than the theme default; box size unchanged above.
+.p-multiselect-overlay .p-checkbox .p-checkbox-icon {
+  width: 0.62rem !important;
+  height: 0.62rem !important;
+  font-size: 0.62rem !important;
+}
+
+// Icons use filled paths; stroke + paint-order fattens the mark slightly (viewBox 14×14).
+.p-multiselect-overlay .p-checkbox .p-checkbox-icon path {
+  stroke: currentColor;
+  stroke-width: 0.55;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  paint-order: stroke fill;
+}
+
 // Keep accent check/minus: theme uses higher-specificity :hover rules (contrast/black) that win otherwise.
 .p-multiselect-overlay .p-checkbox-checked .p-checkbox-icon,
 .p-multiselect-overlay .p-checkbox-checked:not(.p-disabled):has(.p-checkbox-input:hover) .p-checkbox-icon,

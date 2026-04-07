@@ -401,6 +401,7 @@ $export-bar-control-font-size: 0.875rem;
     align-self: center;
     margin-top: 0.5rem;
     margin-left: 5px;
+    margin-bottom: 0;
   }
 }
 
@@ -418,30 +419,37 @@ $export-bar-control-font-size: 0.875rem;
 }
 
 .no-filters-label {
-  color: #2ecc71;
-  font-size: 0.78rem;
+  margin: 0;
+  color: var(--accent);
+  font-size: $export-bar-control-font-size;
+  font-weight: 400;
+  line-height: 1.5;
 }
 
 .filter-chip {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.4rem;
   border: 1px solid var(--surface-border);
   border-radius: 999px;
-  padding: 0.18rem 0.55rem;
-  font-size: 0.72rem;
+  box-sizing: border-box;
+  min-height: calc(0.25rem + 0.25rem + 1.5 * #{$export-bar-control-font-size} + 2px);
+  padding: 0.25rem 0.65rem;
+  font-size: $export-bar-control-font-size;
+  font-weight: 400;
+  line-height: 1.5;
+  font-family: inherit;
   color: var(--text-secondary);
   background: var(--surface-soft);
-  transition: border-color 0.15s ease, transform 0.1s ease;
+  transition: border-color 0.15s ease;
 }
 
 .filter-chip:hover {
   border-color: var(--accent);
-  transform: translateY(-1px);
 }
 
 .filter-chip i {
-  font-size: 0.65rem;
+  font-size: 0.8rem;
 }
 
 .color-swatch {
