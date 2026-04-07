@@ -1678,7 +1678,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     reader.readAsText(file, 'UTF-8');
   }
 
-  /** Clear persisted state and in-memory filters/columns as when localStorage has no entry. */
+  /** Clear persisted state, filters/columns, and all row selections (as when localStorage has no entry). */
   resetTableState(): void {
     try {
       localStorage.removeItem(this.stateStorageKey);
@@ -1701,6 +1701,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
     this.tableFirst = 0;
     this.showSelectedRowsOnly = false;
+    this.selectedRowKeys.clear();
     this.tableSortTriStateAnchor = null;
     if (this.configTableRef) {
       this.configTableRef.multiSortMeta = null;
