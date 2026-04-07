@@ -7,9 +7,47 @@
 }
 
 .title-row {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 0;
+}
+
+.title-row-leading {
   display: inline-flex;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 0.5rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.title-row-heading {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.title-row-actions {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.35rem;
+  flex: 0 0 auto;
+}
+
+.title-row-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+
+  .pi {
+    font-size: 0.85rem;
+    opacity: 0.92;
+  }
 }
 
 .help-logo-btn {

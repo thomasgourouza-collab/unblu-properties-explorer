@@ -27,6 +27,11 @@ export class App {
   private slot1Parsed: CsvParseFileResult | null = null;
   private slot2Parsed: CsvParseFileResult | null = null;
 
+  private readonly extractorScriptUrls = {
+    conf: '/extractors/extract-configuration-properties-csv.js',
+    text: '/extractors/extract-text-properties-csv.js'
+  } as const;
+
   constructor(
     private readonly csvParserService: CsvParserService,
     private readonly cdr: ChangeDetectorRef
@@ -77,6 +82,22 @@ export class App {
       this.fileLabel2 = '';
     }
     this.applyMerge();
+  }
+
+  async copyExtractorScript(kind: 'conf' | 'text'): Promise<void> {
+    const url = this.extractorScriptUrls[kind];
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const text = await response.text();
+      await navigator.clipboard.writeText(text);
+    } catch {
+      globalThis.alert(
+        'Could not copy the script. Use a secure (https or localhost) page and ensure the app was built with extractor assets.'
+      );
+    }
   }
 
   toggleHelpModal(): void {

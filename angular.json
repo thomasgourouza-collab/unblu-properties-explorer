@@ -58,6 +58,11 @@
                 "glob": "search.png",
                 "input": "src/app/images",
                 "output": "/"
+              },
+              {
+                "glob": "*.js",
+                "input": "extractors",
+                "output": "/extractors"
               }
             ],
             "styles": [

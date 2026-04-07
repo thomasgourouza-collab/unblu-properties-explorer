@@ -7,16 +7,40 @@
 >
   <section class="app-header mb-2">
     <div class="title-row">
-      <button
-        type="button"
-        class="help-logo-btn"
-        (click)="toggleHelpModal()"
-        title="Shortcuts and tips"
-        aria-label="Open shortcuts and tips"
-      >
-        <img src="/images/search.png" alt="Search logo" class="title-logo" />
-      </button>
-      <h1 class="h3 mb-0">Unblu Properties Explorer</h1>
+      <div class="title-row-leading">
+        <button
+          type="button"
+          class="help-logo-btn"
+          (click)="toggleHelpModal()"
+          title="Shortcuts and tips"
+          aria-label="Open shortcuts and tips"
+        >
+          <img src="/images/search.png" alt="Search logo" class="title-logo" />
+        </button>
+        <h1 class="h3 mb-0 title-row-heading">Unblu Properties Explorer</h1>
+      </div>
+      <div class="title-row-actions">
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-secondary title-row-copy-btn"
+          (click)="copyExtractorScript('conf')"
+          title="Copy extract-configuration-properties-csv.js to the clipboard"
+          aria-label="Copy configuration properties extractor script"
+        >
+          <i class="pi pi-copy" aria-hidden="true"></i>
+          <span>Copy conf. script</span>
+        </button>
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-secondary title-row-copy-btn"
+          (click)="copyExtractorScript('text')"
+          title="Copy extract-text-properties-csv.js to the clipboard"
+          aria-label="Copy text properties extractor script"
+        >
+          <i class="pi pi-copy" aria-hidden="true"></i>
+          <span>Copy text script</span>
+        </button>
+      </div>
     </div>
   </section>
 
