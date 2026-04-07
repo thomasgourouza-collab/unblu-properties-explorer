@@ -167,3 +167,86 @@ body {
   transform: none;
   box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 4%, transparent);
 }
+
+// Multiselect panels use p-checkbox (box + SVG icon), not native inputs — mirror row-select chrome.
+.p-multiselect-overlay .p-checkbox,
+.p-multiselect-overlay .p-checkbox.p-checkbox-sm {
+  width: 1.14rem;
+  height: 1.14rem;
+  transition: transform 0.12s ease;
+}
+
+.p-multiselect-overlay .p-checkbox .p-checkbox-box,
+.p-multiselect-overlay .p-checkbox.p-checkbox-sm .p-checkbox-box {
+  width: 1.14rem;
+  height: 1.14rem;
+  border-radius: 0.3rem;
+  border-width: 1.5px;
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--accent) 38%, var(--surface-border));
+  background: var(--surface-elevated);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent),
+    0 0 0 1px color-mix(in srgb, #000 42%, transparent);
+  transition:
+    border-color 0.14s ease,
+    background-color 0.14s ease,
+    box-shadow 0.14s ease;
+}
+
+.p-multiselect-overlay .p-checkbox:not(.p-disabled):has(.p-checkbox-input:hover) {
+  transform: scale(1.06);
+}
+
+.p-multiselect-overlay .p-checkbox:not(.p-disabled):has(.p-checkbox-input:hover) .p-checkbox-box {
+  border-color: color-mix(in srgb, var(--accent) 62%, var(--surface-border));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent),
+    0 0 0 1px color-mix(in srgb, #000 42%, transparent),
+    0 0 12px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+.p-multiselect-overlay .p-checkbox-checked .p-checkbox-box,
+.p-multiselect-overlay .p-checkbox:has(svg[data-p-icon="minus"]) .p-checkbox-box {
+  background: var(--surface-elevated) !important;
+  border-color: color-mix(in srgb, var(--accent) 38%, var(--surface-border)) !important;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent),
+    0 0 0 1px color-mix(in srgb, #000 42%, transparent);
+}
+
+// Keep accent check/minus: theme uses higher-specificity :hover rules (contrast/black) that win otherwise.
+.p-multiselect-overlay .p-checkbox-checked .p-checkbox-icon,
+.p-multiselect-overlay .p-checkbox-checked:not(.p-disabled):has(.p-checkbox-input:hover) .p-checkbox-icon,
+.p-multiselect-overlay .p-checkbox-checked:not(.p-disabled):has(.p-checkbox-input:focus-visible) .p-checkbox-icon,
+.p-multiselect-overlay .p-checkbox:has(svg[data-p-icon="minus"]) .p-checkbox-icon,
+.p-multiselect-overlay
+  .p-checkbox:not(.p-checkbox-checked):not(.p-disabled):has(svg[data-p-icon="minus"]):has(
+    .p-checkbox-input:hover
+  )
+  .p-checkbox-icon {
+  color: var(--accent) !important;
+}
+
+.p-multiselect-overlay .p-checkbox-checked:not(.p-disabled):has(.p-checkbox-input:hover) .p-checkbox-box,
+.p-multiselect-overlay
+  .p-checkbox:not(.p-checkbox-checked):not(.p-disabled):has(svg[data-p-icon="minus"]):has(
+    .p-checkbox-input:hover
+  )
+  .p-checkbox-box {
+  border-color: color-mix(in srgb, var(--accent) 62%, var(--surface-border)) !important;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent),
+    0 0 0 1px color-mix(in srgb, #000 42%, transparent),
+    0 0 12px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+.p-multiselect-overlay .p-checkbox:not(.p-disabled):has(.p-checkbox-input:focus-visible) .p-checkbox-box {
+  outline: 2px solid color-mix(in srgb, var(--accent) 75%, transparent);
+  outline-offset: 2px;
+}
+
+.p-multiselect-overlay .p-checkbox.p-disabled .p-checkbox-box {
+  opacity: 0.42;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 4%, transparent);
+}
