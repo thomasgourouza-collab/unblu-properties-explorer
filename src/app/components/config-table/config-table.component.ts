@@ -294,13 +294,10 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       return 0.65;
     }
     if (columnKey === 'source') {
-      return 1.1;
+      return 0.8;
     }
     if (columnKey === 'description') {
       return 1.5;
-    }
-    if (columnKey.startsWith(EXTRA_COLUMN_PREFIX)) {
-      return 0.95;
     }
     return 1;
   }
