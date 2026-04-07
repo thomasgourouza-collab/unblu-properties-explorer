@@ -1533,12 +1533,12 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
 
 // Aura uses primary (green) for selected page; match export / toolbar accent chrome.
 :host ::ng-deep .p-paginator .p-paginator-page.p-paginator-page-selected {
-  background: color-mix(in srgb, #{$toolbar-accent-border} 50%, transparent) !important;
+  background: color-mix(in srgb, #{$toolbar-accent-border} 25%, transparent) !important;
   color: var(--text-primary) !important;
 }
 
 :host ::ng-deep .p-paginator .p-paginator-page.p-paginator-page-selected:hover:not(.p-disabled) {
-  background: color-mix(in srgb, #{$toolbar-accent-border-hover} 50%, transparent) !important;
+  background: color-mix(in srgb, #{$toolbar-accent-border-hover} 30%, transparent) !important;
 }
 
 .paginator-left-report {
