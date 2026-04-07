@@ -254,11 +254,7 @@
               [class.filter-text-option-btn--active]="globalFilterMode === 'regex'"
               [attr.aria-pressed]="globalFilterMode === 'regex'"
               [attr.aria-label]="globalFilterMode === 'regex' ? 'Regular expression mode on' : 'Use regular expression mode'"
-              [title]="
-                globalFilterMode === 'regex'
-                  ? 'Regular expression mode: whole field is one pattern (click to use expression syntax)'
-                  : 'Expression mode by default (&& || ! ( )). Click to match with a regular expression instead.'
-              "
+              title="Regular expression"
               (click)="toggleGlobalFilterRegex()"
             >
               <span class="codicon codicon-regex" aria-hidden="true"></span>
@@ -275,8 +271,8 @@
             data-1p-ignore
             data-lpignore="true"
           >
-            <option value="all">In all columns</option>
             <option value="visible">In visible columns</option>
+            <option value="all">In all columns</option>
           </select>
         </div>
         <div class="global-filter-input-row">
@@ -502,11 +498,7 @@
                           ? 'Regular expression mode on for ' + column.label
                           : 'Use regular expression mode for ' + column.label
                       "
-                      [title]="
-                        getTextMode(column.key) === 'regex'
-                          ? 'Regular expression mode (click to use expression syntax)'
-                          : 'Expression mode by default. Click for regular expression.'
-                      "
+                      title="Regular expression"
                       (click)="toggleTextFilterRegex(column.key)"
                     >
                       <span class="codicon codicon-regex" aria-hidden="true"></span>
