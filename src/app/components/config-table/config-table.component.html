@@ -404,6 +404,16 @@
                 <span class="header-content-value-leading">
                   <span>{{ column.label }}</span>
                   <p-sortIcon [field]="column.key" />
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary value-cell-reset-btn value-header-reset-all-btn"
+                    (click)="onResetAllValuesToDefault($event)"
+                    [disabled]="valueColumnChangeRowCount === 0"
+                    title="Reset all Value cells to Default"
+                    aria-label="Reset all Value cells to Default"
+                  >
+                    <i class="pi pi-undo" aria-hidden="true"></i>
+                  </button>
                 </span>
                 <span *ngIf="configImportErrorCount > 0" class="value-header-error-count text-muted small">
                   ({{ configImportErrorCount }} errors)

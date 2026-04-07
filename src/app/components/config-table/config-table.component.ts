@@ -2281,11 +2281,30 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     if (!this.valueColumnDiffersFromDefault(row)) {
       return;
     }
+    this.resetRowValueToDefaultFields(row);
+    this.safeMarkForCheck();
+  }
+
+  onResetAllValuesToDefault(event: MouseEvent): void {
+    event.stopPropagation();
+    event.preventDefault();
+    let changed = false;
+    for (const row of this.rows) {
+      if (this.valueColumnDiffersFromDefault(row)) {
+        this.resetRowValueToDefaultFields(row);
+        changed = true;
+      }
+    }
+    if (changed) {
+      this.safeMarkForCheck();
+    }
+  }
+
+  private resetRowValueToDefaultFields(row: ConfigRow): void {
     row.value = row.defaultValue ?? '';
     row.configImportError = '';
     row.valueImportResolvedHighlight = false;
     this.valueColumnMultiModelCache.delete(row.rowKey);
-    this.safeMarkForCheck();
   }
 
   onValueCellControlClick(event: MouseEvent): void {

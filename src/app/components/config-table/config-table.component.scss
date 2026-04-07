@@ -620,6 +620,11 @@ $export-bar-control-font-size: 0.875rem;
   overflow: hidden;
 }
 
+.value-header-reset-all-btn {
+  flex-shrink: 0;
+  margin-left: 0.45rem;
+}
+
 .value-header-error-count {
   flex-shrink: 0;
   white-space: nowrap;
