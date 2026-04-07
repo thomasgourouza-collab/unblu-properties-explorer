@@ -567,6 +567,51 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     }
   }
 
+  /**
+   * Move the table paginator by one page (← / →). Returns whether `tableFirst` changed.
+   */
+  private tryStepTablePage(direction: -1 | 1): boolean {
+    const n = this.tableDisplayedRows.length;
+    const r = this.rowsPerPage;
+    if (n === 0 || r <= 0) {
+      return false;
+    }
+    const pageCount = Math.ceil(n / r);
+    if (pageCount <= 1) {
+      return false;
+    }
+    const maxFirst = (pageCount - 1) * r;
+    const nextFirst = Math.max(0, Math.min(maxFirst, this.tableFirst + direction * r));
+    if (nextFirst === this.tableFirst) {
+      return false;
+    }
+    this.tableFirst = nextFirst;
+    return true;
+  }
+
+  /** Skip ←/→ paging when focus is in inputs, dialogs, or floating PrimeNG panels. */
+  private shouldDeferTablePageKeys(target: HTMLElement): boolean {
+    if (this.importMissingKeysDialogVisible) {
+      return true;
+    }
+    if (target.closest('dialog')) {
+      return true;
+    }
+    if (target.closest('[role="dialog"]')) {
+      return true;
+    }
+    if (this.isEditableElement(target)) {
+      return true;
+    }
+    if (target.tagName.toLowerCase() === 'select') {
+      return true;
+    }
+    if (target.closest('.p-connected-overlay, .p-overlay, .p-select-overlay, .p-multiselect-overlay')) {
+      return true;
+    }
+    return false;
+  }
+
   onUtransferClick(): void {
     this.importConfigInputRef?.nativeElement?.click();
   }
@@ -2990,6 +3035,20 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     if (event.key === 'Shift' || event.code === 'ShiftLeft' || event.code === 'ShiftRight') {
       this.matchInspectorShiftFromKeyboard = true;
       this.tryOpenMatchInspectorFromPointerContext();
+    }
+
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+      if (!event.ctrlKey && !event.metaKey && !event.altKey) {
+        const t = event.target as HTMLElement | null;
+        if (!t || !this.shouldDeferTablePageKeys(t)) {
+          const dir: -1 | 1 = event.key === 'ArrowLeft' ? -1 : 1;
+          if (this.tryStepTablePage(dir)) {
+            event.preventDefault();
+            this.safeMarkForCheck();
+          }
+        }
+      }
+      return;
     }
 
     if (event.defaultPrevented || event.key !== '/' || event.ctrlKey || event.metaKey || event.altKey) {
