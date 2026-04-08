@@ -1108,7 +1108,7 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
   min-height: $value-cell-control-min-height;
   border: 1px solid var(--surface-border);
   border-radius: var(--bs-border-radius-sm, var(--bs-border-radius, 0.25rem));
-  background: var(--surface-elevated);
+  background: transparent;
   overflow: hidden;
 
   &:focus-within {
@@ -1117,23 +1117,20 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
   }
 }
 
+/* Block + max(100%, content) width so the `<input>` can fill the full bordered area (clicks anywhere focus). */
 .value-cell-free-text-stack {
-  display: inline-grid;
-  grid-template-columns: max-content;
-  grid-template-rows: $value-cell-control-min-height;
-  vertical-align: top;
+  position: relative;
+  display: block;
+  width: max-content;
   min-width: 100%;
   box-sizing: border-box;
-}
-
-.value-cell-free-text-stack > * {
-  grid-column: 1;
-  grid-row: 1;
-  justify-self: stretch;
+  min-height: $value-cell-control-min-height;
+  vertical-align: top;
 }
 
 .value-cell-highlight-mirror {
   z-index: 0;
+  display: inline-block;
   box-sizing: border-box;
   min-height: $value-cell-control-min-height;
   max-height: $value-cell-control-min-height;
@@ -1147,11 +1144,15 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
   background: transparent;
   color: var(--text-secondary);
   border-radius: 0;
+  vertical-align: top;
 }
 
 .value-cell-input--with-highlight-mirror {
-  position: relative;
+  position: absolute;
+  inset: 0;
   z-index: 1;
+  width: 100% !important;
+  min-width: 0;
   color: transparent !important;
   -webkit-text-fill-color: transparent;
   caret-color: var(--text-secondary);
@@ -1159,12 +1160,8 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
   border: none !important;
   outline: none !important;
   box-shadow: none !important;
-  max-width: none;
   overflow-x: hidden;
   overflow-y: hidden;
-  field-sizing: content;
-  min-width: 100%;
-  width: auto;
 }
 
 .value-cell-input--with-highlight-mirror:focus,
@@ -1190,16 +1187,7 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
     max-width: 100%;
   }
 
-  .value-cell-free-text-stack {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    width: 100%;
-    min-width: 0;
-  }
-
   .value-cell-input.value-cell-input--with-highlight-mirror {
-    width: 100%;
-    max-width: 100%;
     overflow-x: auto;
   }
 
