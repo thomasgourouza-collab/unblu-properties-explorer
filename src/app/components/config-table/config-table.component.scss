@@ -980,6 +980,8 @@ $value-cell-control-pad-y: 0.16rem;
 $value-cell-control-pad-x: 0.32rem;
 $value-cell-control-min-height: 1.58rem;
 $value-cell-font-size: 0.8125rem;
+/* Match `.property-copy-btn` in Value rows; keep `align-items: flex-start` on `.value-cell-row` (no align-self on buttons). */
+$value-cell-row-action-btn-size: 1.35rem;
 
 /* Body rows: fixed height; long text scrolls horizontally in `.cell-x-scroll` / value controls. */
 $table-body-cell-pad-y: 0rem;
@@ -1039,6 +1041,27 @@ $table-body-row-height: calc(
 
 .value-cell-copy-btn {
   flex-shrink: 0;
+}
+
+.value-cell-row .value-cell-reset-btn,
+.value-cell-row .value-cell-copy-btn.property-copy-btn {
+  box-sizing: border-box;
+  flex-shrink: 0;
+  width: $value-cell-row-action-btn-size;
+  height: $value-cell-row-action-btn-size;
+  min-width: $value-cell-row-action-btn-size;
+  min-height: $value-cell-row-action-btn-size;
+  max-width: $value-cell-row-action-btn-size;
+  max-height: $value-cell-row-action-btn-size;
+}
+
+.value-cell-row .value-cell-reset-btn {
+  padding: 0 !important;
+  margin: 0;
+
+  .pi {
+    font-size: 0.7rem;
+  }
 }
 
 .value-header-diff-reset-group .value-header-diff-checkbox-wrap {
