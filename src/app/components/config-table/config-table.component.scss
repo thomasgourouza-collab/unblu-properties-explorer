@@ -1295,7 +1295,7 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
   overflow-y: hidden;
   border: 1px solid var(--surface-border) !important;
   border-radius: var(--bs-border-radius-sm, var(--bs-border-radius, 0.25rem)) !important;
-  background: var(--surface-elevated) !important;
+  background: transparent !important;
   box-shadow: none !important;
   transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 
@@ -1304,6 +1304,7 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
   &:focus,
   &:focus-within {
     border-color: var(--accent) !important;
+    background: transparent !important;
     box-shadow: 0 0 0 0.18rem color-mix(in srgb, var(--accent-soft) 60%, transparent) !important;
   }
 }
@@ -1311,6 +1312,7 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
 :host ::ng-deep .value-cell-multiselect-inner .p-multiselect-label-container {
   flex: 1 1 0 !important;
   min-width: 0 !important;
+  background: transparent !important;
   overflow-x: auto;
   overflow-y: hidden;
   @include thin-overlay-scrollbar;
@@ -1327,12 +1329,14 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
   padding-block: $value-cell-control-pad-y !important;
   padding-inline: $value-cell-control-pad-x !important;
   line-height: 1.2 !important;
+  background: transparent !important;
 }
 
 :host ::ng-deep .value-cell-multiselect-inner .p-multiselect-dropdown {
   flex-shrink: 0 !important;
   align-self: center !important;
   padding-inline: 0.2rem !important;
+  background: transparent !important;
 }
 
 :host ::ng-deep .value-cell-multiselect-inner .p-multiselect-dropdown .p-icon,
