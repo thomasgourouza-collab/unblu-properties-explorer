@@ -2274,37 +2274,23 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   }
 
   getValueColumnSelectOptions(row: ConfigRow): SelectOption[] {
-    const err = (row.configImportError ?? '').trim();
-    const multi = this.valueColumnUsesMultiSelect(row);
-    const cacheKey = `${row.rowKey}\0${row.hasAllowedValuesColumn ? row.allowedValues : ''}\0${err}\0${row.value ?? ''}\0${multi ? 'm' : 's'}`;
+    const cacheKey = `${row.rowKey}\0${row.hasAllowedValuesColumn ? row.allowedValues : ''}`;
     const hit = this.valueColumnSelectOptionsCache.get(cacheKey);
     if (hit) {
       return hit;
     }
     const allowedVals = this.getValueColumnAllowedOptionValues(row);
-    const seen = new Set<string>();
     const opts: SelectOption[] = [];
     for (const v of [...allowedVals].sort((a, b) => a.localeCompare(b))) {
-      seen.add(v);
       opts.push({ label: v, value: v });
-    }
-    if (err.length > 0) {
-      if (multi) {
-        for (const tok of this.parseListStyleCellToTokens(row.value ?? '')) {
-          if (!seen.has(tok)) {
-            seen.add(tok);
-            opts.push({ label: tok, value: tok });
-          }
-        }
-      } else {
-        const v = (row.value ?? '').trim();
-        if (v.length > 0 && !seen.has(v)) {
-          opts.push({ label: v, value: v });
-        }
-      }
     }
     this.valueColumnSelectOptionsCache.set(cacheKey, opts);
     return opts;
+  }
+
+  /** Blank `<select>` option / multiselect clear when default is empty (trimmed). */
+  valueColumnAllowsEmptyChoice(row: ConfigRow): boolean {
+    return (row.defaultValue ?? '').trim().length === 0;
   }
 
   /** Extra `<option>` for boolean Value when JSON import left an invalid value. */
@@ -2332,15 +2318,6 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
   getValueColumnMultiModel(row: ConfigRow): string[] {
     const v = row.value ?? '';
-    if ((row.configImportError ?? '').trim().length > 0) {
-      const cachedErr = this.valueColumnMultiModelCache.get(row.rowKey);
-      if (cachedErr && cachedErr.value === v) {
-        return cachedErr.selected;
-      }
-      const all = this.parseListStyleCellToTokens(v);
-      this.valueColumnMultiModelCache.set(row.rowKey, { value: v, selected: all });
-      return all;
-    }
     const cached = this.valueColumnMultiModelCache.get(row.rowKey);
     if (cached && cached.value === v) {
       return cached.selected;
@@ -2556,7 +2533,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   }
 
   isDefaultValueCellVisible(raw: string): boolean {
-    return this.hasChipPartsContent(this.getDefaultValueParts(raw));
+    return (raw ?? '').length > 0;
   }
 
   isAllowedValuesCellVisible(raw: string): boolean {
@@ -2569,18 +2546,6 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       return [];
     }
     return lines.filter((line) => line.trim().length > 0);
-  }
-
-  isColorType(typeValue: string): boolean {
-    const normalized = typeValue.toLowerCase();
-    return normalized.includes('color') || normalized.includes('colors');
-  }
-
-  getColorSwatchForPart(row: ConfigRow, valuePart: string): string | null {
-    if (!this.isColorType(row.type)) {
-      return null;
-    }
-    return this.getColorSwatchColor(valuePart);
   }
 
   getHighlightedParts(value = '', columnKey?: string): HighlightPart[] {
@@ -2764,50 +2729,6 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       return 'global';
     }
     return 'none';
-  }
-
-  private unwrapColorToken(value: string): string {
-    let unwrapped = value.trim();
-    const wrappers: Array<[string, string]> = [
-      ['`', '`'],
-      ['"', '"'],
-      ["'", "'"]
-    ];
-    for (const [start, end] of wrappers) {
-      if (unwrapped.startsWith(start) && unwrapped.endsWith(end) && unwrapped.length >= 2) {
-        unwrapped = unwrapped.slice(1, -1).trim();
-      }
-    }
-    return unwrapped;
-  }
-
-  getColorSwatchColor(value: string): string | null {
-    const trimmedValue = this.unwrapColorToken(value);
-
-    const hexPattern = /^#(?:[0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
-    if (hexPattern.test(trimmedValue)) {
-      return trimmedValue;
-    }
-
-    const rgbaWithAlphaPattern =
-      /^rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(0|1|0?\.\d+)\s*\)$/i;
-    const rgbaWithAlphaMatch = rgbaWithAlphaPattern.exec(trimmedValue);
-    if (rgbaWithAlphaMatch) {
-      return rgbaWithAlphaMatch[0];
-    }
-
-    const rgbLikePattern = /^(rgba?)\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/i;
-    const rgbLikeMatch = rgbLikePattern.exec(trimmedValue);
-    if (!rgbLikeMatch) {
-      return null;
-    }
-
-    const fn = rgbLikeMatch[1].toLowerCase();
-    const r = rgbLikeMatch[2];
-    const g = rgbLikeMatch[3];
-    const b = rgbLikeMatch[4];
-
-    return fn === 'rgba' ? `rgb(${r},${g},${b})` : rgbLikeMatch[0];
   }
 
   isFullCellCopied(columnKey: string, value: string): boolean {

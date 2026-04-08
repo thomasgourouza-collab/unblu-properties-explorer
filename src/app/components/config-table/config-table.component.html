@@ -694,7 +694,7 @@
                           class="value-cell-multiselect"
                           size="small"
                           [fluid]="true"
-                          [showClear]="false"
+                          [showClear]="valueColumnAllowsEmptyChoice(row)"
                           styleClass="value-cell-multiselect-inner"
                           [options]="getValueColumnSelectOptions(row)"
                           optionLabel="label"
@@ -756,7 +756,7 @@
                               data-1p-ignore
                               data-lpignore="true"
                             >
-                              <option value=""></option>
+                              <option *ngIf="valueColumnAllowsEmptyChoice(row)" value=""></option>
                               <option *ngFor="let opt of getValueColumnSelectOptions(row)" [value]="opt.value">{{ opt.label }}</option>
                             </select>
                           </div>
@@ -820,23 +820,16 @@
             <ng-template #tplNotValueColumn>
             <ng-container *ngIf="column.key === 'defaultValue'; else tplAllowedOrRest">
               <div *ngIf="isDefaultValueCellVisible(getCellValue(row, column.key))" class="cell-x-scroll cell-chips-row">
-                <ng-container
-                  *ngFor="let valuePart of getDefaultValueParts(getCellValue(row, column.key)); trackBy: trackByDefaultValuePart"
-                  ><code class="cell-code-chip"
-                    ><ng-container *ngFor="let part of getHighlightedParts(valuePart, column.key); trackBy: trackByHighlightPart"
-                      ><mark
-                        *ngIf="part.kind !== 'none'"
-                        [class.global-filter-highlight]="part.kind === 'global'"
-                        [class.column-filter-highlight]="part.kind === 'column'"
-                        >{{ part.text }}</mark
-                      ><span *ngIf="part.kind === 'none'">{{ part.text }}</span></ng-container
-                    ></code
-                  ><span
-                    class="color-swatch"
-                    *ngIf="getColorSwatchForPart(row, valuePart) as swatchColor"
-                    [style.backgroundColor]="swatchColor"
-                    aria-label="Detected color"
-                  ></span></ng-container>
+                <code class="cell-code-chip"
+                  ><ng-container
+                    *ngFor="let part of getHighlightedParts(getCellValue(row, column.key), column.key); trackBy: trackByHighlightPart"
+                    ><mark
+                      *ngIf="part.kind !== 'none'"
+                      [class.global-filter-highlight]="part.kind === 'global'"
+                      [class.column-filter-highlight]="part.kind === 'column'"
+                      >{{ part.text }}</mark
+                    ><span *ngIf="part.kind === 'none'">{{ part.text }}</span></ng-container
+                  ></code>
               </div>
             </ng-container>
             <ng-template #tplAllowedOrRest>
