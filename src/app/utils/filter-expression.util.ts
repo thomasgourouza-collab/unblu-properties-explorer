@@ -101,6 +101,36 @@ function readOperandToken(
   return { ok: true, end: j, value: norm };
 }
 
+/** Drops a lone `&` or `|`; keeps only `&&` and `||` pairs. */
+function removeLoneAmpersandsAndPipes(s: string): string {
+  let out = '';
+  let i = 0;
+  const n = s.length;
+  while (i < n) {
+    if (s[i] === '&') {
+      if (i + 1 < n && s[i + 1] === '&') {
+        out += '&&';
+        i += 2;
+      } else {
+        i += 1;
+      }
+      continue;
+    }
+    if (s[i] === '|') {
+      if (i + 1 < n && s[i + 1] === '|') {
+        out += '||';
+        i += 2;
+      } else {
+        i += 1;
+      }
+      continue;
+    }
+    out += s[i];
+    i += 1;
+  }
+  return out;
+}
+
 /** Removes `(` that have no matching `)` to the right (stack-based, ignores `)` with no prior `(`). */
 function removeUnmatchedOpenParens(s: string): string {
   const stack: number[] = [];
@@ -150,8 +180,8 @@ function stripTrailingBooleanOperators(s: string): string {
 }
 
 /**
- * Drops incomplete syntax: trailing `&&` / `||` / `!` with nothing after, and `(` with no closing `)`.
- * Applied in a loop until stable so e.g. `a && (` → `a`.
+ * Drops lone `&` / `|` (not `&&` / `||`), incomplete trailing `&&` / `||` / `!`, and `(` with no closing `)`.
+ * Applied in a loop until stable so e.g. `a & && b` → `a && b`, `a && (` → `a`.
  */
 export function sanitizeFilterExpressionInput(raw: string): string {
   let s = raw.trim();
@@ -159,7 +189,9 @@ export function sanitizeFilterExpressionInput(raw: string): string {
     return '';
   }
   for (let i = 0; i < 32; i += 1) {
-    const next = stripTrailingBooleanOperators(removeUnmatchedOpenParens(s)).trim();
+    const next = stripTrailingBooleanOperators(
+      removeUnmatchedOpenParens(removeLoneAmpersandsAndPipes(s))
+    ).trim();
     if (next === s) {
       break;
     }
