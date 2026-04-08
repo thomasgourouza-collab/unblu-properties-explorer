@@ -169,6 +169,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   filteredRows: ConfigRow[] = [];
   /** When true, the table lists only rows that are selected within the current filter. */
   showSelectedRowsOnly = false;
+  /** When true, the table lists only rows matched by the last imported config keys. */
+  showConfigRowsOnly = false;
   /** Angular-driven export format menu (no Bootstrap JS). */
   exportFormatMenuOpen = false;
   /** Table settings dropdown (reset / export / import persisted UI). */
@@ -199,6 +201,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
    * Last successful JSON import (snapshot for Reset); cleared on Remove or when `rows` input changes.
    */
   lastConfigImport: { fileName: string; snapshot: Record<string, unknown> } | null = null;
+  /** Row keys matched by the last imported config keys (supports Config only filter). */
+  private readonly configImportRowKeys = new Set<string>();
   private copyResetTimerId?: ReturnType<typeof globalThis.setTimeout>;
 
   @ViewChild('cellDetailDialog') private cellDetailDialogEl?: ElementRef<HTMLDialogElement>;
@@ -369,20 +373,30 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     return `${this.selectedFilteredCount} selected in current filter, ${this.selectedDatasetCount} selected in loaded dataset`;
   }
 
-  /** Rows passed to p-table (full filtered set or selected-only subset). */
+  /** Rows passed to p-table (filtered, optionally narrowed by Selected only and/or Config only). */
   get tableDisplayedRows(): ConfigRow[] {
-    if (!this.showSelectedRowsOnly) {
-      return this.filteredRows;
+    let rows = this.filteredRows;
+    if (this.showSelectedRowsOnly) {
+      rows = rows.filter((row) => this.selectedRowKeys.has(row.rowKey));
     }
-    return this.filteredRows.filter((row) => this.selectedRowKeys.has(row.rowKey));
+    if (this.showConfigRowsOnly) {
+      rows = rows.filter((row) => this.configImportRowKeys.has(row.rowKey));
+    }
+    return rows;
   }
 
   get emptyTableMessage(): string {
     if (this.filteredRows.length === 0) {
       return 'No rows match your current filters.';
     }
+    if (this.showSelectedRowsOnly && this.showConfigRowsOnly) {
+      return 'No rows match both Selected only and Config only in the current filter.';
+    }
     if (this.showSelectedRowsOnly) {
       return 'No selected rows in the current filter. Turn off Selected only to see all filtered rows.';
+    }
+    if (this.showConfigRowsOnly) {
+      return 'No imported config rows in the current filter. Turn off Config only to see all filtered rows.';
     }
     return 'No rows match your current filters.';
   }
@@ -418,7 +432,6 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     } else {
       this.selectedRowKeys.delete(row.rowKey);
     }
-    this.clearSelectedOnlyIfNoSelection();
     this.syncMatchInspectorToDisplayedTable();
   }
 
@@ -436,7 +449,6 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
         this.selectedRowKeys.delete(row.rowKey);
       }
     }
-    this.clearSelectedOnlyIfNoSelection();
     this.syncMatchInspectorToDisplayedTable();
   }
 
@@ -454,13 +466,26 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
         this.selectedRowKeys.add(row.rowKey);
       }
     }
-    this.clearSelectedOnlyIfNoSelection();
     this.syncMatchInspectorToDisplayedTable();
     this.safeMarkForCheck();
   }
 
   onSelectedOnlyModeChange(on: boolean): void {
     this.showSelectedRowsOnly = on;
+    if (on) {
+      this.tableFirst = 0;
+    } else {
+      this.clampTableFirstToDisplayedData();
+    }
+    this.syncMatchInspectorToDisplayedTable();
+  }
+
+  onConfigOnlyModeChange(on: boolean): void {
+    if (on && !this.lastConfigImport) {
+      this.showConfigRowsOnly = false;
+      return;
+    }
+    this.showConfigRowsOnly = on;
     if (on) {
       this.tableFirst = 0;
     } else {
@@ -633,6 +658,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
   onRemoveImportedConfigClick(): void {
     this.lastConfigImport = null;
+    this.configImportRowKeys.clear();
+    this.showConfigRowsOnly = false;
     this.selectedRowKeys.clear();
     for (const row of this.rows) {
       row.value = row.defaultValue ?? '';
@@ -641,7 +668,6 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       this.valueColumnMultiModelCache.delete(row.rowKey);
     }
     this.valueColumnSelectOptionsCache.clear();
-    this.clearSelectedOnlyIfNoSelection();
     this.syncMatchInspectorToDisplayedTable();
     this.safeMarkForCheck();
     this.persistSettings();
@@ -734,7 +760,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   }
 
   private applyJsonConfigImport(obj: Record<string, unknown>, importedFileName: string): void {
-    this.selectedRowKeys.clear();
+    this.configImportRowKeys.clear();
     const unmatchedKeys: string[] = [];
     for (const k of Object.keys(obj)) {
       const trimmedKey = k.trim();
@@ -752,7 +778,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       const trimmedKey = k.trim();
       const matchingRows = this.rows.filter((row) => row.property.trim() === trimmedKey);
       for (const row of matchingRows) {
-        this.selectedRowKeys.add(row.rowKey);
+        this.configImportRowKeys.add(row.rowKey);
         const raw = this.coerceJsonImportValueToRaw(obj[k]);
         if (this.jsonImportValueIsValid(row, raw)) {
           row.value = this.canonicalJsonImportStoredValue(row, raw);
@@ -772,7 +798,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       fileName: importedFileName,
       snapshot: this.clonePlainJsonObject(obj)
     };
-    this.clearSelectedOnlyIfNoSelection();
+    this.showConfigRowsOnly = true;
+    this.tableFirst = 0;
     this.syncMatchInspectorToDisplayedTable();
     this.safeMarkForCheck();
     this.persistSettings();
@@ -1077,6 +1104,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     }
 
     this.lastConfigImport = null;
+    this.configImportRowKeys.clear();
+    this.showConfigRowsOnly = false;
     if (this.importMissingKeysDialogVisible) {
       this.closeImportMissingKeysDialog();
     }
@@ -1903,7 +1932,6 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     });
 
     this.pruneSelectionToDatasetRows();
-    this.clearSelectedOnlyIfNoSelection();
 
     if (this.isMatchInspectorOpen && this.matchInspectorRow) {
       if (!this.filteredRows.includes(this.matchInspectorRow) || !this.hasActiveFilters) {
@@ -2172,12 +2200,6 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       if (!allowed.has(key)) {
         this.selectedRowKeys.delete(key);
       }
-    }
-  }
-
-  private clearSelectedOnlyIfNoSelection(): void {
-    if (this.showSelectedRowsOnly && this.selectedFilteredCount === 0) {
-      this.showSelectedRowsOnly = false;
     }
   }
 
@@ -2855,6 +2877,16 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       this.copyResetTimerId = undefined;
       this.safeMarkForCheck();
     }, 800);
+  }
+
+  valueCellCopyId(row: ConfigRow): string {
+    return `value:${row.rowKey}`;
+  }
+
+  async onCopyRowValue(event: MouseEvent, row: ConfigRow): Promise<void> {
+    event.stopPropagation();
+    event.preventDefault();
+    await this.copyById(this.valueCellCopyId(row), row.value ?? '');
   }
 
   isCopiedId(id: string): boolean {

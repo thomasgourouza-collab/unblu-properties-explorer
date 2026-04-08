@@ -27,7 +27,7 @@
           title="Copy extract-configuration-properties-csv.js to the clipboard"
           aria-label="Copy configuration properties extractor script"
         >
-          <i class="pi pi-copy" aria-hidden="true"></i>
+          <i class="pi" [ngClass]="copiedExtractorKind === 'conf' ? 'pi-check' : 'pi-copy'" aria-hidden="true"></i>
           <span>Copy conf. script</span>
         </button>
         <button
@@ -37,7 +37,7 @@
           title="Copy extract-text-properties-csv.js to the clipboard"
           aria-label="Copy text properties extractor script"
         >
-          <i class="pi pi-copy" aria-hidden="true"></i>
+          <i class="pi" [ngClass]="copiedExtractorKind === 'text' ? 'pi-check' : 'pi-copy'" aria-hidden="true"></i>
           <span>Copy text script</span>
         </button>
       </div>

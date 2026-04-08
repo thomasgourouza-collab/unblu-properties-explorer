@@ -23,9 +23,12 @@ export class App {
   isParsing = false;
   draggingSlot: UploadSlot | null = null;
   isHelpOpen = false;
+  copiedExtractorKind: 'conf' | 'text' | null = null;
 
   private slot1Parsed: CsvParseFileResult | null = null;
   private slot2Parsed: CsvParseFileResult | null = null;
+  private copyExtractorResetTimerId?: ReturnType<typeof globalThis.setTimeout>;
+  private copyExtractorIconNonce = 0;
 
   private readonly extractorScriptUrls = {
     conf: '/extractors/extract-configuration-properties-csv.js',
@@ -86,6 +89,7 @@ export class App {
 
   async copyExtractorScript(kind: 'conf' | 'text'): Promise<void> {
     const url = this.extractorScriptUrls[kind];
+    this.showCopiedExtractorIcon(kind);
     try {
       const response = await fetch(url);
       if (!response.ok) {
@@ -97,6 +101,33 @@ export class App {
       globalThis.alert(
         'Could not copy the script. Use a secure (https or localhost) page and ensure the app was built with extractor assets.'
       );
+    }
+  }
+
+  private showCopiedExtractorIcon(kind: 'conf' | 'text'): void {
+    this.copyExtractorIconNonce += 1;
+    const nonce = this.copyExtractorIconNonce;
+    this.copiedExtractorKind = kind;
+    if (this.copyExtractorResetTimerId !== undefined) {
+      globalThis.clearTimeout(this.copyExtractorResetTimerId);
+    }
+    this.copyExtractorResetTimerId = globalThis.setTimeout(() => {
+      if (nonce !== this.copyExtractorIconNonce) {
+        return;
+      }
+      this.copiedExtractorKind = null;
+      this.copyExtractorResetTimerId = undefined;
+      this.safeMarkForCheck();
+    }, 850);
+    this.safeMarkForCheck();
+  }
+
+  private safeMarkForCheck(): void {
+    try {
+      this.cdr.markForCheck();
+      this.cdr.detectChanges();
+    } catch {
+      // Ignore edge cases during view teardown.
     }
   }
 

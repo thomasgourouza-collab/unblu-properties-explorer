@@ -45,7 +45,13 @@
   white-space: nowrap;
 
   .pi {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 0.95rem;
+    flex: 0 0 0.95rem;
     font-size: 0.85rem;
+    line-height: 1;
     opacity: 0.92;
   }
 }

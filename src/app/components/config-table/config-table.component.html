@@ -159,7 +159,6 @@
           class="btn-check"
           [ngModel]="showSelectedRowsOnly"
           (ngModelChange)="onSelectedOnlyModeChange($event)"
-          [disabled]="!showSelectedRowsOnly && selectedFilteredCount === 0"
           aria-label="Show only selected rows in the table"
         />
         <label
@@ -168,6 +167,24 @@
           title="When on, the table lists only rows you have checked (within the current filter)"
         >
           Selected only
+        </label>
+      </div>
+      <div class="selected-only-toggle config-only-toggle">
+        <input
+          type="checkbox"
+          id="config-table-config-only"
+          class="btn-check"
+          [ngModel]="showConfigRowsOnly"
+          (ngModelChange)="onConfigOnlyModeChange($event)"
+          [disabled]="!lastConfigImport"
+          aria-label="Show only imported config rows in the table"
+        />
+        <label
+          class="btn btn-sm btn-outline-secondary"
+          for="config-table-config-only"
+          title="When on, the table lists only rows targeted by the last imported config"
+        >
+          Config only
         </label>
       </div>
     </div>
@@ -410,7 +427,7 @@
               [attr.aria-label]="'Hide column: ' + column.label"
               [title]="'Hide ' + column.label + ' (turn it back on under Visible columns)'"
             >
-              <i class="pi pi-times" aria-hidden="true"></i>
+              <i class="pi pi-times-circle" aria-hidden="true"></i>
             </button>
             <div class="header-content" [class.header-content--value]="column.key === 'value'">
               <ng-container *ngIf="column.key === 'value'; else tplHeaderDefaultLabel">
@@ -427,9 +444,10 @@
                     class="btn btn-sm btn-outline-secondary value-header-select-changes-btn"
                     (click)="onSelectValueChangesClick($event)"
                     [disabled]="valueColumnChangeRowCount === 0"
-                    title="Clear row selection, then select only loaded rows whose Value differs from Default (order ignored for lists)"
+                    [title]="'Select rows where Value differs from Default (' + valueColumnChangeRowCount + ')'"
+                    [attr.aria-label]="'Select diffs (' + valueColumnChangeRowCount + ')'"
                   >
-                    select diffs ({{ valueColumnChangeRowCount }})
+                    <span class="codicon codicon-diff" aria-hidden="true"></span>
                   </button>
                   <button
                     type="button"
@@ -801,6 +819,15 @@
                     [attr.aria-label]="'Reset value to default for ' + row.property"
                   >
                     <i class="pi pi-undo" aria-hidden="true"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary value-cell-copy-btn"
+                    (click)="onCopyRowValue($event, row)"
+                    [title]="isCopiedId(valueCellCopyId(row)) ? 'Copied' : 'Copy value'"
+                    [attr.aria-label]="isCopiedId(valueCellCopyId(row)) ? 'Copied' : 'Copy value for ' + row.property"
+                  >
+                    <i class="pi" [ngClass]="isCopiedId(valueCellCopyId(row)) ? 'pi-check' : 'pi-copy'" aria-hidden="true"></i>
                   </button>
                 </div>
               </div>
