@@ -1049,7 +1049,7 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
 }
 
 :host ::ng-deep .value-cell-wrap.value-cell-diverges .value-cell-multiselect-inner.p-multiselect {
-  border-color: $value-column-divergent-border;
+  border-color: $value-column-divergent-border !important;
 }
 
 :host .value-cell-wrap.value-cell-wrap--import-invalid {
@@ -1061,7 +1061,7 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
 }
 
 :host ::ng-deep .value-cell-wrap.value-cell-wrap--import-invalid .value-cell-multiselect-inner.p-multiselect {
-  border-color: $value-import-invalid-border;
+  border-color: $value-import-invalid-border !important;
 }
 
 :host .value-cell-wrap.value-cell-wrap--import-resolved {
@@ -1073,7 +1073,7 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
 }
 
 :host ::ng-deep .value-cell-wrap.value-cell-wrap--import-resolved .value-cell-multiselect-inner.p-multiselect {
-  border-color: $value-column-divergent-border;
+  border-color: $value-column-divergent-border !important;
 }
 
 .value-cell-input {
