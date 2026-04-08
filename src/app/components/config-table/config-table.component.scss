@@ -537,6 +537,7 @@ $export-bar-control-font-size: 0.875rem;
   flex: 1 1 auto;
   min-width: 0;
   box-sizing: border-box;
+  min-height: calc(1lh + #{$table-body-scroll-text-gap} + #{$table-body-hscrollbar-gutter});
   max-height: calc(1lh + #{$table-body-scroll-text-gap} + #{$table-body-hscrollbar-gutter});
   padding-bottom: $table-body-scroll-text-gap;
   overflow-x: auto;
@@ -1104,6 +1105,9 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
   max-width: 100%;
   min-width: 0;
   box-sizing: border-box;
+  min-height: calc(
+    #{$value-cell-control-min-height} + #{$table-body-scroll-text-gap} + #{$table-body-hscrollbar-gutter}
+  );
   max-height: calc(
     #{$value-cell-control-min-height} + #{$table-body-scroll-text-gap} + #{$table-body-hscrollbar-gutter}
   );
@@ -1326,6 +1330,7 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
   flex: 1 1 0 !important;
   min-width: 0 !important;
   box-sizing: border-box !important;
+  min-height: calc(1lh + #{$table-body-scroll-text-gap} + #{$table-body-hscrollbar-gutter}) !important;
   max-height: calc(1lh + #{$table-body-scroll-text-gap} + #{$table-body-hscrollbar-gutter}) !important;
   padding-bottom: $table-body-scroll-text-gap !important;
   background: transparent !important;
@@ -1366,6 +1371,7 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
   max-width: 100%;
   min-width: 0;
   box-sizing: border-box;
+  min-height: calc(1lh + #{$table-body-scroll-text-gap} + #{$table-body-hscrollbar-gutter});
   max-height: calc(1lh + #{$table-body-scroll-text-gap} + #{$table-body-hscrollbar-gutter});
   padding-bottom: $table-body-scroll-text-gap;
   overflow-x: auto;
