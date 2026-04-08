@@ -28,7 +28,7 @@
           [attr.aria-expanded]="exportFormatMenuOpen"
           aria-haspopup="true"
           aria-label="Export selected rows as config"
-          title="Export selected rows as JSON, YAML, or Java .properties (Property → Value)."
+          title="Export selected rows as JSON, YAML, or Java .properties (Key → Value)."
         >
           <i class="pi pi-download" aria-hidden="true"></i>
           <span>Export config</span>
@@ -44,7 +44,7 @@
             type="button"
             class="export-format-dropdown__item"
             role="menuitem"
-            title="Download selected rows as JSON: each Property is a key and the editable Value is the string value (UTF-8). Rows with an empty Property are skipped; duplicate properties keep the last selected row."
+            title="Download selected rows as JSON: each Key is a JSON key and the editable Value is the string value (UTF-8). Rows with an empty Key are skipped; duplicate keys keep the last selected row."
             (click)="onExportFormatChosen('json', $event)"
           >
             .json
@@ -53,7 +53,7 @@
             type="button"
             class="export-format-dropdown__item"
             role="menuitem"
-            title="Download selected rows as YAML: each Property is a key and the editable Value is the string value (UTF-8). Rows with an empty Property are skipped; duplicate properties keep the last selected row."
+            title="Download selected rows as YAML: each Key is a YAML key and the editable Value is the string value (UTF-8). Rows with an empty Key are skipped; duplicate keys keep the last selected row."
             (click)="onExportFormatChosen('yaml', $event)"
           >
             .yaml
@@ -62,7 +62,7 @@
             type="button"
             class="export-format-dropdown__item"
             role="menuitem"
-            title="Download selected rows as Java .properties: key=value per line (UTF-8). Rows with an empty Property are skipped; duplicate properties keep the last selected row."
+            title="Download selected rows as Java .properties: key=value per line (UTF-8). Rows with an empty Key are skipped; duplicate keys keep the last selected row."
             (click)="onExportFormatChosen('properties', $event)"
           >
             .properties
@@ -1139,7 +1139,7 @@
             <table class="import-missing-keys-table">
               <thead>
                 <tr>
-                  <th scope="col">Property</th>
+                  <th scope="col">Key</th>
                   <th scope="col">Value</th>
                 </tr>
               </thead>
@@ -1154,9 +1154,9 @@
                         type="button"
                         class="property-copy-btn import-missing-keys-cell-copy"
                         (click)="$event.stopPropagation(); copyById(importMissingKeyPropertyCopyId(i), row.property)"
-                        [title]="isCopiedId(importMissingKeyPropertyCopyId(i)) ? 'Copied' : 'Copy property'"
+                        [title]="isCopiedId(importMissingKeyPropertyCopyId(i)) ? 'Copied' : 'Copy key'"
                         [attr.aria-label]="
-                          isCopiedId(importMissingKeyPropertyCopyId(i)) ? 'Copied' : 'Copy property name'
+                          isCopiedId(importMissingKeyPropertyCopyId(i)) ? 'Copied' : 'Copy key name'
                         "
                       >
                         <i

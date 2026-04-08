@@ -92,9 +92,9 @@ const UNBLU_SCOPE_EDITORS: Record<string, string[]> = unbluScopeEditorsJson as R
 
 const BASE_COLUMN_DEFINITIONS: ColumnDefinition[] = [
   { key: 'source', label: 'Source', filterType: 'select' },
-  { key: 'category', label: 'Category', filterType: 'select' },
-  { key: 'propertyTitle', label: 'Property title', filterType: 'text' },
-  { key: 'property', label: 'Property', filterType: 'text' },
+  { key: 'category', label: 'Group title', filterType: 'select' },
+  { key: 'propertyTitle', label: 'Label', filterType: 'text' },
+  { key: 'property', label: 'Key', filterType: 'text' },
   { key: 'value', label: 'Value', filterType: 'text' },
   { key: 'defaultValue', label: 'Default value', filterType: 'text' },
   { key: 'allowedValues', label: 'Allowed values', filterType: 'text' },
@@ -1057,7 +1057,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     URL.revokeObjectURL(url);
   }
 
-  /** Property → Value strings for JSON/YAML selection export (same rules as CSV selection). */
+  /** Key → Value strings for JSON/YAML selection export (same rules as CSV selection). */
   private buildSelectionExportPropertyValueMap(): Record<string, string> {
     const selected = this.rows.filter((row) => this.selectedRowKeys.has(row.rowKey));
     const out: Record<string, string> = {};
@@ -1149,7 +1149,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.onFiltersChanged();
   }
 
-  /** Header × control: hide column (Property is never closable). Same as clearing it in Visible columns. */
+  /** Header × control: hide column (Key is never closable). Same as clearing it in Visible columns. */
   hideColumnFromHeader(columnKey: string, event: Event): void {
     event.stopPropagation();
     event.preventDefault();

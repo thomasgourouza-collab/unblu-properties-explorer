@@ -1595,7 +1595,7 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
   overflow: auto;
 }
 
-// Property column: full key on one line (native title-style preview); scroll if longer than tooltip.
+// Key column: full key on one line (native title-style preview); scroll if longer than tooltip.
 .cell-hover-tooltip--property {
   width: min(720px, 92vw);
 }

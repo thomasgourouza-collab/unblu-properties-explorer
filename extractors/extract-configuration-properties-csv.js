@@ -119,12 +119,12 @@
   const categoryBlocks = document.querySelectorAll("div.sect1");
 
   categoryBlocks.forEach((categoryBlock) => {
-    const category = cleanText(categoryBlock.querySelector(":scope > h2")?.textContent);
+    const groupTitle = cleanText(categoryBlock.querySelector(":scope > h2")?.textContent);
     const properties = getDirectSect2Blocks(categoryBlock);
 
     properties.forEach((propertyBlock) => {
-      const propertyTitle = cleanText(propertyBlock.querySelector(":scope > h3")?.textContent);
-      const propertyName = cleanText(
+      const label = cleanText(propertyBlock.querySelector(":scope > h3")?.textContent);
+      const key = cleanText(
         propertyBlock.querySelector(":scope > .paragraph code.code__key, :scope > .paragraph code")?.textContent
       );
 
@@ -132,9 +132,9 @@
       const description = getDescription(propertyBlock);
 
       rows.push({
-        category,
-        propertyTitle,
-        property: propertyName,
+        groupTitle,
+        label,
+        key,
         defaultValue: fields.default,
         type: fields.type,
         allowedValues: fields.allowedValues,
@@ -147,9 +147,9 @@
   });
 
   const headers = [
-    "category",
-    "property title",
-    "property",
+    "group title",
+    "label",
+    "key",
     "default value",
     "type",
     "allowed values",
@@ -163,9 +163,9 @@
     headers.join(","),
     ...rows.map((row) =>
       [
-        row.category,
-        row.propertyTitle,
-        row.property,
+        row.groupTitle,
+        row.label,
+        row.key,
         row.defaultValue,
         row.type,
         row.allowedValues,

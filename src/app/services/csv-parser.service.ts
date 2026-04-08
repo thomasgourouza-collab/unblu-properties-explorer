@@ -32,6 +32,9 @@ export interface ParseFileSource {
 })
 export class CsvParserService {
   private readonly headerKeyMap: Record<string, CsvMappedKey> = {
+    grouptitle: 'category',
+    label: 'propertyTitle',
+    key: 'property',
     category: 'category',
     propertytitle: 'propertyTitle',
     property: 'property',
