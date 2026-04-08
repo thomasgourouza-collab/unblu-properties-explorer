@@ -15,6 +15,9 @@ export type FilterExprParseResult =
   | { ok: true; ast: FilterExprNode }
   | { ok: false; error: string };
 
+/** Returned when the input is empty or becomes empty after {@link sanitizeFilterExpressionInput}. */
+export const FILTER_EXPR_EMPTY_ERROR = 'empty' as const;
+
 type Token =
   | { kind: 'LPAREN' }
   | { kind: 'RPAREN' }
@@ -96,6 +99,73 @@ function readOperandToken(
     return { ok: false, error: `Empty operand near ${i}` };
   }
   return { ok: true, end: j, value: norm };
+}
+
+/** Removes `(` that have no matching `)` to the right (stack-based, ignores `)` with no prior `(`). */
+function removeUnmatchedOpenParens(s: string): string {
+  const stack: number[] = [];
+  for (let i = 0; i < s.length; i += 1) {
+    const ch = s[i];
+    if (ch === '(') {
+      stack.push(i);
+    } else if (ch === ')') {
+      if (stack.length > 0) {
+        stack.pop();
+      }
+    }
+  }
+  if (stack.length === 0) {
+    return s;
+  }
+  const drop = new Set(stack);
+  let out = '';
+  for (let i = 0; i < s.length; i += 1) {
+    if (!drop.has(i)) {
+      out += s[i];
+    }
+  }
+  return out;
+}
+
+/** Strips trailing `&&`, `||`, and unary `!` when they have no operand after (after trim). */
+function stripTrailingBooleanOperators(s: string): string {
+  let t = s;
+  for (let guard = 0; guard < 64; guard += 1) {
+    const u = t.trimEnd();
+    if (u.endsWith('&&')) {
+      t = u.slice(0, -2);
+      continue;
+    }
+    if (u.endsWith('||')) {
+      t = u.slice(0, -2);
+      continue;
+    }
+    if (u.endsWith('!')) {
+      t = u.slice(0, -1);
+      continue;
+    }
+    return u;
+  }
+  return t.trimEnd();
+}
+
+/**
+ * Drops incomplete syntax: trailing `&&` / `||` / `!` with nothing after, and `(` with no closing `)`.
+ * Applied in a loop until stable so e.g. `a && (` → `a`.
+ */
+export function sanitizeFilterExpressionInput(raw: string): string {
+  let s = raw.trim();
+  if (!s) {
+    return '';
+  }
+  for (let i = 0; i < 32; i += 1) {
+    const next = stripTrailingBooleanOperators(removeUnmatchedOpenParens(s)).trim();
+    if (next === s) {
+      break;
+    }
+    s = next;
+  }
+  return s.trim();
 }
 
 /** Edge-trim only; preserves internal spaces and character case for match-case filtering. */
@@ -249,11 +319,11 @@ class Parser {
 }
 
 export function parseFilterExpression(input: string): FilterExprParseResult {
-  const trimmed = input.trim();
-  if (!trimmed) {
-    return { ok: false, error: 'empty' };
+  const sanitized = sanitizeFilterExpressionInput(input);
+  if (!sanitized) {
+    return { ok: false, error: FILTER_EXPR_EMPTY_ERROR };
   }
-  const tok = tokenizeFilterExpression(trimmed);
+  const tok = tokenizeFilterExpression(sanitized);
   if (!tok.ok) {
     return { ok: false, error: tok.error };
   }

@@ -25,6 +25,7 @@ import { ColumnDefinition, ConfigRow, EXTRA_COLUMN_PREFIX, FilterMode } from '..
 import {
   collectHighlightOperands,
   evaluateFilterAst,
+  FILTER_EXPR_EMPTY_ERROR,
   formatExpressionMatchLines,
   parseFilterExpression
 } from '../../utils/filter-expression.util';
@@ -1108,7 +1109,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     URL.revokeObjectURL(url);
   }
 
-  /** Key → Value strings for JSON/YAML selection export (same rules as CSV selection). */
+  /** Key → Value strings for JSON/YAML/properties selection export. */
   private buildSelectionExportPropertyValueMap(): Record<string, string> {
     const selected = this.rows.filter((row) => this.selectedRowKeys.has(row.rowKey));
     const out: Record<string, string> = {};
@@ -1117,7 +1118,11 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       if (!prop) {
         continue;
       }
-      out[prop] = this.getCellValue(row, 'value');
+      let value = this.getCellValue(row, 'value');
+      if (this.valueColumnUsesMultiSelect(row)) {
+        value = this.parseListStyleCellToTokens(value).join(',');
+      }
+      out[prop] = value;
     }
     return out;
   }
@@ -1934,25 +1939,21 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.columnTextExprPredicates.clear();
 
     if (this.globalFilterMode === 'expr') {
-      const t = this.globalFilter.trim();
-      if (!t) {
-        this.globalExprRowPredicate = () => true;
+      const pr = parseFilterExpression(this.globalFilter);
+      if (!pr.ok) {
+        this.globalExprRowPredicate =
+          pr.error === FILTER_EXPR_EMPTY_ERROR ? () => true : () => false;
       } else {
-        const pr = parseFilterExpression(this.globalFilter);
-        if (!pr.ok) {
-          this.globalExprRowPredicate = () => false;
-        } else {
-          const ast = pr.ast;
-          const gCase = this.globalFilterMatchCase;
-          const gWord = this.globalFilterWholeWord;
-          this.globalExprRowPredicate = (row: ConfigRow) => {
-            const columnsToSearch = this.globalFilterScope === 'visible' ? this.visibleColumns : this.columns;
-            const rowValues = columnsToSearch.map((column) => this.getCellValue(row, column.key) ?? '');
-            const rowContains = (s: string): boolean =>
-              rowValues.some((value) => this.textFilterAtomMatches(value, s, { matchCase: gCase, wholeWord: gWord }));
-            return evaluateFilterAst(ast, rowContains);
-          };
-        }
+        const ast = pr.ast;
+        const gCase = this.globalFilterMatchCase;
+        const gWord = this.globalFilterWholeWord;
+        this.globalExprRowPredicate = (row: ConfigRow) => {
+          const columnsToSearch = this.globalFilterScope === 'visible' ? this.visibleColumns : this.columns;
+          const rowValues = columnsToSearch.map((column) => this.getCellValue(row, column.key) ?? '');
+          const rowContains = (s: string): boolean =>
+            rowValues.some((value) => this.textFilterAtomMatches(value, s, { matchCase: gCase, wholeWord: gWord }));
+          return evaluateFilterAst(ast, rowContains);
+        };
       }
     }
 
@@ -1963,14 +1964,13 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       if (this.getTextMode(column.key) !== 'expr') {
         continue;
       }
-      const raw = (this.textFilters[column.key] ?? '').trim();
-      if (!raw) {
-        this.columnTextExprPredicates.set(column.key, () => true);
-        continue;
-      }
       const pr = parseFilterExpression(this.textFilters[column.key] ?? '');
       if (!pr.ok) {
-        this.columnTextExprPredicates.set(column.key, () => false);
+        this.columnTextExprPredicates.set(
+          column.key,
+          pr.error === FILTER_EXPR_EMPTY_ERROR ? () => true : () => false
+        );
+        continue;
       } else {
         const ast = pr.ast;
         const cCase = this.getTextFilterMatchCase(column.key);
