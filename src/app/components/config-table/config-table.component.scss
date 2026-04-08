@@ -655,19 +655,14 @@ $export-bar-control-font-size: 0.875rem;
   font-weight: 600;
 }
 
-.value-header-select-changes-btn {
+.value-header-diff-checkbox-wrap {
   flex-shrink: 0;
   min-height: 1.42rem;
   min-width: 1.95rem;
-  padding: 0.18rem 0.34rem;
-  line-height: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
-  .codicon {
-    font-size: 0.9rem;
-  }
+  line-height: 1;
 }
 
 .row-select-header,
@@ -1032,7 +1027,7 @@ $table-body-row-height: calc(
   flex-shrink: 0;
 }
 
-.value-header-diff-reset-group .value-header-select-changes-btn {
+.value-header-diff-reset-group .value-header-diff-checkbox-wrap {
   min-height: $value-cell-control-min-height;
   display: inline-flex;
   align-items: center;

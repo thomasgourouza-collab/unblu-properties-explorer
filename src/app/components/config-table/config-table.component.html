@@ -439,16 +439,19 @@
                   ({{ configImportErrorCount }} errors)
                 </span>
                 <span class="value-header-diff-reset-group" role="group" aria-label="Select value diffs and reset all to default">
-                  <button
-                    type="button"
-                    class="btn btn-sm btn-outline-secondary value-header-select-changes-btn"
-                    (click)="onSelectValueChangesClick($event)"
-                    [disabled]="valueColumnChangeRowCount === 0"
-                    [title]="'Select diffs (' + valueColumnChangeRowCount + ')'"
-                    [attr.aria-label]="'Select diffs (' + valueColumnChangeRowCount + ')'"
-                  >
-                    <span class="codicon codicon-diff" aria-hidden="true"></span>
-                  </button>
+                  <span class="value-header-diff-checkbox-wrap">
+                    <input
+                      type="checkbox"
+                      class="form-check-input row-select-checkbox value-header-diff-checkbox"
+                      [appBindIndeterminate]="valueColumnDiffsCheckboxIndeterminate"
+                      [checked]="valueColumnDiffsCheckboxChecked"
+                      (change)="onValueDiffsCheckboxChange($event)"
+                      (click)="$event.stopPropagation()"
+                      [disabled]="valueColumnChangeRowCount === 0"
+                      [title]="'Select diffs (' + valueColumnChangeRowCount + ')'"
+                      [attr.aria-label]="'Select rows where Value differs from default (' + valueColumnChangeRowCount + ')'"
+                    />
+                  </span>
                   <button
                     type="button"
                     class="btn btn-sm btn-outline-secondary value-cell-reset-btn value-header-reset-all-btn"

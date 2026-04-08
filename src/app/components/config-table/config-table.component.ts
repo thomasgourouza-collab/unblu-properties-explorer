@@ -292,7 +292,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       return 2;
     }
     if (columnKey === 'value') {
-      return 1.2;
+      return 1.5;
     }
     if (columnKey === 'visibility') {
       return 0.65;
@@ -458,18 +458,41 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     return this.rows.filter((row) => this.valueColumnDiffersFromDefault(row)).length;
   }
 
-  onSelectValueChangesClick(event: MouseEvent): void {
+  private get valueColumnDiffRows(): ConfigRow[] {
+    return this.rows.filter((row) => this.valueColumnDiffersFromDefault(row));
+  }
+
+  get valueColumnDiffsCheckboxChecked(): boolean {
+    const diffRows = this.valueColumnDiffRows;
+    if (diffRows.length === 0) {
+      return false;
+    }
+    return diffRows.every((row) => this.selectedRowKeys.has(row.rowKey));
+  }
+
+  get valueColumnDiffsCheckboxIndeterminate(): boolean {
+    const diffRows = this.valueColumnDiffRows;
+    if (diffRows.length === 0) {
+      return false;
+    }
+    const n = diffRows.filter((row) => this.selectedRowKeys.has(row.rowKey)).length;
+    return n > 0 && n < diffRows.length;
+  }
+
+  onValueDiffsCheckboxChange(event: Event): void {
     event.stopPropagation();
-    event.preventDefault();
-    const diffRows = this.rows.filter((row) => this.valueColumnDiffersFromDefault(row));
-    const allDiffsSelected = diffRows.length > 0 && diffRows.every((row) => this.selectedRowKeys.has(row.rowKey));
-    if (allDiffsSelected) {
+    const input = event.target as HTMLInputElement | null;
+    if (!input) {
+      return;
+    }
+    const diffRows = this.valueColumnDiffRows;
+    if (input.checked) {
       for (const row of diffRows) {
-        this.selectedRowKeys.delete(row.rowKey);
+        this.selectedRowKeys.add(row.rowKey);
       }
     } else {
       for (const row of diffRows) {
-        this.selectedRowKeys.add(row.rowKey);
+        this.selectedRowKeys.delete(row.rowKey);
       }
     }
     this.syncMatchInspectorToDisplayedTable();
