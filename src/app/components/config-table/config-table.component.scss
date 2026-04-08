@@ -1,3 +1,5 @@
+@use "../../../thin-overlay-scrollbar" as *;
+
 :host {
   display: block;
 }
@@ -5,36 +7,6 @@
 /* Stronger accent on selected filter / list-mode toggles (was ~42%/65% accent — too muted on dark UI). */
 $toolbar-accent-border: color-mix(in srgb, var(--accent) 82%, var(--surface-border));
 $toolbar-accent-border-hover: color-mix(in srgb, var(--accent) 94%, var(--surface-border));
-
-// Shared with .cell-x-scroll / .property-code-scroll and the main table scroll container.
-@mixin thin-overlay-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
-
-  &::-webkit-scrollbar {
-    width: 7px;
-    height: 7px;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background-color: transparent;
-    border-radius: 999px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background-color: transparent;
-  }
-
-  &:hover,
-  &:focus-within {
-    scrollbar-color: color-mix(in srgb, var(--surface-border) 85%, transparent) transparent;
-  }
-
-  &:hover::-webkit-scrollbar-thumb,
-  &:focus-within::-webkit-scrollbar-thumb {
-    background-color: color-mix(in srgb, var(--surface-border) 85%, transparent);
-  }
-}
 
 .table-toolbar {
   border: 1px solid var(--surface-border);
