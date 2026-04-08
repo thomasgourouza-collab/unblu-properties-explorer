@@ -994,6 +994,10 @@ $table-body-row-height: calc(
   padding-top: $table-body-cell-pad-y;
   padding-bottom: $table-body-cell-pad-y;
   overflow: hidden;
+  vertical-align: top;
+}
+
+:host ::ng-deep .fixed-columns-table .p-datatable-tbody > tr:not(.datatable-empty-state-row) > td.row-select-cell {
   vertical-align: middle;
 }
 
