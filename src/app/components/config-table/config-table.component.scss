@@ -980,7 +980,7 @@ $value-cell-control-min-height: 1.58rem;
 $value-cell-font-size: 0.8125rem;
 
 /* Body rows: fixed height; long text scrolls horizontally in `.cell-x-scroll` / value controls. */
-$table-body-cell-pad-y: 0.28rem;
+$table-body-cell-pad-y: 0.16rem;
 $table-body-row-height: calc(
   #{$value-cell-control-min-height} + #{$table-body-cell-pad-y} + #{$table-body-cell-pad-y} +
     #{$table-body-hscrollbar-gutter} + #{$table-body-scroll-text-gap}
