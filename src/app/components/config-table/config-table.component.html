@@ -640,9 +640,7 @@
             class="body-cell"
             [style.width.%]="getColumnWidthPercent(column.key)"
             (click)="onCellCmdClick($event, row, column)"
-            (mouseenter)="onCellHoverEnter($event, getCellValue(row, column.key), column.key)"
-            (mousemove)="onBodyCellMouseMove($event, row, column)"
-            (mouseleave)="onCellHoverLeave()"
+            (mousemove)="onRowMatchInspectorHover($event, row)"
             (mouseover)="onRowMatchInspectorHover($event, row)"
           >
             <ng-container *ngIf="column.key === 'value'; else tplNotValueColumn">
@@ -712,7 +710,7 @@
                           [attr.aria-label]="'Values for ' + row.property"
                         >
                           <ng-template pTemplate="selectedItems">
-                            <span class="value-multiselect-selected-hl" [attr.title]="row.value || ''">
+                            <span class="value-multiselect-selected-hl">
                               <ng-container *ngIf="valueColumnMultiselectUseSummaryLabel(row); else tplValueMultiHl">
                                 {{ valueColumnMultiselectSummaryLabel(row) }}
                               </ng-container>
@@ -834,7 +832,6 @@
                     class="color-swatch"
                     *ngIf="getColorSwatchForPart(row, valuePart) as swatchColor"
                     [style.backgroundColor]="swatchColor"
-                    [title]="swatchColor"
                     aria-label="Detected color"
                   ></span></ng-container>
               </div>
@@ -882,8 +879,7 @@
               </ng-container>
               <ng-template #standardTextCell>
                 <div
-                  class="cell-plain-ellipsis"
-                  [attr.title]="getCellValue(row, column.key) || ''"
+                  class="cell-x-scroll"
                   ><ng-container *ngFor="let part of getHighlightedParts(getCellValue(row, column.key), column.key); trackBy: trackByHighlightPart"
                     ><mark
                       *ngIf="part.kind !== 'none'"
@@ -944,25 +940,6 @@
         </div>
       </ng-template>
     </p-table>
-
-    <div
-      class="cell-hover-tooltip"
-      *ngIf="isCellHoverTooltipOpen"
-      [class.cell-hover-tooltip--property]="cellHoverTooltipColumnKey === 'property'"
-      [style.left.px]="cellHoverTooltipLeft"
-      [style.top.px]="cellHoverTooltipTop"
-    >
-      <div class="cell-hover-tooltip-title">{{ getColumnLabel(cellHoverTooltipColumnKey) }}</div>
-      <div class="cell-hover-tooltip-content"
-        ><ng-container *ngFor="let part of getHighlightedParts(cellHoverTooltipText, cellHoverTooltipColumnKey ?? undefined); trackBy: trackByHighlightPart"
-          ><mark
-            *ngIf="part.kind !== 'none'"
-            [class.global-filter-highlight]="part.kind === 'global'"
-            [class.column-filter-highlight]="part.kind === 'column'"
-            >{{ part.text }}</mark
-          ><span *ngIf="part.kind === 'none'">{{ part.text }}</span></ng-container
-      ></div>
-    </div>
 
     <div
       class="match-inspector-tooltip"

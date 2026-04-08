@@ -971,7 +971,7 @@ $value-cell-control-pad-x: 0.32rem;
 $value-cell-control-min-height: 1.58rem;
 $value-cell-font-size: 0.8125rem;
 
-/* Body rows: fixed height; cell contents clip with ellipsis (see .cell-plain-ellipsis, value free-text stack). */
+/* Body rows: fixed height; long text scrolls horizontally in `.cell-x-scroll` / value controls. */
 $table-body-cell-pad-y: 0.38rem;
 $table-body-row-height: calc(
   #{$value-cell-control-min-height} + #{$table-body-cell-pad-y} + #{$table-body-cell-pad-y} + 0.12rem
@@ -1083,8 +1083,9 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
   padding: $value-cell-control-pad-y $value-cell-control-pad-x;
   line-height: 1.2;
   font-size: $value-cell-font-size;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
 }
 
 /* Free-text Value: mirror under transparent input (highlights align with `row.value`). */
@@ -1112,8 +1113,8 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
   font-size: $value-cell-font-size;
   font-family: inherit;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-x: auto;
+  overflow-y: hidden;
   pointer-events: none;
   background: var(--surface-elevated);
   color: var(--text-secondary);
@@ -1195,10 +1196,9 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
 /* Multiselect comma label: custom selectedItems template with marks. */
 .value-multiselect-selected-hl {
   display: block;
+  width: max-content;
+  max-width: none;
   min-width: 0;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
   line-height: 1.25;
   font-size: $value-cell-font-size;
@@ -1237,22 +1237,26 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
   min-width: 0;
   min-height: $value-cell-control-min-height;
   font-size: $value-cell-font-size;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
 }
 
 :host ::ng-deep .value-cell-multiselect-inner .p-multiselect-label-container {
   flex: 1 1 0 !important;
   min-width: 0 !important;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  @include thin-overlay-scrollbar;
 }
 
-/* Comma display: one line, ellipsis — no chip strip scrollbar or per-token remove icons */
+/* Comma display: one line + horizontal scroll in label container (avoid nested scroll areas). */
 :host ::ng-deep .value-cell-multiselect-inner .p-multiselect-label {
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
+  overflow-x: visible !important;
+  overflow-y: visible !important;
+  text-overflow: clip !important;
   white-space: nowrap !important;
-  max-width: 100%;
-  min-width: 0;
+  max-width: none;
+  min-width: min-content;
   padding-block: $value-cell-control-pad-y !important;
   padding-inline: $value-cell-control-pad-x !important;
   line-height: 1.2 !important;
@@ -1279,16 +1283,6 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
   white-space: nowrap;
   padding-bottom: 2px;
   @include thin-overlay-scrollbar;
-}
-
-/* Plain read-only text cells: one line + ellipsis (JSON/long strings). */
-.cell-plain-ellipsis {
-  display: block;
-  max-width: 100%;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 :host ::ng-deep .p-datatable {
@@ -1566,55 +1560,6 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
 .rows-select {
   min-width: 4.2rem;
   width: auto;
-}
-
-.cell-hover-tooltip {
-  position: fixed;
-  z-index: 1400;
-  width: min(420px, 70vw);
-  pointer-events: none;
-  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--surface-border));
-  border-radius: 0.7rem;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--accent) 9%, var(--surface-elevated)) 0%,
-      color-mix(in srgb, var(--surface-elevated) 96%, #06080d) 100%
-    );
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(8px);
-  overflow: hidden;
-}
-
-.cell-hover-tooltip-title {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: color-mix(in srgb, var(--text-primary) 92%, var(--text-muted));
-  padding: 0.4rem 0.62rem;
-  border-bottom: 1px solid color-mix(in srgb, var(--accent) 20%, var(--surface-border));
-  text-transform: uppercase;
-}
-
-.cell-hover-tooltip-content {
-  font-size: 0.88rem;
-  color: var(--text-primary);
-  padding: 0.44rem 0.58rem 0.56rem;
-  white-space: pre-wrap;
-  word-break: break-word;
-  overflow: auto;
-}
-
-// Key column: full key on one line (native title-style preview); scroll if longer than tooltip.
-.cell-hover-tooltip--property {
-  width: min(720px, 92vw);
-}
-
-.cell-hover-tooltip--property .cell-hover-tooltip-content {
-  white-space: nowrap;
-  word-break: normal;
-  overflow-x: auto;
-  overflow-y: hidden;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
 .match-inspector-tooltip {

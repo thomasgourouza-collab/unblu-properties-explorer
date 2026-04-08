@@ -219,11 +219,6 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   cellDetailDialogAllowedLines: string[] | null = null;
   /** Cmd/Ctrl+click on Allowed scopes: one row per scope with role hints from `unblu-scope-editors.json`. */
   cellDetailDialogAllowedScopeRows: CellDetailAllowedScopeRow[] | null = null;
-  isCellHoverTooltipOpen = false;
-  cellHoverTooltipText = '';
-  cellHoverTooltipColumnKey: string | null = null;
-  cellHoverTooltipLeft = 0;
-  cellHoverTooltipTop = 0;
   isMatchInspectorOpen = false;
   matchInspectorLeft = 0;
   matchInspectorTop = 0;
@@ -1350,45 +1345,6 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.onFiltersChanged();
   }
 
-  onCellHoverEnter(event: MouseEvent, value: string, columnKey: string): void {
-    if (!this.isHoverTooltipModifierPressed(event)) {
-      this.onCellHoverLeave();
-      return;
-    }
-
-    const text = value?.trim() ?? '';
-    if (!text) {
-      this.onCellHoverLeave();
-      return;
-    }
-    this.cellHoverTooltipText = text;
-    this.cellHoverTooltipColumnKey = columnKey;
-    this.isCellHoverTooltipOpen = true;
-    this.positionCellHoverTooltip(event);
-  }
-
-  onCellHoverMove(event: MouseEvent, value: string, columnKey: string): void {
-    if (!this.isHoverTooltipModifierPressed(event)) {
-      this.onCellHoverLeave();
-      return;
-    }
-
-    if (!this.isCellHoverTooltipOpen) {
-      this.onCellHoverEnter(event, value, columnKey);
-      return;
-    }
-
-    this.positionCellHoverTooltip(event);
-  }
-
-  onCellHoverLeave(): void {
-    if (!this.isCellHoverTooltipOpen && this.cellHoverTooltipColumnKey === null) {
-      return;
-    }
-    this.isCellHoverTooltipOpen = false;
-    this.cellHoverTooltipColumnKey = null;
-  }
-
   /** Stable *ngFor identity so CD / mousemove does not recreate text nodes (which clears selection). */
   trackByDefaultValuePart(index: number, valuePart: string): string {
     return `${index}:${valuePart}`;
@@ -1443,7 +1399,6 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   }
 
   private openCellDetailDialog(row: ConfigRow, column: ColumnDefinition): void {
-    this.onCellHoverLeave();
     this.cellDetailDialogRowKey = row.rowKey;
     this.cellDetailDialogColumnKey = column.key;
     this.cellDetailDialogPropertyCode = this.getCellValue(row, 'property')?.trim() ?? '';
@@ -1551,12 +1506,6 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       clientY: this.pointerContextClientY
     } as MouseEvent;
     this.openMatchInspector(synthetic, this.pointerContextRow);
-  }
-
-  /** Single `mousemove` on data cells: Cmd/Ctrl cell tooltip + Shift match inspector. */
-  onBodyCellMouseMove(event: MouseEvent, row: ConfigRow, column: ColumnDefinition): void {
-    this.onCellHoverMove(event, this.getCellValue(row, column.key), column.key);
-    this.onRowMatchInspectorHover(event, row);
   }
 
   onRowHoverLeave(): void {
@@ -3305,26 +3254,4 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     return tagName === 'input' || tagName === 'textarea' || target.isContentEditable;
   }
 
-  private isHoverTooltipModifierPressed(event: MouseEvent): boolean {
-    return event.ctrlKey || event.metaKey;
-  }
-
-  private positionCellHoverTooltip(event: MouseEvent): void {
-    const offset = 14;
-    const maxWidth = 420;
-    const margin = 12;
-    let left = event.clientX + offset;
-    let top = event.clientY + offset;
-
-    if (left + maxWidth > globalThis.innerWidth - margin) {
-      left = Math.max(margin, event.clientX - maxWidth - offset);
-    }
-    const estimatedHeight = 120;
-    if (top + estimatedHeight > globalThis.innerHeight - margin) {
-      top = Math.max(margin, event.clientY - estimatedHeight - offset);
-    }
-
-    this.cellHoverTooltipLeft = left;
-    this.cellHoverTooltipTop = top;
-  }
 }
