@@ -1,5 +1,10 @@
 @use "../../../thin-overlay-scrollbar" as *;
 
+/* Horizontal scrollbar track height in `thin-overlay-scrollbar` (WebKit `height: 7px`). */
+$table-body-hscrollbar-gutter: 7px;
+/* Space between text / descenders and the horizontal scrollbar (scrollports use border-box + padding-bottom). */
+$table-body-scroll-text-gap: 10px;
+
 :host {
   display: block;
 }
@@ -531,10 +536,12 @@ $export-bar-control-font-size: 0.875rem;
 .property-code-scroll {
   flex: 1 1 auto;
   min-width: 0;
+  box-sizing: border-box;
+  max-height: calc(1lh + #{$table-body-scroll-text-gap} + #{$table-body-hscrollbar-gutter});
+  padding-bottom: $table-body-scroll-text-gap;
   overflow-x: auto;
   overflow-y: hidden;
   white-space: nowrap;
-  padding-bottom: 2px;
   @include thin-overlay-scrollbar;
 }
 
@@ -972,9 +979,10 @@ $value-cell-control-min-height: 1.58rem;
 $value-cell-font-size: 0.8125rem;
 
 /* Body rows: fixed height; long text scrolls horizontally in `.cell-x-scroll` / value controls. */
-$table-body-cell-pad-y: 0.38rem;
+$table-body-cell-pad-y: 0.44rem;
 $table-body-row-height: calc(
-  #{$value-cell-control-min-height} + #{$table-body-cell-pad-y} + #{$table-body-cell-pad-y} + 0.12rem
+  #{$value-cell-control-min-height} + #{$table-body-cell-pad-y} + #{$table-body-cell-pad-y} + 0.22rem +
+    #{$table-body-hscrollbar-gutter} + #{$table-body-scroll-text-gap}
 );
 
 :host ::ng-deep .fixed-columns-table .p-datatable-tbody > tr:not(.datatable-empty-state-row) {
@@ -1095,6 +1103,11 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
 .value-free-text-outer {
   max-width: 100%;
   min-width: 0;
+  box-sizing: border-box;
+  max-height: calc(
+    #{$value-cell-control-min-height} + #{$table-body-scroll-text-gap} + #{$table-body-hscrollbar-gutter}
+  );
+  padding-bottom: $table-body-scroll-text-gap;
   overflow-x: auto;
   overflow-y: hidden;
   @include thin-overlay-scrollbar;
@@ -1312,6 +1325,9 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
 :host ::ng-deep .value-cell-multiselect-inner .p-multiselect-label-container {
   flex: 1 1 0 !important;
   min-width: 0 !important;
+  box-sizing: border-box !important;
+  max-height: calc(1lh + #{$table-body-scroll-text-gap} + #{$table-body-hscrollbar-gutter}) !important;
+  padding-bottom: $table-body-scroll-text-gap !important;
   background: transparent !important;
   overflow-x: auto;
   overflow-y: hidden;
@@ -1349,10 +1365,12 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
   display: block;
   max-width: 100%;
   min-width: 0;
+  box-sizing: border-box;
+  max-height: calc(1lh + #{$table-body-scroll-text-gap} + #{$table-body-hscrollbar-gutter});
+  padding-bottom: $table-body-scroll-text-gap;
   overflow-x: auto;
   overflow-y: hidden;
   white-space: nowrap;
-  padding-bottom: 2px;
   @include thin-overlay-scrollbar;
 }
 
