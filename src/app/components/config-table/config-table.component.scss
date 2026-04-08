@@ -1029,7 +1029,7 @@ $table-body-row-height: calc(
 }
 
 .value-cell-copy-btn {
-  @extend .value-cell-reset-btn;
+  flex-shrink: 0;
 }
 
 .value-header-diff-reset-group .value-header-select-changes-btn {
