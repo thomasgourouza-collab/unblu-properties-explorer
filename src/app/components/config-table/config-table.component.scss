@@ -765,8 +765,10 @@ $export-bar-control-font-size: 0.875rem;
 }
 
 .row-select-cell {
-  padding: 0.35rem 0.3rem !important;
-  vertical-align: middle;
+  /* Horizontal inset only; vertical padding comes from fixed body row `td` rules so the checkbox lines up with other columns. */
+  padding-left: 0.3rem !important;
+  padding-right: 0.3rem !important;
+  vertical-align: top;
 }
 
 .row-select-checkbox {
@@ -995,10 +997,6 @@ $table-body-row-height: calc(
   padding-bottom: $table-body-cell-pad-y;
   overflow: hidden;
   vertical-align: top;
-}
-
-:host ::ng-deep .fixed-columns-table .p-datatable-tbody > tr:not(.datatable-empty-state-row) > td.row-select-cell {
-  vertical-align: middle;
 }
 
 .value-cell-wrap {
@@ -1417,7 +1415,7 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
 }
 
 :host ::ng-deep .p-datatable-tbody > tr > td.row-select-cell {
-  vertical-align: middle;
+  vertical-align: top;
 }
 
 :host ::ng-deep .p-datatable-tbody > tr:nth-child(even) {
