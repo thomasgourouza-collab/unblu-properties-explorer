@@ -387,8 +387,8 @@
                 [appBindIndeterminate]="masterCheckboxIndeterminate"
                 [checked]="masterCheckboxChecked"
                 (change)="onMasterCheckboxChange($event)"
-                [disabled]="filteredRows.length === 0"
-                aria-label="Select all filtered rows"
+                [disabled]="tableDisplayedRows.length === 0"
+                aria-label="Select all displayed rows"
               />
               <span
                 class="row-select-count"

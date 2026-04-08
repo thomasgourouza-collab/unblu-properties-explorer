@@ -402,20 +402,20 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   }
 
   get masterCheckboxChecked(): boolean {
-    const { filteredRows, selectedRowKeys } = this;
-    if (filteredRows.length === 0) {
+    const displayed = this.tableDisplayedRows;
+    if (displayed.length === 0) {
       return false;
     }
-    return filteredRows.every((row) => selectedRowKeys.has(row.rowKey));
+    return displayed.every((row) => this.selectedRowKeys.has(row.rowKey));
   }
 
   get masterCheckboxIndeterminate(): boolean {
-    const { filteredRows, selectedRowKeys } = this;
-    if (filteredRows.length === 0) {
+    const displayed = this.tableDisplayedRows;
+    if (displayed.length === 0) {
       return false;
     }
-    const n = filteredRows.filter((row) => selectedRowKeys.has(row.rowKey)).length;
-    return n > 0 && n < filteredRows.length;
+    const n = displayed.filter((row) => this.selectedRowKeys.has(row.rowKey)).length;
+    return n > 0 && n < displayed.length;
   }
 
   isRowSelected(row: ConfigRow): boolean {
@@ -440,12 +440,13 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     if (!input) {
       return;
     }
+    const displayed = this.tableDisplayedRows;
     if (input.checked) {
-      for (const row of this.filteredRows) {
+      for (const row of displayed) {
         this.selectedRowKeys.add(row.rowKey);
       }
     } else {
-      for (const row of this.filteredRows) {
+      for (const row of displayed) {
         this.selectedRowKeys.delete(row.rowKey);
       }
     }
@@ -460,9 +461,14 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   onSelectValueChangesClick(event: MouseEvent): void {
     event.stopPropagation();
     event.preventDefault();
-    this.selectedRowKeys.clear();
-    for (const row of this.rows) {
-      if (this.valueColumnDiffersFromDefault(row)) {
+    const diffRows = this.rows.filter((row) => this.valueColumnDiffersFromDefault(row));
+    const allDiffsSelected = diffRows.length > 0 && diffRows.every((row) => this.selectedRowKeys.has(row.rowKey));
+    if (allDiffsSelected) {
+      for (const row of diffRows) {
+        this.selectedRowKeys.delete(row.rowKey);
+      }
+    } else {
+      for (const row of diffRows) {
         this.selectedRowKeys.add(row.rowKey);
       }
     }
