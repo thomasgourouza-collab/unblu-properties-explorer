@@ -56,9 +56,9 @@ npm run build
 
 The upload expects a header row with these columns (case-insensitive):
 
-1. `category`
-2. `property title`
-3. `property`
+1. `group title`
+2. `label`
+3. `key`
 4. `default value`
 5. `type`
 6. `allowed scopes`
@@ -71,7 +71,7 @@ The upload expects a header row with these columns (case-insensitive):
 - Sort on every column
 - Per-column filters (all filters can be combined in parallel)
 - Global case-insensitive contains filter across all columns
-- Text filters (`property title`, `property`, `default value`, `description`) as case-insensitive contains
+- Text filters (`label`, `key`, `default value`, `description`) as case-insensitive contains
 - Select filters for non-text columns with unique values from the loaded file
 - Multi-select list filters for `allowed scopes` and `editable by` with OR/AND behavior:
   - OR: any selected value matches any token in row list

@@ -444,7 +444,7 @@
                     class="btn btn-sm btn-outline-secondary value-header-select-changes-btn"
                     (click)="onSelectValueChangesClick($event)"
                     [disabled]="valueColumnChangeRowCount === 0"
-                    [title]="'Select rows where Value differs from Default (' + valueColumnChangeRowCount + ')'"
+                    [title]="'Select diffs (' + valueColumnChangeRowCount + ')'"
                     [attr.aria-label]="'Select diffs (' + valueColumnChangeRowCount + ')'"
                   >
                     <span class="codicon codicon-diff" aria-hidden="true"></span>
@@ -901,8 +901,8 @@
                     type="button"
                     class="property-copy-btn"
                     (click)="$event.stopPropagation(); copyFullCell('property', getCellValue(row, column.key))"
-                    [title]="isFullCellCopied('property', getCellValue(row, column.key)) ? 'Copied' : 'Copy property'"
-                    [attr.aria-label]="isFullCellCopied('property', getCellValue(row, column.key)) ? 'Copied' : 'Copy property value'"
+                    [title]="isFullCellCopied('property', getCellValue(row, column.key)) ? 'Copied' : 'Copy key'"
+                    [attr.aria-label]="isFullCellCopied('property', getCellValue(row, column.key)) ? 'Copied' : 'Copy key value'"
                   >
                     <i class="pi" [ngClass]="isFullCellCopied('property', getCellValue(row, column.key)) ? 'pi-check' : 'pi-copy'"></i>
                   </button>

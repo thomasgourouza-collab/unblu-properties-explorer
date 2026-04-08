@@ -206,7 +206,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   private copyResetTimerId?: ReturnType<typeof globalThis.setTimeout>;
 
   @ViewChild('cellDetailDialog') private cellDetailDialogEl?: ElementRef<HTMLDialogElement>;
-  /** Help-style overlay when JSON import contains keys with no matching Property row. */
+  /** Help-style overlay when JSON import contains keys with no matching Key row. */
   importMissingKeysDialogVisible = false;
   importMissingKeysDialogTitle = '';
   importMissingKeysDialogRows: ImportMissingKeyDialogRow[] = [];

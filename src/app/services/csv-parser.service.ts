@@ -35,15 +35,26 @@ export class CsvParserService {
     grouptitle: 'category',
     label: 'propertyTitle',
     key: 'property',
-    category: 'category',
-    propertytitle: 'propertyTitle',
-    property: 'property',
     defaultvalue: 'defaultValue',
     type: 'type',
     allowedvalues: 'allowedValues',
     allowedscopes: 'allowedScopes',
     visibility: 'visibility',
     editableby: 'editableBy',
+    description: 'description'
+  };
+
+  /** Maps internal required-header keys to the CSV column names shown in error messages. */
+  private readonly headerDisplayNames: Partial<Record<string, string>> = {
+    category: 'group title',
+    propertyTitle: 'label',
+    property: 'key',
+    defaultValue: 'default value',
+    type: 'type',
+    allowedValues: 'allowed values',
+    allowedScopes: 'allowed scopes',
+    visibility: 'visibility',
+    editableBy: 'editable by',
     description: 'description'
   };
 
@@ -70,9 +81,12 @@ export class CsvParserService {
           const missingHeaders = this.getMissingHeaders(headerMap);
 
           if (missingHeaders.length > 0) {
+            const displayNames = missingHeaders.map(
+              (h) => this.headerDisplayNames[h] ?? h
+            );
             reject(
               new Error(
-                `Missing required columns: ${missingHeaders.join(', ')}.`
+                `Missing required columns: ${displayNames.join(', ')}.`
               )
             );
             return;
