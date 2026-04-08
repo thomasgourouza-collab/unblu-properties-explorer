@@ -526,7 +526,7 @@ $export-bar-control-font-size: 0.875rem;
 
 .property-code-wrap {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.28rem;
   min-width: 0;
   max-height: 100%;
@@ -1007,7 +1007,7 @@ $table-body-row-height: calc(
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.28rem;
   width: 100%;
   min-width: 0;
