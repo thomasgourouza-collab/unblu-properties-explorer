@@ -2481,14 +2481,6 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     return `${n} selected`;
   }
 
-  /** Keep free-text highlight mirror aligned on horizontal scroll. */
-  onValueFreeTextHighlightScroll(event: Event, mirror: HTMLDivElement): void {
-    const t = event.target;
-    if (t instanceof HTMLInputElement) {
-      mirror.scrollLeft = t.scrollLeft;
-    }
-  }
-
   /**
    * True when the Value field differs from Default value (for list types, token order is ignored).
    */

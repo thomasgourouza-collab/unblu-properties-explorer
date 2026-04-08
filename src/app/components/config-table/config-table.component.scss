@@ -1088,19 +1088,45 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
   white-space: nowrap;
 }
 
-/* Free-text Value: mirror under transparent input (highlights align with `row.value`). */
-.value-cell-free-text-stack {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: $value-cell-control-min-height;
-  width: 100%;
+/* Free-text Value: scroll on `.value-free-text-outer` so the bar sits under the bordered field, not inside the input. */
+.value-free-text-outer {
+  max-width: 100%;
   min-width: 0;
-  max-height: $value-cell-control-min-height;
+  overflow-x: auto;
+  overflow-y: hidden;
+  @include thin-overlay-scrollbar;
+}
+
+.value-free-text-field {
+  box-sizing: border-box;
+  min-width: 100%;
+  width: max-content;
+  max-width: none;
+  min-height: $value-cell-control-min-height;
+  border: 1px solid var(--bs-border-color, var(--surface-border));
+  border-radius: var(--bs-border-radius, 0.25rem);
+  background: var(--surface-elevated);
+  overflow: hidden;
+
+  &:focus-within {
+    border-color: var(--bs-focus-border-color, var(--accent));
+    box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--accent) 22%, transparent);
+  }
+}
+
+.value-cell-free-text-stack {
+  display: inline-grid;
+  grid-template-columns: max-content;
+  grid-template-rows: $value-cell-control-min-height;
+  vertical-align: top;
+  min-width: 100%;
+  box-sizing: border-box;
 }
 
 .value-cell-free-text-stack > * {
   grid-column: 1;
   grid-row: 1;
+  justify-self: stretch;
 }
 
 .value-cell-highlight-mirror {
@@ -1113,12 +1139,11 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
   font-size: $value-cell-font-size;
   font-family: inherit;
   white-space: nowrap;
-  overflow-x: auto;
-  overflow-y: hidden;
+  overflow: hidden;
   pointer-events: none;
-  background: var(--surface-elevated);
+  background: transparent;
   color: var(--text-secondary);
-  border-radius: var(--bs-border-radius, 0.25rem);
+  border-radius: 0;
 }
 
 .value-cell-input--with-highlight-mirror {
@@ -1128,6 +1153,15 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
   -webkit-text-fill-color: transparent;
   caret-color: var(--text-secondary);
   background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  max-width: none;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  field-sizing: content;
+  min-width: 100%;
+  width: auto;
 }
 
 .value-cell-input--with-highlight-mirror:focus,
@@ -1136,10 +1170,39 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
   color: transparent !important;
   -webkit-text-fill-color: transparent;
   caret-color: var(--text-secondary);
+  box-shadow: none !important;
 }
 
 .value-cell-input--with-highlight-mirror::selection {
   background: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+@supports not (field-sizing: content) {
+  .value-free-text-outer {
+    overflow-x: hidden;
+  }
+
+  .value-free-text-field {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .value-cell-free-text-stack {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    min-width: 0;
+  }
+
+  .value-cell-input.value-cell-input--with-highlight-mirror {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  .value-cell-highlight-mirror {
+    overflow-x: auto;
+  }
 }
 
 /* Native Value `<select>`: painted label under transparent control (same highlight pipeline as other cells). */

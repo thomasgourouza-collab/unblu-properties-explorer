@@ -762,31 +762,34 @@
                           </div>
                         </ng-container>
                         <ng-template #tplValueFreeText>
-                          <div class="value-cell-free-text-stack">
-                            <div class="value-cell-highlight-mirror" #valueFreeTextHlMirror aria-hidden="true"
-                              ><ng-container
-                                *ngFor="let part of getHighlightedParts(row.value ?? '', 'value'); trackBy: trackByHighlightPart"
-                                ><mark
-                                  *ngIf="part.kind !== 'none'"
-                                  [class.global-filter-highlight]="part.kind === 'global'"
-                                  [class.column-filter-highlight]="part.kind === 'column'"
-                                  >{{ part.text }}</mark
-                                ><span *ngIf="part.kind === 'none'">{{ part.text }}</span></ng-container
-                            ></div>
-                            <input
-                              type="text"
-                              class="form-control form-control-sm value-cell-input value-cell-input--with-highlight-mirror"
-                              [ngModel]="row.value"
-                              (ngModelChange)="onValueColumnFreeTextChange(row, $event)"
-                              (scroll)="onValueFreeTextHighlightScroll($event, valueFreeTextHlMirror)"
-                              [attr.aria-label]="'Value for ' + row.property"
-                              autocomplete="off"
-                              autocapitalize="off"
-                              spellcheck="false"
-                              data-bwignore
-                              data-1p-ignore
-                              data-lpignore="true"
-                            />
+                          <div class="value-free-text-outer">
+                            <div class="value-free-text-field">
+                              <div class="value-cell-free-text-stack">
+                                <div class="value-cell-highlight-mirror" aria-hidden="true"
+                                  ><ng-container
+                                    *ngFor="let part of getHighlightedParts(row.value ?? '', 'value'); trackBy: trackByHighlightPart"
+                                    ><mark
+                                      *ngIf="part.kind !== 'none'"
+                                      [class.global-filter-highlight]="part.kind === 'global'"
+                                      [class.column-filter-highlight]="part.kind === 'column'"
+                                      >{{ part.text }}</mark
+                                    ><span *ngIf="part.kind === 'none'">{{ part.text }}</span></ng-container
+                                ></div>
+                                <input
+                                  type="text"
+                                  class="form-control form-control-sm value-cell-input value-cell-input--with-highlight-mirror"
+                                  [ngModel]="row.value"
+                                  (ngModelChange)="onValueColumnFreeTextChange(row, $event)"
+                                  [attr.aria-label]="'Value for ' + row.property"
+                                  autocomplete="off"
+                                  autocapitalize="off"
+                                  spellcheck="false"
+                                  data-bwignore
+                                  data-1p-ignore
+                                  data-lpignore="true"
+                                />
+                              </div>
+                            </div>
                           </div>
                         </ng-template>
                       </ng-template>
