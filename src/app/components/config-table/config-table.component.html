@@ -658,23 +658,19 @@
                     <ng-container *ngIf="isValueColumnBooleanType(row); else tplValueNonBoolean">
                       <div class="value-cell-native-select-stack">
                         <div class="value-cell-select-face" aria-hidden="true">
-                          <span class="value-cell-select-face-text">
-                            <ng-container
+                          <span class="value-cell-select-face-text"
+                            ><ng-container
                               *ngFor="
                                 let part of getHighlightedParts(valueColumnNativeSelectHighlightSource(row), 'value');
                                 trackBy: trackByHighlightPart
                               "
-                            >
-                              <mark
+                              ><mark
                                 *ngIf="part.kind !== 'none'"
                                 [class.global-filter-highlight]="part.kind === 'global'"
                                 [class.column-filter-highlight]="part.kind === 'column'"
-                              >
-                                {{ part.text }}
-                              </mark>
-                              <span *ngIf="part.kind === 'none'">{{ part.text }}</span>
-                            </ng-container>
-                          </span>
+                                >{{ part.text }}</mark
+                              ><span *ngIf="part.kind === 'none'">{{ part.text }}</span></ng-container
+                          ></span>
                         </div>
                         <select
                           class="form-select form-select-sm value-cell-select-native value-cell-select-over-face"
@@ -722,20 +718,13 @@
                               </ng-container>
                               <ng-template #tplValueMultiHl>
                                 <ng-container
-                                  *ngFor="
-                                    let part of getHighlightedParts(row.value ?? '', 'value');
-                                    trackBy: trackByHighlightPart
-                                  "
-                                >
-                                  <mark
+                                  *ngFor="let part of getHighlightedParts(row.value ?? '', 'value'); trackBy: trackByHighlightPart"
+                                  ><mark
                                     *ngIf="part.kind !== 'none'"
                                     [class.global-filter-highlight]="part.kind === 'global'"
                                     [class.column-filter-highlight]="part.kind === 'column'"
-                                  >
-                                    {{ part.text }}
-                                  </mark>
-                                  <span *ngIf="part.kind === 'none'">{{ part.text }}</span>
-                                </ng-container>
+                                    >{{ part.text }}</mark
+                                  ><span *ngIf="part.kind === 'none'">{{ part.text }}</span></ng-container>
                               </ng-template>
                             </span>
                           </ng-template>
@@ -745,23 +734,19 @@
                         <ng-container *ngIf="valueColumnUsesSingleSelectFromAllowed(row); else tplValueFreeText">
                           <div class="value-cell-native-select-stack">
                             <div class="value-cell-select-face" aria-hidden="true">
-                              <span class="value-cell-select-face-text">
-                                <ng-container
+                              <span class="value-cell-select-face-text"
+                                ><ng-container
                                   *ngFor="
                                     let part of getHighlightedParts(valueColumnNativeSelectHighlightSource(row), 'value');
                                     trackBy: trackByHighlightPart
                                   "
-                                >
-                                  <mark
+                                  ><mark
                                     *ngIf="part.kind !== 'none'"
                                     [class.global-filter-highlight]="part.kind === 'global'"
                                     [class.column-filter-highlight]="part.kind === 'column'"
-                                  >
-                                    {{ part.text }}
-                                  </mark>
-                                  <span *ngIf="part.kind === 'none'">{{ part.text }}</span>
-                                </ng-container>
-                              </span>
+                                    >{{ part.text }}</mark
+                                  ><span *ngIf="part.kind === 'none'">{{ part.text }}</span></ng-container
+                              ></span>
                             </div>
                             <select
                               class="form-select form-select-sm value-cell-select-native value-cell-select-over-face"
@@ -780,20 +765,16 @@
                         </ng-container>
                         <ng-template #tplValueFreeText>
                           <div class="value-cell-free-text-stack">
-                            <div class="value-cell-highlight-mirror" #valueFreeTextHlMirror aria-hidden="true">
-                              <ng-container
+                            <div class="value-cell-highlight-mirror" #valueFreeTextHlMirror aria-hidden="true"
+                              ><ng-container
                                 *ngFor="let part of getHighlightedParts(row.value ?? '', 'value'); trackBy: trackByHighlightPart"
-                              >
-                                <mark
+                                ><mark
                                   *ngIf="part.kind !== 'none'"
                                   [class.global-filter-highlight]="part.kind === 'global'"
                                   [class.column-filter-highlight]="part.kind === 'column'"
-                                >
-                                  {{ part.text }}
-                                </mark>
-                                <span *ngIf="part.kind === 'none'">{{ part.text }}</span>
-                              </ng-container>
-                            </div>
+                                  >{{ part.text }}</mark
+                                ><span *ngIf="part.kind === 'none'">{{ part.text }}</span></ng-container
+                            ></div>
                             <input
                               type="text"
                               class="form-control form-control-sm value-cell-input value-cell-input--with-highlight-mirror"
@@ -840,27 +821,22 @@
               <div *ngIf="isDefaultValueCellVisible(getCellValue(row, column.key))" class="cell-x-scroll cell-chips-row">
                 <ng-container
                   *ngFor="let valuePart of getDefaultValueParts(getCellValue(row, column.key)); trackBy: trackByDefaultValuePart"
-                >
-                  <code class="cell-code-chip">
-                    <ng-container *ngFor="let part of getHighlightedParts(valuePart, column.key); trackBy: trackByHighlightPart">
-                      <mark
+                  ><code class="cell-code-chip"
+                    ><ng-container *ngFor="let part of getHighlightedParts(valuePart, column.key); trackBy: trackByHighlightPart"
+                      ><mark
                         *ngIf="part.kind !== 'none'"
                         [class.global-filter-highlight]="part.kind === 'global'"
                         [class.column-filter-highlight]="part.kind === 'column'"
-                      >
-                        {{ part.text }}
-                      </mark>
-                      <span *ngIf="part.kind === 'none'">{{ part.text }}</span>
-                    </ng-container>
-                  </code>
-                  <span
+                        >{{ part.text }}</mark
+                      ><span *ngIf="part.kind === 'none'">{{ part.text }}</span></ng-container
+                    ></code
+                  ><span
                     class="color-swatch"
                     *ngIf="getColorSwatchForPart(row, valuePart) as swatchColor"
                     [style.backgroundColor]="swatchColor"
                     [title]="swatchColor"
                     aria-label="Detected color"
-                  ></span>
-                </ng-container>
+                  ></span></ng-container>
               </div>
             </ng-container>
             <ng-template #tplAllowedOrRest>
@@ -869,36 +845,29 @@
                   <code
                     class="cell-code-chip"
                     *ngFor="let valuePart of getWhitespaceValueParts(getCellValue(row, column.key)); trackBy: trackByDefaultValuePart"
-                  >
-                    <ng-container *ngFor="let part of getHighlightedParts(valuePart, column.key); trackBy: trackByHighlightPart">
-                      <mark
+                    ><ng-container *ngFor="let part of getHighlightedParts(valuePart, column.key); trackBy: trackByHighlightPart"
+                      ><mark
                         *ngIf="part.kind !== 'none'"
                         [class.global-filter-highlight]="part.kind === 'global'"
                         [class.column-filter-highlight]="part.kind === 'column'"
-                      >
-                        {{ part.text }}
-                      </mark>
-                      <span *ngIf="part.kind === 'none'">{{ part.text }}</span>
-                    </ng-container>
-                  </code>
+                        >{{ part.text }}</mark
+                      ><span *ngIf="part.kind === 'none'">{{ part.text }}</span></ng-container
+                    ></code>
                 </div>
               </ng-container>
               <ng-template #tplPlainCell>
               <ng-container *ngIf="column.key === 'property'; else standardTextCell">
                 <span class="property-code-wrap">
                   <span class="property-code-scroll">
-                    <code class="property-code-cell">
-                      <ng-container *ngFor="let part of getHighlightedParts(getCellValue(row, column.key), column.key); trackBy: trackByHighlightPart">
-                        <mark
+                    <code class="property-code-cell"
+                      ><ng-container *ngFor="let part of getHighlightedParts(getCellValue(row, column.key), column.key); trackBy: trackByHighlightPart"
+                        ><mark
                           *ngIf="part.kind !== 'none'"
                           [class.global-filter-highlight]="part.kind === 'global'"
                           [class.column-filter-highlight]="part.kind === 'column'"
-                        >
-                          {{ part.text }}
-                        </mark>
-                        <span *ngIf="part.kind === 'none'">{{ part.text }}</span>
-                      </ng-container>
-                    </code>
+                          >{{ part.text }}</mark
+                        ><span *ngIf="part.kind === 'none'">{{ part.text }}</span></ng-container
+                      ></code>
                   </span>
                   <button
                     type="button"
@@ -915,18 +884,14 @@
                 <div
                   class="cell-plain-ellipsis"
                   [attr.title]="getCellValue(row, column.key) || ''"
-                >
-                  <ng-container *ngFor="let part of getHighlightedParts(getCellValue(row, column.key), column.key); trackBy: trackByHighlightPart">
-                    <mark
+                  ><ng-container *ngFor="let part of getHighlightedParts(getCellValue(row, column.key), column.key); trackBy: trackByHighlightPart"
+                    ><mark
                       *ngIf="part.kind !== 'none'"
                       [class.global-filter-highlight]="part.kind === 'global'"
                       [class.column-filter-highlight]="part.kind === 'column'"
-                    >
-                      {{ part.text }}
-                    </mark>
-                    <span *ngIf="part.kind === 'none'">{{ part.text }}</span>
-                  </ng-container>
-                </div>
+                      >{{ part.text }}</mark
+                    ><span *ngIf="part.kind === 'none'">{{ part.text }}</span></ng-container
+                  ></div>
               </ng-template>
               </ng-template>
             </ng-template>
@@ -988,18 +953,15 @@
       [style.top.px]="cellHoverTooltipTop"
     >
       <div class="cell-hover-tooltip-title">{{ getColumnLabel(cellHoverTooltipColumnKey) }}</div>
-      <div class="cell-hover-tooltip-content">
-        <ng-container *ngFor="let part of getHighlightedParts(cellHoverTooltipText, cellHoverTooltipColumnKey ?? undefined); trackBy: trackByHighlightPart">
-          <mark
+      <div class="cell-hover-tooltip-content"
+        ><ng-container *ngFor="let part of getHighlightedParts(cellHoverTooltipText, cellHoverTooltipColumnKey ?? undefined); trackBy: trackByHighlightPart"
+          ><mark
             *ngIf="part.kind !== 'none'"
             [class.global-filter-highlight]="part.kind === 'global'"
             [class.column-filter-highlight]="part.kind === 'column'"
-          >
-            {{ part.text }}
-          </mark>
-          <span *ngIf="part.kind === 'none'">{{ part.text }}</span>
-        </ng-container>
-      </div>
+            >{{ part.text }}</mark
+          ><span *ngIf="part.kind === 'none'">{{ part.text }}</span></ng-container
+      ></div>
     </div>
 
     <div
@@ -1094,20 +1056,16 @@
           <ng-template #cellDetailCodeOrPlain>
             <ng-container *ngIf="isCellDetailDialogCodeStyle; else cellDetailPlainBody">
               <div *ngIf="cellDetailDialogPlainText.trim()" class="cell-detail-dialog-code-with-copy">
-                <code class="cell-code-chip cell-detail-dialog-code-block">
-                  <ng-container
+                <code class="cell-code-chip cell-detail-dialog-code-block"
+                  ><ng-container
                     *ngFor="let part of getHighlightedParts(cellDetailDialogPlainText, cellDetailDialogColumnKey); trackBy: trackByHighlightPart"
-                  >
-                    <mark
+                    ><mark
                       *ngIf="part.kind !== 'none'"
                       [class.global-filter-highlight]="part.kind === 'global'"
                       [class.column-filter-highlight]="part.kind === 'column'"
-                    >
-                      {{ part.text }}
-                    </mark>
-                    <span *ngIf="part.kind === 'none'">{{ part.text }}</span>
-                  </ng-container>
-                </code>
+                      >{{ part.text }}</mark
+                    ><span *ngIf="part.kind === 'none'">{{ part.text }}</span></ng-container
+                ></code>
                 <button
                   type="button"
                   class="property-copy-btn cell-detail-dialog-line-copy"
@@ -1121,20 +1079,16 @@
             </ng-container>
           </ng-template>
           <ng-template #cellDetailPlainBody>
-            <div class="cell-detail-dialog-plain">
-              <ng-container
+            <div class="cell-detail-dialog-plain"
+              ><ng-container
                 *ngFor="let part of getHighlightedParts(cellDetailDialogPlainText, cellDetailDialogColumnKey); trackBy: trackByHighlightPart"
-              >
-                <mark
+                ><mark
                   *ngIf="part.kind !== 'none'"
                   [class.global-filter-highlight]="part.kind === 'global'"
                   [class.column-filter-highlight]="part.kind === 'column'"
-                >
-                  {{ part.text }}
-                </mark>
-                <span *ngIf="part.kind === 'none'">{{ part.text }}</span>
-              </ng-container>
-            </div>
+                  >{{ part.text }}</mark
+                ><span *ngIf="part.kind === 'none'">{{ part.text }}</span></ng-container
+            ></div>
           </ng-template>
         </div>
       </div>

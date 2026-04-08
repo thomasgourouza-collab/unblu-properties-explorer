@@ -466,31 +466,33 @@ $export-bar-control-font-size: 0.875rem;
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--surface-elevated) 70%, transparent);
 }
 
+/* No padding/margin on marks — horizontal padding inflated the match width and row line boxes. */
 .global-filter-highlight {
   display: inline;
+  margin: 0;
+  padding: 0;
   vertical-align: baseline;
-  line-height: 1;
+  line-height: inherit;
+  font: inherit;
+  font-weight: inherit;
   background: color-mix(in srgb, var(--accent) 72%, transparent);
   color: var(--text-primary);
-  border-radius: 0.2rem;
-  padding: 0 0.08rem;
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, #93c5fd 85%, transparent),
-    0 0 16px color-mix(in srgb, var(--accent) 58%, transparent);
+  border-radius: 0.12rem;
+  box-shadow: 0 0 0 1px color-mix(in srgb, #93c5fd 85%, transparent);
 }
 
 .column-filter-highlight {
   display: inline;
+  margin: 0;
+  padding: 0;
   vertical-align: baseline;
-  line-height: 1;
+  line-height: inherit;
+  font: inherit;
+  font-weight: inherit;
   background: color-mix(in srgb, #2ecc71 42%, transparent);
   color: inherit;
-  font-weight: inherit;
-  border-radius: 0.22rem;
-  padding: 0 0.1rem;
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, #58d68d 70%, transparent),
-    0 0 12px color-mix(in srgb, #2ecc71 42%, transparent);
+  border-radius: 0.12rem;
+  box-shadow: 0 0 0 1px color-mix(in srgb, #58d68d 70%, transparent);
 }
 
 .property-code-cell,
