@@ -179,6 +179,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   showConfigRowsOnly = false;
   /** Angular-driven export format menu (no Bootstrap JS). */
   exportFormatMenuOpen = false;
+  /** Nested menu under Export config → To file (.json / .yaml / .properties). */
+  exportToFileSubmenuOpen = false;
   /** Import config: from file vs from account. */
   importConfigMenuOpen = false;
   /** Table settings dropdown (reset / export / import persisted UI). */
@@ -1126,10 +1128,17 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       return;
     }
     this.exportFormatMenuOpen = !this.exportFormatMenuOpen;
+    this.exportToFileSubmenuOpen = false;
     if (this.exportFormatMenuOpen) {
       this.tableSettingsMenuOpen = false;
       this.importConfigMenuOpen = false;
     }
+    this.safeMarkForCheck();
+  }
+
+  toggleExportToFileSubmenu(event: MouseEvent): void {
+    event.stopPropagation();
+    this.exportToFileSubmenuOpen = !this.exportToFileSubmenuOpen;
     this.safeMarkForCheck();
   }
 
@@ -1138,6 +1147,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.importConfigMenuOpen = !this.importConfigMenuOpen;
     if (this.importConfigMenuOpen) {
       this.exportFormatMenuOpen = false;
+      this.exportToFileSubmenuOpen = false;
       this.tableSettingsMenuOpen = false;
     }
     this.safeMarkForCheck();
@@ -1148,6 +1158,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.tableSettingsMenuOpen = !this.tableSettingsMenuOpen;
     if (this.tableSettingsMenuOpen) {
       this.exportFormatMenuOpen = false;
+      this.exportToFileSubmenuOpen = false;
       this.importConfigMenuOpen = false;
     }
     this.safeMarkForCheck();
@@ -1193,6 +1204,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   onExportFormatChosen(format: 'json' | 'yaml' | 'properties', event: MouseEvent): void {
     event.stopPropagation();
     this.exportFormatMenuOpen = false;
+    this.exportToFileSubmenuOpen = false;
     switch (format) {
       case 'json':
         this.exportSelectedToJson();
@@ -3091,6 +3103,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       const host = this.exportFormatMenuHost?.nativeElement;
       if (!host || !(t instanceof Node) || !host.contains(t)) {
         this.exportFormatMenuOpen = false;
+        this.exportToFileSubmenuOpen = false;
         changed = true;
       }
     }
@@ -3118,6 +3131,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     if (event.key === 'Escape' && (this.exportFormatMenuOpen || this.importConfigMenuOpen || this.tableSettingsMenuOpen)) {
       event.preventDefault();
       this.exportFormatMenuOpen = false;
+      this.exportToFileSubmenuOpen = false;
       this.importConfigMenuOpen = false;
       this.tableSettingsMenuOpen = false;
       this.safeMarkForCheck();

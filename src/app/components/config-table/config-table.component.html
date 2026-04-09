@@ -183,7 +183,7 @@
         [attr.aria-expanded]="exportFormatMenuOpen"
         aria-haspopup="true"
         aria-label="Export selected rows as config"
-        title="Export selected rows as JSON, YAML, or Java .properties (Key → Value)."
+        title="Export selected rows to a file as JSON, YAML, or Java .properties (Key → Value)."
       >
         <i class="pi pi-download" aria-hidden="true"></i>
         <span>Export config</span>
@@ -191,37 +191,61 @@
       </button>
       <div
         *ngIf="exportFormatMenuOpen"
-        class="export-format-dropdown__menu"
+        class="export-format-dropdown__menu export-format-dropdown__menu--export-nested"
         role="menu"
-        aria-label="Config export format"
+        aria-label="Config export"
       >
-        <button
-          type="button"
-          class="export-format-dropdown__item"
-          role="menuitem"
-          title="Download selected rows as JSON: each Key is a JSON key and the editable Value is the string value (UTF-8). Rows with an empty Key are skipped; duplicate keys keep the last selected row."
-          (click)="onExportFormatChosen('json', $event)"
-        >
-          .json
-        </button>
-        <button
-          type="button"
-          class="export-format-dropdown__item"
-          role="menuitem"
-          title="Download selected rows as YAML: each Key is a YAML key and the editable Value is the string value (UTF-8). Rows with an empty Key are skipped; duplicate keys keep the last selected row."
-          (click)="onExportFormatChosen('yaml', $event)"
-        >
-          .yaml
-        </button>
-        <button
-          type="button"
-          class="export-format-dropdown__item"
-          role="menuitem"
-          title="Download selected rows as Java .properties: key=value per line (UTF-8). Rows with an empty Key are skipped; duplicate keys keep the last selected row."
-          (click)="onExportFormatChosen('properties', $event)"
-        >
-          .properties
-        </button>
+        <div class="export-format-dropdown__nested">
+          <button
+            type="button"
+            class="export-format-dropdown__nested-toggle"
+            [class.export-format-dropdown__nested-toggle--open]="exportToFileSubmenuOpen"
+            (click)="toggleExportToFileSubmenu($event)"
+            [attr.aria-expanded]="exportToFileSubmenuOpen"
+            aria-haspopup="true"
+            aria-controls="export-to-file-format-menu"
+            id="export-to-file-trigger"
+            title="Choose file format for download"
+          >
+            <span>To file</span>
+            <i class="pi pi-angle-down export-format-dropdown__nested-caret" aria-hidden="true"></i>
+          </button>
+          <div
+            *ngIf="exportToFileSubmenuOpen"
+            id="export-to-file-format-menu"
+            class="export-format-dropdown__nested-menu"
+            role="menu"
+            aria-label="Export file format"
+          >
+            <button
+              type="button"
+              class="export-format-dropdown__item export-format-dropdown__item--nested"
+              role="menuitem"
+              title="Download selected rows as JSON: each Key is a JSON key and the editable Value is the string value (UTF-8). Rows with an empty Key are skipped; duplicate keys keep the last selected row."
+              (click)="onExportFormatChosen('json', $event)"
+            >
+              .json
+            </button>
+            <button
+              type="button"
+              class="export-format-dropdown__item export-format-dropdown__item--nested"
+              role="menuitem"
+              title="Download selected rows as YAML: each Key is a YAML key and the editable Value is the string value (UTF-8). Rows with an empty Key are skipped; duplicate keys keep the last selected row."
+              (click)="onExportFormatChosen('yaml', $event)"
+            >
+              .yaml
+            </button>
+            <button
+              type="button"
+              class="export-format-dropdown__item export-format-dropdown__item--nested"
+              role="menuitem"
+              title="Download selected rows as Java .properties: key=value per line (UTF-8). Rows with an empty Key are skipped; duplicate keys keep the last selected row."
+              (click)="onExportFormatChosen('properties', $event)"
+            >
+              .properties
+            </button>
+          </div>
+        </div>
       </div>
     </div>
     <div class="export-format-dropdown align-self-center" #importConfigMenuHost>
