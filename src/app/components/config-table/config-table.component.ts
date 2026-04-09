@@ -741,7 +741,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       }
       this.connectedAccountResponse = accountRecord;
       const importObject = this.buildConfigImportFromConnectedAccount(accountRecord);
-      this.applyJsonConfigImport(importObject, `Connected account (${baseUrl})`);
+      this.applyJsonConfigImport(importObject, `${baseUrl}`);
       this.connectAccountDialogVisible = false;
       this.connectAccountError = '';
       this.connectAccountPassword = '';
@@ -912,9 +912,10 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   }
 
   private applyJsonConfigImport(obj: Record<string, unknown>, importedFileName: string): void {
+    const filteredImportObject = this.filterIgnoredImportKeys(obj);
     this.configImportRowKeys.clear();
     const unmatchedKeys: string[] = [];
-    for (const k of Object.keys(obj)) {
+    for (const k of Object.keys(filteredImportObject)) {
       const trimmedKey = k.trim();
       const hasRow = this.rows.some((row) => row.property.trim() === trimmedKey);
       if (!hasRow) {
@@ -926,12 +927,12 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       row.configImportError = '';
       row.valueImportResolvedHighlight = false;
     }
-    for (const k of Object.keys(obj)) {
+    for (const k of Object.keys(filteredImportObject)) {
       const trimmedKey = k.trim();
       const matchingRows = this.rows.filter((row) => row.property.trim() === trimmedKey);
       for (const row of matchingRows) {
         this.configImportRowKeys.add(row.rowKey);
-        const raw = this.coerceJsonImportValueToRaw(obj[k]);
+        const raw = this.coerceJsonImportValueToRaw(filteredImportObject[k]);
         if (this.jsonImportValueIsValid(row, raw)) {
           row.value = this.canonicalJsonImportStoredValue(row, raw);
           row.configImportError = '';
@@ -948,7 +949,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.valueColumnSelectOptionsCache.clear();
     this.lastConfigImport = {
       fileName: importedFileName,
-      snapshot: this.clonePlainJsonObject(obj)
+      snapshot: this.clonePlainJsonObject(filteredImportObject)
     };
     this.showConfigRowsOnly = true;
     this.tableFirst = 0;
@@ -957,9 +958,20 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.persistSettings();
 
     if (unmatchedKeys.length > 0) {
-      const dialogRows = this.buildImportMissingKeyDialogRows(unmatchedKeys, obj);
+      const dialogRows = this.buildImportMissingKeyDialogRows(unmatchedKeys, filteredImportObject);
       this.openImportMissingKeysDialog(unmatchedKeys.length, dialogRows);
     }
+  }
+
+  private filterIgnoredImportKeys(obj: Record<string, unknown>): Record<string, unknown> {
+    const out: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (key.trim() === '$_version') {
+        continue;
+      }
+      out[key] = value;
+    }
+    return out;
   }
 
   trackByImportMissingRow(index: number, row: ImportMissingKeyDialogRow): string {
