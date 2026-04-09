@@ -277,10 +277,6 @@ $export-bar-control-font-size: 0.875rem;
   transition: transform 0.15s ease;
 }
 
-.export-format-dropdown__nested-toggle--open .export-format-dropdown__nested-caret {
-  transform: rotate(90deg);
-}
-
 .export-format-dropdown__nested-menu {
   display: flex;
   flex-direction: column;

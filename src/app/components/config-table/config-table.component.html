@@ -209,7 +209,11 @@
               title="Choose file format for download"
             >
               <span>To file</span>
-              <i class="pi pi-angle-right export-format-dropdown__nested-caret" aria-hidden="true"></i>
+              <i
+                class="pi export-format-dropdown__nested-caret"
+                [ngClass]="exportToFileSubmenuOpen ? 'pi-angle-left' : 'pi-angle-right'"
+                aria-hidden="true"
+              ></i>
             </button>
             <div
               *ngIf="exportToFileSubmenuOpen"
