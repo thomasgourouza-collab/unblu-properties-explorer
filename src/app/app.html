@@ -35,8 +35,21 @@
     </div>
   </section>
 
-  <section class="card shadow-sm upload-card mb-3">
-    <div class="card-body upload-card-body py-2">
+  <section
+    class="card shadow-sm upload-card mb-3"
+    *ngIf="!statusBannerDismissed || isLoading"
+  >
+    <div class="card-body upload-card-body py-2 position-relative">
+      <button
+        *ngIf="!isLoading"
+        type="button"
+        class="load-status-dismiss-btn"
+        (click)="dismissStatusBanner()"
+        title="Hide status bar (reappears after page refresh)"
+        aria-label="Hide status bar"
+      >
+        <i class="pi pi-times" aria-hidden="true"></i>
+      </button>
       <div class="load-status-row">
         <div class="load-status-main" *ngIf="isLoading">
           <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>

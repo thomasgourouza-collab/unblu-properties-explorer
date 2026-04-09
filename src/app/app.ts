@@ -29,6 +29,8 @@ export class App implements OnInit {
   lastScrapedAt = '';
   authRefreshed = false;
   loadedFromCache = false;
+  /** Hidden via X until next full page load (not persisted). */
+  statusBannerDismissed = false;
   isHelpOpen = false;
   private readonly loadTimeoutMs = 90_000;
 
@@ -85,6 +87,11 @@ export class App implements OnInit {
       this.isLoading = false;
       this.refreshView();
     }
+  }
+
+  dismissStatusBanner(): void {
+    this.statusBannerDismissed = true;
+    this.refreshView();
   }
 
   toggleHelpModal(): void {
