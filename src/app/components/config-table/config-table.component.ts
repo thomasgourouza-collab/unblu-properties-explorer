@@ -19,9 +19,20 @@ import { MessageService, SortMeta } from 'primeng/api';
 import { MultiSelect, MultiSelectModule } from 'primeng/multiselect';
 import type { Table } from 'primeng/table';
 import { TableColumnReorderEvent, TableModule } from 'primeng/table';
-import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
+import { stringify as stringifyYaml } from 'yaml';
 
 import { ColumnDefinition, ConfigRow, EXTRA_COLUMN_PREFIX, FilterMode } from '../../models/config-row.model';
+import { buildSelectionExportFilename, escapeCsvField } from './lib/config-export.util';
+import {
+  buildConfigImportFromConnectedAccount,
+  filterIgnoredImportKeys,
+  parseImportedConfigFileText,
+  parseImportedPropertiesFileText
+} from './lib/config-import.util';
+import { patchAccountPayloadFromSelection } from './lib/connected-account.util';
+import { ActiveFilterChip, buildActiveFilterChips, buildDisplayedRows } from './lib/filtering.util';
+import { asRecord, clonePlainJsonObject } from './lib/json-record.util';
+import { countSelectedDatasetRows, countSelectedFilteredRows, buildSelectionHeaderAriaLabel } from './lib/row-selection.util';
 import {
   collectHighlightOperands,
   evaluateFilterAst,
@@ -29,7 +40,7 @@ import {
   formatExpressionMatchLines,
   parseFilterExpression
 } from '../../utils/filter-expression.util';
-import { parseJavaPropertiesFile, stringifyJavaPropertiesFile } from '../../utils/java-properties-config.util';
+import { stringifyJavaPropertiesFile } from '../../utils/java-properties-config.util';
 import unbluScopeEditorsJson from '../../data/unblu-scope-editors.json';
 
 interface SelectOption {
@@ -41,14 +52,6 @@ interface SelectOption {
 interface HighlightPart {
   text: string;
   kind: 'none' | 'global' | 'column';
-}
-
-interface ActiveFilterChip {
-  id: string;
-  label: string;
-  kind: 'global' | 'text' | 'value';
-  columnKey?: string;
-  value?: string;
 }
 
 interface MatchReason {
@@ -330,40 +333,13 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   }
 
   get activeFilterChips(): ActiveFilterChip[] {
-    const chips: ActiveFilterChip[] = [];
-
-    if (this.globalFilter.trim()) {
-      chips.push({
-        id: 'global',
-        label: `Global: ${this.globalFilter.trim()}`,
-        kind: 'global'
-      });
-    }
-
-    for (const column of this.columns) {
-      const textValue = this.textFilters[column.key]?.trim();
-      if (textValue) {
-        chips.push({
-          id: `text:${column.key}`,
-          label: `${column.label}: ${textValue}`,
-          kind: 'text',
-          columnKey: column.key
-        });
-      }
-
-      const selectedValues = this.valueFilters[column.key] ?? [];
-      for (const value of selectedValues) {
-        chips.push({
-          id: `value:${column.key}:${value}`,
-          label: `${column.label}: ${this.columnFilterChipValueLabel(value)}`,
-          kind: 'value',
-          columnKey: column.key,
-          value
-        });
-      }
-    }
-
-    return chips;
+    return buildActiveFilterChips(
+      this.columns,
+      this.globalFilter,
+      this.textFilters,
+      this.valueFilters,
+      (value) => this.columnFilterChipValueLabel(value)
+    );
   }
 
   get hasActiveFilters(): boolean {
@@ -372,12 +348,12 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
   /** Selected rows that match the current column/global filters (visible in the table when not in “selected only” mode). */
   get selectedFilteredCount(): number {
-    return this.filteredRows.filter((row) => this.selectedRowKeys.has(row.rowKey)).length;
+    return countSelectedFilteredRows(this.filteredRows, this.selectedRowKeys);
   }
 
   /** All selected rows in the loaded dataset (persists across filters and pagination). */
   get selectedDatasetCount(): number {
-    return this.rows.filter((row) => this.selectedRowKeys.has(row.rowKey)).length;
+    return countSelectedDatasetRows(this.rows, this.selectedRowKeys);
   }
 
   /** True when some selection is off the current filtered view (show dual count in header). */
@@ -387,25 +363,17 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
   /** Accessible name / tooltip for the header selection count. */
   get selectionHeaderAriaLabel(): string {
-    if (this.selectedDatasetCount === 0) {
-      return '0 rows selected';
-    }
-    if (!this.selectionCountShowsSplit) {
-      return `${this.selectedDatasetCount} rows selected`;
-    }
-    return `${this.selectedFilteredCount} selected in current filter, ${this.selectedDatasetCount} selected in loaded dataset`;
+    return buildSelectionHeaderAriaLabel(this.selectedFilteredCount, this.selectedDatasetCount);
   }
 
   /** Rows passed to p-table (filtered, optionally narrowed by Selected only and/or Config only). */
   get tableDisplayedRows(): ConfigRow[] {
-    let rows = this.filteredRows;
-    if (this.showSelectedRowsOnly) {
-      rows = rows.filter((row) => this.selectedRowKeys.has(row.rowKey));
-    }
-    if (this.showConfigRowsOnly) {
-      rows = rows.filter((row) => this.configImportRowKeys.has(row.rowKey));
-    }
-    return rows;
+    return buildDisplayedRows(this.filteredRows, {
+      showSelectedRowsOnly: this.showSelectedRowsOnly,
+      showConfigRowsOnly: this.showConfigRowsOnly,
+      selectedRowKeys: this.selectedRowKeys,
+      configImportRowKeys: this.configImportRowKeys
+    });
   }
 
   get emptyTableMessage(): string {
@@ -746,7 +714,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       }
 
       const payload = (await response.json()) as ConnectAccountApiResponse;
-      const accountRecord = this.asRecord(payload.account);
+      const accountRecord = asRecord(payload.account);
       if (!accountRecord) {
         throw new Error('Invalid account payload received from backend.');
       }
@@ -756,7 +724,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       }
       this.connectedAccountResponse = accountRecord;
       this.connectedAccountSessionId = sessionId;
-      const importObject = this.buildConfigImportFromConnectedAccount(accountRecord);
+      const importObject = buildConfigImportFromConnectedAccount(accountRecord);
       this.applyJsonConfigImport(importObject, `${baseUrl}`);
       this.connectAccountDialogVisible = false;
       this.connectAccountError = '';
@@ -808,7 +776,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     if (!this.lastConfigImport) {
       return;
     }
-    this.applyJsonConfigImport(this.clonePlainJsonObject(this.lastConfigImport.snapshot), this.lastConfigImport.fileName);
+    this.applyJsonConfigImport(clonePlainJsonObject(this.lastConfigImport.snapshot), this.lastConfigImport.fileName);
   }
 
   onImportConfigFileSelected(event: Event): void {
@@ -823,8 +791,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       const text = typeof reader.result === 'string' ? reader.result : '';
       const nameLower = file.name.toLowerCase();
       const parsed = nameLower.endsWith('.properties')
-        ? this.parseImportedPropertiesFileText(text)
-        : this.parseImportedConfigFileText(text);
+        ? parseImportedPropertiesFileText(text)
+        : parseImportedConfigFileText(text);
       if (parsed === 'not-object') {
         globalThis.alert(
           'Config import requires a plain object at the root (not an array). Use a JSON object or YAML mapping.'
@@ -845,90 +813,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     reader.readAsText(file, 'UTF-8');
   }
 
-  /** `.properties` files → string map as `Record<string, unknown>` for the same import pipeline. */
-  private parseImportedPropertiesFileText(text: string): Record<string, unknown> | null {
-    const body = text.replace(/^\uFEFF/, '').trim();
-    if (!body) {
-      return {};
-    }
-    const map = parseJavaPropertiesFile(text);
-    const out: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(map)) {
-      out[k] = v;
-    }
-    return out;
-  }
-
-  /**
-   * Parse JSON first, then YAML. Returns a plain object record, `null` if syntax is invalid, or
-   * `'not-object'` if the document root is not a non-null object (e.g. array or scalar).
-   */
-  private parseImportedConfigFileText(
-    text: string
-  ): Record<string, unknown> | null | 'not-object' {
-    const body = text.replace(/^\uFEFF/, '').trim();
-    if (!body) {
-      return null;
-    }
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(body);
-    } catch {
-      try {
-        parsed = parseYaml(body);
-      } catch {
-        return null;
-      }
-    }
-    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-      return 'not-object';
-    }
-    return parsed as Record<string, unknown>;
-  }
-
-  private buildConfigImportFromConnectedAccount(account: Record<string, unknown>): Record<string, unknown> {
-    const out: Record<string, unknown> = {};
-
-    const configuration = this.asRecord(account['configuration']);
-    if (configuration) {
-      for (const [key, value] of Object.entries(configuration)) {
-        out[key] = value;
-      }
-    }
-
-    const textConfig = this.asRecord(account['text']);
-    if (textConfig) {
-      for (const [key, value] of Object.entries(textConfig)) {
-        const langMap = this.asRecord(value);
-        if (!langMap || !('en' in langMap)) {
-          continue;
-        }
-        out[key] = langMap['en'];
-      }
-    }
-
-    if (Object.keys(out).length === 0) {
-      throw new Error(
-        'Connected account does not contain configuration/text data in expected format.'
-      );
-    }
-
-    return out;
-  }
-
-  private clonePlainJsonObject(obj: Record<string, unknown>): Record<string, unknown> {
-    return JSON.parse(JSON.stringify(obj)) as Record<string, unknown>;
-  }
-
-  private asRecord(value: unknown): Record<string, unknown> | null {
-    if (!value || typeof value !== 'object' || Array.isArray(value)) {
-      return null;
-    }
-    return value as Record<string, unknown>;
-  }
-
   private applyJsonConfigImport(obj: Record<string, unknown>, importedFileName: string): void {
-    const filteredImportObject = this.filterIgnoredImportKeys(obj);
+    const filteredImportObject = filterIgnoredImportKeys(obj);
     this.configImportRowKeys.clear();
     const unmatchedKeys: string[] = [];
     for (const k of Object.keys(filteredImportObject)) {
@@ -965,7 +851,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.valueColumnSelectOptionsCache.clear();
     this.lastConfigImport = {
       fileName: importedFileName,
-      snapshot: this.clonePlainJsonObject(filteredImportObject)
+      snapshot: clonePlainJsonObject(filteredImportObject)
     };
     this.showConfigRowsOnly = true;
     this.tableFirst = 0;
@@ -977,17 +863,6 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       const dialogRows = this.buildImportMissingKeyDialogRows(unmatchedKeys, filteredImportObject);
       this.openImportMissingKeysDialog(unmatchedKeys.length, dialogRows);
     }
-  }
-
-  private filterIgnoredImportKeys(obj: Record<string, unknown>): Record<string, unknown> {
-    const out: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(obj)) {
-      if (key.trim() === '$_version') {
-        continue;
-      }
-      out[key] = value;
-    }
-    return out;
   }
 
   trackByImportMissingRow(index: number, row: ImportMissingKeyDialogRow): string {
@@ -1145,8 +1020,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.exportFormatMenuOpen = !this.exportFormatMenuOpen;
     this.exportToFileSubmenuOpen = false;
     if (this.exportFormatMenuOpen) {
-      this.tableSettingsMenuOpen = false;
-      this.importConfigMenuOpen = false;
+      this.closeToolbarMenus('export');
     }
     this.safeMarkForCheck();
   }
@@ -1161,9 +1035,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     event.stopPropagation();
     this.importConfigMenuOpen = !this.importConfigMenuOpen;
     if (this.importConfigMenuOpen) {
-      this.exportFormatMenuOpen = false;
-      this.exportToFileSubmenuOpen = false;
-      this.tableSettingsMenuOpen = false;
+      this.closeToolbarMenus('import');
     }
     this.safeMarkForCheck();
   }
@@ -1172,9 +1044,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     event.stopPropagation();
     this.tableSettingsMenuOpen = !this.tableSettingsMenuOpen;
     if (this.tableSettingsMenuOpen) {
-      this.exportFormatMenuOpen = false;
-      this.exportToFileSubmenuOpen = false;
-      this.importConfigMenuOpen = false;
+      this.closeToolbarMenus('settings');
     }
     this.safeMarkForCheck();
   }
@@ -1247,8 +1117,18 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       return;
     }
 
-    const patchedAccount = this.clonePlainJsonObject(this.connectedAccountResponse);
-    const patchedCount = this.patchAccountPayloadFromSelection(patchedAccount);
+    const patchedAccount = clonePlainJsonObject(this.connectedAccountResponse);
+    const patchedCount = patchAccountPayloadFromSelection(patchedAccount, {
+      rows: this.rows,
+      selectedRowKeys: this.selectedRowKeys,
+      valueForRow: (row) => {
+        let value = row.value ?? '';
+        if (this.valueColumnUsesMultiSelect(row)) {
+          value = this.parseListStyleCellToTokens(value).join(',');
+        }
+        return value;
+      }
+    });
     if (patchedCount === 0) {
       globalThis.alert('No selected rows could be mapped to configuration/text based on Source and Key.');
       return;
@@ -1286,7 +1166,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       }
 
       const payload = (await response.json()) as UpdateAccountApiResponse;
-      const accountRecord = this.asRecord(payload.account);
+      const accountRecord = asRecord(payload.account);
       if (!accountRecord) {
         throw new Error('Invalid account payload received from backend.');
       }
@@ -1319,16 +1199,16 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     if (selected.length === 0) {
       return;
     }
-    const headerLine = cols.map((c) => this.escapeCsvField(c.label)).join(',');
+    const headerLine = cols.map((c) => escapeCsvField(c.label)).join(',');
     const lines = selected.map((row) =>
-      cols.map((col) => this.escapeCsvField(this.getCellValue(row, col.key))).join(',')
+      cols.map((col) => escapeCsvField(this.getCellValue(row, col.key))).join(',')
     );
     const body = [headerLine, ...lines].join('\r\n');
     const blob = new Blob([`\ufeff${body}`], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = this.buildSelectionExportFilename('csv');
+    anchor.download = buildSelectionExportFilename('csv');
     anchor.click();
     URL.revokeObjectURL(url);
   }
@@ -1343,7 +1223,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = this.buildSelectionExportFilename('json');
+    anchor.download = buildSelectionExportFilename('json');
     anchor.click();
     URL.revokeObjectURL(url);
   }
@@ -1359,7 +1239,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = this.buildSelectionExportFilename('yaml');
+    anchor.download = buildSelectionExportFilename('yaml');
     anchor.click();
     URL.revokeObjectURL(url);
   }
@@ -1374,7 +1254,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = this.buildSelectionExportFilename('properties');
+    anchor.download = buildSelectionExportFilename('properties');
     anchor.click();
     URL.revokeObjectURL(url);
   }
@@ -1395,53 +1275,6 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       out[prop] = value;
     }
     return out;
-  }
-
-  /**
-   * Patch selected rows into connected account payload:
-   * - source contains "configuration" => configuration[key] = value
-   * - source contains "text" => text[key].en = value
-   */
-  private patchAccountPayloadFromSelection(accountPayload: Record<string, unknown>): number {
-    const selected = this.rows.filter((row) => this.selectedRowKeys.has(row.rowKey));
-    let patched = 0;
-
-    let configuration = this.asRecord(accountPayload['configuration']);
-    if (!configuration) {
-      configuration = {};
-      accountPayload['configuration'] = configuration;
-    }
-
-    let text = this.asRecord(accountPayload['text']);
-    if (!text) {
-      text = {};
-      accountPayload['text'] = text;
-    }
-
-    for (const row of selected) {
-      const key = (row.property ?? '').trim();
-      if (!key) {
-        continue;
-      }
-
-      let value = row.value ?? '';
-      if (this.valueColumnUsesMultiSelect(row)) {
-        value = this.parseListStyleCellToTokens(value).join(',');
-      }
-
-      const source = (row.source ?? '').toLowerCase();
-      if (source.includes('configuration')) {
-        configuration[key] = value;
-        patched += 1;
-      }
-      if (source.includes('text')) {
-        const existing = this.asRecord(text[key]);
-        text[key] = existing ? { ...existing, en: value } : { en: value };
-        patched += 1;
-      }
-    }
-
-    return patched;
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -2507,22 +2340,6 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     }
   }
 
-  private escapeCsvField(value: string): string {
-    const s = value ?? '';
-    if (/[",\r\n]/.test(s)) {
-      return `"${s.replaceAll('"', '""')}"`;
-    }
-    return s;
-  }
-
-  private buildSelectionExportFilename(extension: 'csv' | 'json' | 'yaml' | 'properties'): string {
-    const d = new Date();
-    const day = String(d.getDate()).padStart(2, '0');
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const y = d.getFullYear();
-    return `configuration-${day}-${m}-${y}.${extension}`;
-  }
-
   getDefaultValueParts(value = ''): string[] {
     const trimmed = value.trim();
     if (!trimmed) {
@@ -3233,6 +3050,35 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     return key === 'allowedScopes' ? 'allowedScopes' : 'editableBy';
   }
 
+  private closeExportMenu(): void {
+    this.exportFormatMenuOpen = false;
+    this.exportToFileSubmenuOpen = false;
+  }
+
+  private closeImportMenu(): void {
+    this.importConfigMenuOpen = false;
+  }
+
+  private closeTableSettingsMenu(): void {
+    this.tableSettingsMenuOpen = false;
+  }
+
+  /**
+   * Close toolbar menus while optionally keeping one open.
+   * Passing no argument closes every toolbar menu.
+   */
+  private closeToolbarMenus(except?: 'export' | 'import' | 'settings'): void {
+    if (except !== 'export') {
+      this.closeExportMenu();
+    }
+    if (except !== 'import') {
+      this.closeImportMenu();
+    }
+    if (except !== 'settings') {
+      this.closeTableSettingsMenu();
+    }
+  }
+
   @HostListener('document:click', ['$event'])
   onDocumentClickCloseExportMenu(event: MouseEvent): void {
     const t = event.target;
@@ -3240,22 +3086,21 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     if (this.exportFormatMenuOpen) {
       const host = this.exportFormatMenuHost?.nativeElement;
       if (!host || !(t instanceof Node) || !host.contains(t)) {
-        this.exportFormatMenuOpen = false;
-        this.exportToFileSubmenuOpen = false;
+        this.closeExportMenu();
         changed = true;
       }
     }
     if (this.importConfigMenuOpen) {
       const host = this.importConfigMenuHost?.nativeElement;
       if (!host || !(t instanceof Node) || !host.contains(t)) {
-        this.importConfigMenuOpen = false;
+        this.closeImportMenu();
         changed = true;
       }
     }
     if (this.tableSettingsMenuOpen) {
       const host = this.tableSettingsMenuHost?.nativeElement;
       if (!host || !(t instanceof Node) || !host.contains(t)) {
-        this.tableSettingsMenuOpen = false;
+        this.closeTableSettingsMenu();
         changed = true;
       }
     }
@@ -3268,10 +3113,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   onDocumentKeydown(event: KeyboardEvent): void {
     if (event.key === 'Escape' && (this.exportFormatMenuOpen || this.importConfigMenuOpen || this.tableSettingsMenuOpen)) {
       event.preventDefault();
-      this.exportFormatMenuOpen = false;
-      this.exportToFileSubmenuOpen = false;
-      this.importConfigMenuOpen = false;
-      this.tableSettingsMenuOpen = false;
+      this.closeToolbarMenus();
       this.safeMarkForCheck();
       return;
     }
