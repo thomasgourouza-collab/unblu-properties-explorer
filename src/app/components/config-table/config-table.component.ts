@@ -15,7 +15,7 @@ import {
   ViewChildren
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { SortMeta } from 'primeng/api';
+import { MessageService, SortMeta } from 'primeng/api';
 import { MultiSelect, MultiSelectModule } from 'primeng/multiselect';
 import type { Table } from 'primeng/table';
 import { TableColumnReorderEvent, TableModule } from 'primeng/table';
@@ -147,7 +147,10 @@ export class BindIndeterminateDirective implements AfterViewChecked {
   styleUrl: './config-table.component.scss'
 })
 export class ConfigTableComponent implements OnChanges, OnDestroy {
-  constructor(private readonly cdr: ChangeDetectorRef) {}
+  constructor(
+    private readonly cdr: ChangeDetectorRef,
+    private readonly messageService: MessageService
+  ) {}
 
   @Input({ required: true }) rows: ConfigRow[] = [];
   @ViewChild('globalFilterInputRef') globalFilterInputRef?: ElementRef<HTMLInputElement>;
@@ -1289,6 +1292,12 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       }
       this.connectedAccountResponse = accountRecord;
       this.connectAccountError = '';
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Exported to account',
+        detail: 'Selected properties were saved to the connected Unblu account.',
+        life: 4500
+      });
     } catch (error) {
       globalThis.alert(
         error instanceof Error

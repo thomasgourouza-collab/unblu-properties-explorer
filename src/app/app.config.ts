@@ -2,6 +2,7 @@ import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import Aura from '@primeuix/themes/aura';
 import { definePreset } from '@primeuix/themes';
+import { MessageService } from 'primeng/api';
 import { providePrimeNG } from 'primeng/config';
 
 /** Aura defaults to emerald primary; use blue so Select / MultiSelect / overlay checkboxes match the app. */
@@ -27,6 +28,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideAnimationsAsync(),
+    MessageService,
     providePrimeNG({
       theme: {
         preset: appAuraPreset

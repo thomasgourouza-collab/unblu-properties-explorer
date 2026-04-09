@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, HostListener, OnInit } from '@angular/core';
+import { ToastModule } from 'primeng/toast';
 
 import { ConfigTableComponent } from './components/config-table/config-table.component';
 import { ConfigRow } from './models/config-row.model';
@@ -17,7 +18,7 @@ interface PropertiesApiResponse {
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, ConfigTableComponent],
+  imports: [CommonModule, ConfigTableComponent, ToastModule],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
