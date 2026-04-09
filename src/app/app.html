@@ -23,24 +23,13 @@
         <button
           type="button"
           class="btn btn-sm btn-outline-secondary title-row-copy-btn"
-          (click)="reloadProperties()"
-          [disabled]="isLoading"
-          title="Reload properties from the backend scraper"
-          aria-label="Reload scraped properties"
-        >
-          <i class="pi pi-refresh" aria-hidden="true"></i>
-          <span>Reload data</span>
-        </button>
-        <button
-          type="button"
-          class="btn btn-sm btn-outline-secondary title-row-copy-btn"
           (click)="reloadProperties(true)"
           [disabled]="isLoading"
-          title="Force Google re-login and scrape again"
-          aria-label="Force re-login and reload data"
+          title="Re-login and reload properties"
+          aria-label="Re-login and reload properties"
         >
           <i class="pi pi-user-edit" aria-hidden="true"></i>
-          <span>Re-login + reload</span>
+          <span>Re-login</span>
         </button>
       </div>
     </div>
