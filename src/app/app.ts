@@ -58,10 +58,20 @@ export class App implements OnInit {
           errorPayload &&
           typeof errorPayload === 'object' &&
           'message' in errorPayload &&
-          typeof errorPayload.message === 'string'
-            ? errorPayload.message
+          typeof (errorPayload as { message?: unknown }).message === 'string'
+            ? (errorPayload as { message: string }).message
             : `HTTP ${response.status}`;
-        throw new Error(backendMessage);
+        const backendDetail =
+          errorPayload &&
+          typeof errorPayload === 'object' &&
+          'detail' in errorPayload &&
+          typeof (errorPayload as { detail?: unknown }).detail === 'string'
+            ? (errorPayload as { detail: string }).detail
+            : '';
+        const composed = backendDetail ? `${backendMessage}
+
+${backendDetail}` : backendMessage;
+        throw new Error(composed);
       }
 
       const payload = (await response.json()) as PropertiesApiResponse;
@@ -111,9 +121,6 @@ export class App implements OnInit {
     event.stopPropagation();
   }
 
-  onCsvParseErrorBackdropClick(): void {
-    this.closeCsvParseErrorDialog();
-  }
 
   /** Stop backdrop close when clicking the dialog panel (loading + error). */
   onCsvImportDialogPanelClick(event: MouseEvent): void {
@@ -138,10 +145,6 @@ export class App implements OnInit {
       event.preventDefault();
       this.closeHelpModal();
       return;
-    }
-    if (this.parseError) {
-      event.preventDefault();
-      this.closeCsvParseErrorDialog();
     }
   }
 }

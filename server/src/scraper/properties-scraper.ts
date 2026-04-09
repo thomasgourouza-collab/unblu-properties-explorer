@@ -103,6 +103,12 @@ export class PropertiesScraper {
   }
 
   private async runInteractiveLogin(): Promise<void> {
+    if (!this.canRunHeadedLogin()) {
+      throw new AuthRequiredError(
+        'Interactive login requires a display server (X11/Wayland). In Docker, bootstrap auth on a local non-container backend or run with a virtual display (xvfb).'
+      );
+    }
+
     await fs.mkdir(path.dirname(AUTH_STATE_FILE), { recursive: true });
     const browser = await chromium.launch({ headless: false, slowMo: 120 });
     const context = await browser.newContext();
@@ -126,6 +132,11 @@ export class PropertiesScraper {
       await context.close();
       await browser.close();
     }
+  }
+
+
+  private canRunHeadedLogin(): boolean {
+    return Boolean(process.env.DISPLAY || process.env.WAYLAND_DISPLAY);
   }
 
   private async waitForAuthenticatedPage(page: Page, timeoutMs: number): Promise<boolean> {

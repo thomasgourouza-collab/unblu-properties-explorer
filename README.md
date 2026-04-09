@@ -151,6 +151,18 @@ curl -X POST http://localhost:3000/api/auth/relogin
 
 - Check backend logs: `docker compose logs backend`.
 - Confirm container can reach Unblu domains and your auth flow is compatible with container runtime.
+- If you see a Playwright executable mismatch ("current image" vs "required"), rebuild with matching versions:
+
+```bash
+docker compose build --no-cache backend
+docker compose up
+```
+
+- Backend image and server dependency are pinned to Playwright `1.59.1` and must stay aligned.
+- If you see "headed browser without XServer" / "$DISPLAY missing":
+  - container cannot run interactive login UI;
+  - bootstrap auth on host backend once (creates `server/.auth/storage-state.json`);
+  - then run Docker Compose so backend reuses that mounted auth state.
 
 ### Frontend loads but API fails in Docker
 

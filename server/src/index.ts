@@ -59,6 +59,14 @@ app.post('/api/auth/relogin', async (_req, res) => {
       metadata: response.metadata
     });
   } catch (error) {
+    if (error instanceof AuthRequiredError) {
+      res.status(401).json({
+        message: 'Authentication is required. Complete Google login when prompted and retry.',
+        detail: error.reason
+      });
+      return;
+    }
+
     const message = error instanceof Error ? error.message : 'Authentication refresh failed.';
     res.status(500).json({ message });
   }
