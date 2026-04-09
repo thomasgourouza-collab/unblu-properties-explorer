@@ -1082,18 +1082,12 @@
       </div>
     </dialog>
 
-    <div
-      class="connect-account-backdrop"
-      *ngIf="connectAccountDialogVisible"
-      (click)="closeConnectAccountDialog()"
-      tabindex="-1"
-    >
+    <div class="connect-account-backdrop" *ngIf="connectAccountDialogVisible" tabindex="-1">
       <form
         class="connect-account-dialog"
         role="dialog"
         aria-modal="true"
         aria-labelledby="connect-account-heading"
-        (click)="onConnectAccountDialogPanelClick($event)"
         (submit)="onConnectAccountSubmit($event)"
       >
         <header class="connect-account-header">

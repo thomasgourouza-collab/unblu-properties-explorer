@@ -693,10 +693,6 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.safeMarkForCheck();
   }
 
-  onConnectAccountDialogPanelClick(event: MouseEvent): void {
-    event.stopPropagation();
-  }
-
   async onConnectAccountSubmit(event: Event): Promise<void> {
     event.preventDefault();
 
@@ -3091,12 +3087,6 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     if (event.key === 'Escape' && this.importMissingKeysDialogVisible) {
       event.preventDefault();
       this.closeImportMissingKeysDialog();
-      return;
-    }
-
-    if (event.key === 'Escape' && this.connectAccountDialogVisible) {
-      event.preventDefault();
-      this.closeConnectAccountDialog();
       return;
     }
 
