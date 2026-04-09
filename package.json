@@ -4,9 +4,14 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
+    "start:backend": "npm --prefix server run dev",
+    "start:dev": "concurrently \"npm run start:backend\" \"npm run start\"",
     "build": "ng build",
+    "build:backend": "npm --prefix server run build",
+    "build:all": "npm run build && npm run build:backend",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "backend:start": "npm --prefix server run start"
   },
   "private": true,
   "packageManager": "npm@11.9.0",
@@ -22,6 +27,7 @@
     "@types/papaparse": "^5.5.2",
     "@vscode/codicons": "^0.0.45",
     "bootstrap": "^5.3.8",
+    "concurrently": "^9.2.1",
     "papaparse": "^5.5.3",
     "primeicons": "^7.0.0",
     "primeng": "^21.1.5",

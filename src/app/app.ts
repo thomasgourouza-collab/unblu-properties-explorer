@@ -1,11 +1,18 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, HostListener } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener, OnInit } from '@angular/core';
 
 import { ConfigTableComponent } from './components/config-table/config-table.component';
-import { ConfigRow, CsvParseFileResult } from './models/config-row.model';
-import { CsvParserService } from './services/csv-parser.service';
+import { ConfigRow } from './models/config-row.model';
 
-type UploadSlot = 1 | 2;
+interface PropertiesApiResponse {
+  rows: ConfigRow[];
+  warnings: string[];
+  metadata?: {
+    scrapedAt?: string;
+    authRefreshed?: boolean;
+    fromCache?: boolean;
+  };
+}
 
 @Component({
   selector: 'app-root',
@@ -14,120 +21,69 @@ type UploadSlot = 1 | 2;
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
-export class App {
+export class App implements OnInit {
   rows: ConfigRow[] = [];
   parseWarnings: string[] = [];
   parseError = '';
-  fileLabel1 = '';
-  fileLabel2 = '';
-  isParsing = false;
-  draggingSlot: UploadSlot | null = null;
+  isLoading = false;
+  lastScrapedAt = '';
+  authRefreshed = false;
+  loadedFromCache = false;
   isHelpOpen = false;
-  copiedExtractorKind: 'conf' | 'text' | null = null;
+  private readonly loadTimeoutMs = 90_000;
 
-  private slot1Parsed: CsvParseFileResult | null = null;
-  private slot2Parsed: CsvParseFileResult | null = null;
-  private copyExtractorResetTimerId?: ReturnType<typeof globalThis.setTimeout>;
-  private copyExtractorIconNonce = 0;
+  constructor(private readonly cdr: ChangeDetectorRef) {}
 
-  private readonly extractorScriptUrls = {
-    conf: '/extractors/extract-configuration-properties-csv.js',
-    text: '/extractors/extract-text-properties-csv.js'
-  } as const;
-
-  constructor(
-    private readonly csvParserService: CsvParserService,
-    private readonly cdr: ChangeDetectorRef
-  ) {}
-
-  async onFileSelected(event: Event, slot: UploadSlot): Promise<void> {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file) {
-      return;
-    }
-
-    await this.loadFileIntoSlot(slot, file);
-    input.value = '';
+  ngOnInit(): void {
+    void this.reloadProperties();
   }
 
-  onDragOver(event: DragEvent, slot: UploadSlot): void {
-    event.preventDefault();
-    this.draggingSlot = slot;
-  }
-
-  onDragLeave(event: DragEvent, slot: UploadSlot): void {
-    event.preventDefault();
-    if (this.draggingSlot === slot) {
-      this.draggingSlot = null;
-    }
-  }
-
-  async onDrop(event: DragEvent, slot: UploadSlot): Promise<void> {
-    event.preventDefault();
-    this.draggingSlot = null;
-    const file = event.dataTransfer?.files?.[0];
-
-    if (!file) {
-      return;
-    }
-
-    await this.loadFileIntoSlot(slot, file);
-  }
-
-  clearSlot(slot: UploadSlot): void {
+  async reloadProperties(forceLogin = false): Promise<void> {
+    const query = forceLogin ? '?forceLogin=1' : '';
+    this.isLoading = true;
     this.parseError = '';
-    if (slot === 1) {
-      this.slot1Parsed = null;
-      this.fileLabel1 = '';
-    } else {
-      this.slot2Parsed = null;
-      this.fileLabel2 = '';
-    }
-    this.applyMerge();
-  }
+    const abortController = new AbortController();
+    const timeoutId = globalThis.setTimeout(() => abortController.abort(), this.loadTimeoutMs);
 
-  async copyExtractorScript(kind: 'conf' | 'text'): Promise<void> {
-    const url = this.extractorScriptUrls[kind];
-    this.showCopiedExtractorIcon(kind);
     try {
-      const response = await fetch(url);
+      const response = await fetch(`/api/properties${query}`, {
+        signal: abortController.signal
+      });
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+        const errorPayload = await response.json().catch(() => null);
+        const backendMessage =
+          errorPayload &&
+          typeof errorPayload === 'object' &&
+          'message' in errorPayload &&
+          typeof errorPayload.message === 'string'
+            ? errorPayload.message
+            : `HTTP ${response.status}`;
+        throw new Error(backendMessage);
       }
-      const text = await response.text();
-      await navigator.clipboard.writeText(text);
-    } catch {
-      globalThis.alert(
-        'Could not copy the script. Use a secure (https or localhost) page and ensure the app was built with extractor assets.'
-      );
-    }
-  }
 
-  private showCopiedExtractorIcon(kind: 'conf' | 'text'): void {
-    this.copyExtractorIconNonce += 1;
-    const nonce = this.copyExtractorIconNonce;
-    this.copiedExtractorKind = kind;
-    if (this.copyExtractorResetTimerId !== undefined) {
-      globalThis.clearTimeout(this.copyExtractorResetTimerId);
-    }
-    this.copyExtractorResetTimerId = globalThis.setTimeout(() => {
-      if (nonce !== this.copyExtractorIconNonce) {
-        return;
+      const payload = (await response.json()) as PropertiesApiResponse;
+      this.rows = payload.rows ?? [];
+      this.parseWarnings = payload.warnings ?? [];
+      this.lastScrapedAt = payload.metadata?.scrapedAt ?? '';
+      this.authRefreshed = payload.metadata?.authRefreshed ?? false;
+      this.loadedFromCache = payload.metadata?.fromCache ?? false;
+      this.refreshView();
+    } catch (error) {
+      this.parseError = error instanceof Error ? error.message : 'Could not load properties.';
+      this.rows = [];
+      this.parseWarnings = [];
+      this.loadedFromCache = false;
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        this.parseError =
+          'Loading timed out. If a login window opened, complete Google sign-in, then click "Re-login + retry".';
+      } else {
+        this.parseError = error instanceof Error ? error.message : 'Could not load properties.';
       }
-      this.copiedExtractorKind = null;
-      this.copyExtractorResetTimerId = undefined;
-      this.safeMarkForCheck();
-    }, 850);
-    this.safeMarkForCheck();
-  }
-
-  private safeMarkForCheck(): void {
-    try {
-      this.cdr.markForCheck();
-      this.cdr.detectChanges();
-    } catch {
-      // Ignore edge cases during view teardown.
+      this.refreshView();
+    } finally {
+      globalThis.clearTimeout(timeoutId);
+      this.isLoading = false;
+      this.refreshView();
     }
   }
 
@@ -156,6 +112,15 @@ export class App {
     event.stopPropagation();
   }
 
+  private refreshView(): void {
+    try {
+      this.cdr.markForCheck();
+      this.cdr.detectChanges();
+    } catch {
+      // Ignore teardown timing edge cases.
+    }
+  }
+
   @HostListener('document:keydown', ['$event'])
   onDocumentKeydown(event: KeyboardEvent): void {
     if (event.key !== 'Escape') {
@@ -170,48 +135,5 @@ export class App {
       event.preventDefault();
       this.closeCsvParseErrorDialog();
     }
-  }
-
-  get slot1RowCount(): number {
-    return this.slot1Parsed?.rows.length ?? 0;
-  }
-
-  get slot2RowCount(): number {
-    return this.slot2Parsed?.rows.length ?? 0;
-  }
-
-  private async loadFileIntoSlot(slot: UploadSlot, file: File): Promise<void> {
-    this.isParsing = true;
-    this.parseError = '';
-    this.cdr.detectChanges();
-
-    const rowKeyPrefix = slot === 1 ? 'slot1' : 'slot2';
-
-    try {
-      const result = await this.csvParserService.parseFile(file, {
-        displayLabel: file.name,
-        rowKeyPrefix
-      });
-      if (slot === 1) {
-        this.slot1Parsed = result;
-        this.fileLabel1 = file.name;
-      } else {
-        this.slot2Parsed = result;
-        this.fileLabel2 = file.name;
-      }
-      this.applyMerge();
-    } catch (error) {
-      this.parseError =
-        error instanceof Error ? error.message : 'The CSV file could not be parsed.';
-    } finally {
-      this.isParsing = false;
-    }
-    this.cdr.detectChanges();
-  }
-
-  private applyMerge(): void {
-    const merged = this.csvParserService.mergeParsedFiles(this.slot1Parsed, this.slot2Parsed);
-    this.rows = merged.rows;
-    this.parseWarnings = merged.warnings;
   }
 }

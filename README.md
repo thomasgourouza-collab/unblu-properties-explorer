@@ -1,70 +1,98 @@
 # Properties Table Explorer
 
-Interactive Angular app to upload a CSV file and explore it with sorting, filtering, and customizable columns.
+Angular frontend + Node backend that automatically scrapes Unblu internal docs with Playwright and loads rows into the table on every page load/reload.
 
-## Stack
+## Architecture
 
-- Angular (latest stable CLI at generation time)
-- PrimeNG table components
-- Bootstrap + SCSS
-- PapaParse for CSV parsing
+- `src/`: Angular app and table UI.
+- `server/`: Express API + Playwright scraper.
+- `GET /api/properties`: Scrapes both docs pages and returns merged rows in table-ready JSON.
+- Session state is saved to `server/.auth/storage-state.json` and reused for subsequent scrapes.
 
-## Run locally
+## Scraped sources
+
+- `https://udocs.unblu.com/latest-internal/reference/configuration-properties.html`
+- `https://udocs.unblu.com/latest-internal/reference/text-properties.html`
+
+## Authentication behavior
+
+- First scrape (or expired session) triggers interactive Google login in a real Playwright browser window.
+- After successful login, storage state is persisted and reused automatically.
+- If session expires later, the backend opens login again and refreshes the saved state.
+- You can force a fresh login from the UI (`Re-login + reload`) or by calling:
+
+```bash
+curl -X POST http://localhost:3000/api/auth/relogin
+```
+
+## Local development
+
+1. Install frontend dependencies:
 
 ```bash
 npm install
-npm start
 ```
 
-Open [http://localhost:4200](http://localhost:4200).
-
-## Docker
-
-Build a production image (multi-stage: `npm run build`, then serve static files with nginx):
+2. Install backend dependencies:
 
 ```bash
-docker build -t unblu-properties-explorer .
+npm --prefix server install
 ```
 
-Run the app (maps container port 80 to **3000** on your machine):
+3. Install Playwright Chromium (one-time per machine/user):
 
 ```bash
-docker run -d --name unblu-properties-explorer -p 3000:80 unblu-properties-explorer:latest
+npm --prefix server exec playwright install chromium
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
-
-To stop, use:
+4. Run frontend + backend together:
 
 ```bash
-docker stop unblu-properties-explorer
+npm run start:dev
 ```
 
-To start use:
+- Angular: `http://localhost:4200`
+- Backend: `http://localhost:3000`
 
-```bash
-docker start unblu-properties-explorer
-```
+The Angular dev server proxies `/api/*` to the backend via `proxy.conf.json`.
 
 ## Build
+
+Build frontend + backend:
+
+```bash
+npm run build:all
+```
+
+Frontend only:
 
 ```bash
 npm run build
 ```
 
-## CSV format contract
+Backend only:
 
-The upload expects a header row with these columns (case-insensitive):
+```bash
+npm run build:backend
+```
 
-1. `group title`
-2. `label`
-3. `key`
-4. `default value`
-5. `type`
-6. `allowed scopes`
-7. `visibility`
-8. `editable by`
-9. `description`
+## Troubleshooting
+
+- **`Invalid IAP credentials: empty token`**
+  - Your authenticated session is missing or expired.
+  - Re-run a scrape and complete login in the Playwright browser window.
+  - If needed, force reset session:
+    - UI: `Re-login + reload`
+    - API: `POST /api/auth/relogin`
+    - Manual: delete `server/.auth/storage-state.json`
+
+- **Browser login window does not appear**
+  - Ensure backend process is running.
+  - Ensure your environment allows headed browser windows.
+
+- **No rows returned**
+  - Verify you can open both target docs pages in a normal browser with your current account.
+  - Check backend logs for selector/auth failures.
 
 ## Table features
 
@@ -72,10 +100,8 @@ The upload expects a header row with these columns (case-insensitive):
 - Per-column filters (all filters can be combined in parallel)
 - Global case-insensitive contains filter across all columns
 - Text filters (`label`, `key`, `default value`, `description`) as case-insensitive contains
-- Select filters for non-text columns with unique values from the loaded file
-- Multi-select list filters for `allowed scopes` and `editable by` with OR/AND behavior:
-  - OR: any selected value matches any token in row list
-  - AND: all selected values must be present in row list
+- Select filters for non-text columns with unique values from loaded rows
+- Multi-select list filters for `allowed scopes` and `editable by` with OR/AND behavior
 - Hide/show columns
 - Reorder visible columns with drag-and-drop
 - Table settings persistence (filters, list modes, visible columns) in local storage

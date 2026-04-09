@@ -23,131 +23,47 @@
         <button
           type="button"
           class="btn btn-sm btn-outline-secondary title-row-copy-btn"
-          (click)="copyExtractorScript('conf')"
-          title="Copy extract-configuration-properties-csv.js to the clipboard"
-          aria-label="Copy configuration properties extractor script"
+          (click)="reloadProperties()"
+          [disabled]="isLoading"
+          title="Reload properties from the backend scraper"
+          aria-label="Reload scraped properties"
         >
-          <i class="pi" [ngClass]="copiedExtractorKind === 'conf' ? 'pi-check' : 'pi-copy'" aria-hidden="true"></i>
-          <span>Copy conf. script</span>
+          <i class="pi pi-refresh" aria-hidden="true"></i>
+          <span>Reload data</span>
         </button>
         <button
           type="button"
           class="btn btn-sm btn-outline-secondary title-row-copy-btn"
-          (click)="copyExtractorScript('text')"
-          title="Copy extract-text-properties-csv.js to the clipboard"
-          aria-label="Copy text properties extractor script"
+          (click)="reloadProperties(true)"
+          [disabled]="isLoading"
+          title="Force Google re-login and scrape again"
+          aria-label="Force re-login and reload data"
         >
-          <i class="pi" [ngClass]="copiedExtractorKind === 'text' ? 'pi-check' : 'pi-copy'" aria-hidden="true"></i>
-          <span>Copy text script</span>
+          <i class="pi pi-user-edit" aria-hidden="true"></i>
+          <span>Re-login + reload</span>
         </button>
       </div>
     </div>
   </section>
 
   <section class="card shadow-sm upload-card mb-3">
-    <div class="card-body upload-card-body py-1">
-      <div class="upload-slots-grid">
-        <div
-          class="upload-slot"
-          data-slot="1"
-          aria-label="First CSV file"
-          [class.dragging]="draggingSlot === 1"
-          (dragover)="onDragOver($event, 1)"
-          (dragleave)="onDragLeave($event, 1)"
-          (drop)="onDrop($event, 1)"
-        >
-          <div class="upload-slot-row" *ngIf="!fileLabel1">
-            <div class="upload-inline">
-              <label
-                for="csvUpload1"
-                class="btn btn-sm choose-csv-upload-btn"
-                [class.choose-csv-upload-btn--disabled]="isParsing"
-              >
-                <i class="pi pi-upload" aria-hidden="true"></i>
-                <span>Import CSV</span>
-              </label>
-              <span class="upload-inline-text"> or drop here.</span>
-            </div>
-            <input
-              id="csvUpload1"
-              type="file"
-              class="visually-hidden"
-              accept=".csv,text/csv"
-              autocomplete="off"
-              data-bwignore
-              data-1p-ignore
-              data-lpignore="true"
-              (change)="onFileSelected($event, 1)"
-              [disabled]="isParsing"
-            />
-          </div>
-          <div class="upload-slot-row upload-slot-row--loaded" *ngIf="fileLabel1">
-            <span class="badge text-bg-primary upload-slot-filename" [title]="fileLabel1">{{ fileLabel1 }}</span>
-            <span class="upload-slot-row-count text-muted small">{{ slot1RowCount }} rows</span>
-            <button
-              type="button"
-              class="btn btn-sm btn-outline-danger upload-slot-clear"
-              (click)="clearSlot(1)"
-              [disabled]="isParsing"
-              title="Remove this file from the merge"
-            >
-              Clear data
-            </button>
-          </div>
+    <div class="card-body upload-card-body py-2">
+      <div class="load-status-row">
+        <div class="load-status-main" *ngIf="isLoading">
+          <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+          <span>Scraping properties from authenticated docs...</span>
         </div>
-
-        <div
-          class="upload-slot"
-          data-slot="2"
-          aria-label="Second CSV file, optional"
-          [class.dragging]="draggingSlot === 2"
-          (dragover)="onDragOver($event, 2)"
-          (dragleave)="onDragLeave($event, 2)"
-          (drop)="onDrop($event, 2)"
-        >
-          <div class="upload-slot-row" *ngIf="!fileLabel2">
-            <div class="upload-inline">
-              <label
-                for="csvUpload2"
-                class="btn btn-sm choose-csv-upload-btn"
-                [class.choose-csv-upload-btn--disabled]="isParsing"
-              >
-                <i class="pi pi-upload" aria-hidden="true"></i>
-                <span>Import CSV</span>
-              </label>
-              <span class="upload-inline-text"> or drop here.</span>
-            </div>
-            <input
-              id="csvUpload2"
-              type="file"
-              class="visually-hidden"
-              accept=".csv,text/csv"
-              autocomplete="off"
-              data-bwignore
-              data-1p-ignore
-              data-lpignore="true"
-              (change)="onFileSelected($event, 2)"
-              [disabled]="isParsing"
-            />
-          </div>
-          <div class="upload-slot-row upload-slot-row--loaded" *ngIf="fileLabel2">
-            <span class="badge text-bg-primary upload-slot-filename" [title]="fileLabel2">{{ fileLabel2 }}</span>
-            <span class="upload-slot-row-count text-muted small">{{ slot2RowCount }} rows</span>
-            <button
-              type="button"
-              class="btn btn-sm btn-outline-danger upload-slot-clear"
-              (click)="clearSlot(2)"
-              [disabled]="isParsing"
-              title="Remove this file from the merge"
-            >
-              Clear data
-            </button>
-          </div>
+        <div class="load-status-main" *ngIf="!isLoading">
+          <i class="pi pi-check-circle load-status-icon" aria-hidden="true"></i>
+          <span>Loaded {{ rows.length }} rows automatically.</span>
+          <span class="text-muted small" *ngIf="lastScrapedAt">Last scrape: {{ lastScrapedAt }}</span>
+          <span class="badge text-bg-info" *ngIf="authRefreshed">Session refreshed</span>
+          <span class="badge text-bg-secondary" *ngIf="loadedFromCache">Showing cached snapshot</span>
         </div>
       </div>
 
       <div class="alert alert-warning mt-2 mb-0 py-2 px-3" *ngIf="parseWarnings.length > 0">
-        <strong>Parsing warnings:</strong>
+        <strong>Scraping warnings:</strong>
         <ul class="mb-0 mt-2">
           <li *ngFor="let warning of parseWarnings">{{ warning }}</li>
         </ul>
@@ -156,10 +72,13 @@
   </section>
 
   <app-config-table *ngIf="rows.length > 0" [rows]="rows" />
+  <section class="alert alert-secondary" *ngIf="!isLoading && !parseError && rows.length === 0">
+    No rows returned from the scraper.
+  </section>
 
   <div
     class="help-modal-backdrop csv-parse-modal-backdrop"
-    *ngIf="isParsing"
+    *ngIf="isLoading"
     tabindex="-1"
     aria-busy="true"
     aria-live="polite"
@@ -174,7 +93,7 @@
     >
       <div class="csv-import-dialog-body csv-import-dialog-body--loading">
         <span class="spinner-border csv-import-dialog-spinner" aria-hidden="true"></span>
-        <p id="csv-parse-loading-title" class="csv-import-dialog-loading-text">Parsing CSV file…</p>
+        <p id="csv-parse-loading-title" class="csv-import-dialog-loading-text">Loading properties…</p>
       </div>
     </div>
   </div>
@@ -206,6 +125,14 @@
       </header>
       <div class="csv-import-dialog-body csv-import-dialog-body--error">
         <p id="csv-parse-error-desc" class="csv-import-dialog-error-text">{{ parseError }}</p>
+        <div class="csv-import-dialog-actions">
+          <button type="button" class="btn btn-sm btn-outline-secondary" (click)="reloadProperties()">
+            Retry
+          </button>
+          <button type="button" class="btn btn-sm btn-outline-secondary" (click)="reloadProperties(true)">
+            Re-login + retry
+          </button>
+        </div>
       </div>
     </div>
   </div>
