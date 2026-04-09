@@ -37,10 +37,17 @@ curl -X POST http://localhost:3000/api/auth/relogin
 - On submit, the frontend calls `POST /api/account/connect` and the backend fetches:
   - `<baseUrl>/app/rest/v4/accounts/getCurrentAccount?expand=configuration,text`
   - with Basic auth from submitted credentials.
+- The backend stores a short-lived in-memory account session (`sessionId`) so follow-up account updates can reuse server-side auth.
 - Import mapping:
   - `configuration` is imported as-is.
   - `text` is imported by taking each key's `en` value (`key: { en: value }` → `key: value`).
 - The full account response is retained in component memory for future features and the merged config is applied through the existing `Import config` pipeline.
+- Export mapping (`Export config → To account`):
+  - The selected rows patch the connected account payload (no full replacement).
+  - If row `Source` contains `configuration`, patch `configuration[key] = value`.
+  - If row `Source` contains `text`, patch `text[key].en = value` (preserving other languages when present).
+  - The frontend sends patched payload to `POST /api/account/update`, which proxies to:
+    - `<baseUrl>/app/rest/v4/accounts/update?expand=configuration,text`
 
 ## Local development
 

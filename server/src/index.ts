@@ -1,4 +1,5 @@
 import express from 'express';
+import { randomUUID } from 'node:crypto';
 
 import { AuthRequiredError } from './scraper/extractors.js';
 import { PropertiesScraper } from './scraper/properties-scraper.js';
@@ -6,13 +7,15 @@ import { PropertiesScraper } from './scraper/properties-scraper.js';
 const app = express();
 const port = Number(process.env.PORT ?? 3000);
 const scraper = new PropertiesScraper();
+const accountSessions = new Map<string, AccountSession>();
 
 app.use(express.json());
 app.use((req, _res, next) => {
   if (
     req.path === '/api/properties' ||
     req.path === '/api/auth/relogin' ||
-    req.path === '/api/account/connect'
+    req.path === '/api/account/connect' ||
+    req.path === '/api/account/update'
   ) {
     console.log(`[api] ${req.method} ${req.path} started`);
   }
@@ -69,7 +72,8 @@ app.post('/api/account/connect', async (req, res) => {
   }
 
   const { baseUrl, username, password } = parsed.value;
-  const endpoint = buildGetCurrentAccountUrl(baseUrl);
+  const normalizedBaseUrl = normalizeBaseUrl(baseUrl);
+  const endpoint = buildGetCurrentAccountUrl(normalizedBaseUrl);
   const credentials = `${username}:${password}`;
   const authHeader = `Basic ${Buffer.from(credentials, 'utf8').toString('base64')}`;
 
@@ -80,6 +84,56 @@ app.post('/api/account/connect', async (req, res) => {
         Authorization: authHeader,
         Accept: 'application/json'
       }
+    });
+
+    if (!response.ok) {
+      const detail = await readResponseDetail(response);
+      res.status(response.status).json({
+        message: detail || `Unblu request failed with HTTP ${response.status}.`
+      });
+      return;
+    }
+
+    const payload = (await response.json()) as unknown;
+    const sessionId = randomUUID();
+    accountSessions.set(sessionId, {
+      baseUrl: normalizedBaseUrl,
+      authHeader
+    });
+    res.json({ account: payload, sessionId });
+  } catch {
+    res.status(502).json({
+      message: 'Could not reach the Unblu endpoint. Check base URL, network access, and credentials.'
+    });
+  }
+});
+
+app.post('/api/account/update', async (req, res) => {
+  const parsed = parseAccountUpdatePayload(req.body);
+  if (!parsed.ok) {
+    res.status(400).json({ message: parsed.message });
+    return;
+  }
+
+  const { sessionId, account } = parsed.value;
+  const session = accountSessions.get(sessionId);
+  if (!session) {
+    res.status(401).json({
+      message: 'Account session not found. Connect account again and retry.'
+    });
+    return;
+  }
+
+  const endpoint = buildUpdateAccountUrl(session.baseUrl);
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        Authorization: session.authHeader,
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(account)
     });
 
     if (!response.ok) {
@@ -110,9 +164,16 @@ function toBoolean(value: unknown): boolean {
   return value === '1' || value === 'true' || value === true;
 }
 
+function normalizeBaseUrl(baseUrl: string): string {
+  return baseUrl.trim().replace(/\/+$/, '');
+}
+
 function buildGetCurrentAccountUrl(baseUrl: string): string {
-  const normalizedBase = baseUrl.trim().replace(/\/+$/, '');
-  return `${normalizedBase}/app/rest/v4/accounts/getCurrentAccount?expand=configuration,text`;
+  return `${normalizeBaseUrl(baseUrl)}/app/rest/v4/accounts/getCurrentAccount?expand=configuration,text`;
+}
+
+function buildUpdateAccountUrl(baseUrl: string): string {
+  return `${normalizeBaseUrl(baseUrl)}/app/rest/v4/accounts/update?expand=configuration,text`;
 }
 
 function parseConnectPayload(body: unknown):
@@ -168,4 +229,37 @@ async function readResponseDetail(response: Response): Promise<string> {
   } catch {
     return '';
   }
+}
+
+interface AccountSession {
+  baseUrl: string;
+  authHeader: string;
+}
+
+function parseAccountUpdatePayload(body: unknown):
+  | { ok: true; value: { sessionId: string; account: Record<string, unknown> } }
+  | { ok: false; message: string } {
+  if (typeof body !== 'object' || body === null) {
+    return { ok: false, message: 'Missing request body.' };
+  }
+
+  const sessionId = typeof (body as { sessionId?: unknown }).sessionId === 'string'
+    ? (body as { sessionId: string }).sessionId.trim()
+    : '';
+  const accountRaw = (body as { account?: unknown }).account;
+
+  if (!sessionId) {
+    return { ok: false, message: 'sessionId is required.' };
+  }
+  if (typeof accountRaw !== 'object' || accountRaw === null || Array.isArray(accountRaw)) {
+    return { ok: false, message: 'account must be a JSON object.' };
+  }
+
+  return {
+    ok: true,
+    value: {
+      sessionId,
+      account: accountRaw as Record<string, unknown>
+    }
+  };
 }

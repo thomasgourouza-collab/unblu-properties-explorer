@@ -71,6 +71,11 @@ interface ImportMissingKeyDialogRow {
 
 interface ConnectAccountApiResponse {
   account: unknown;
+  sessionId: unknown;
+}
+
+interface UpdateAccountApiResponse {
+  account: unknown;
 }
 
 type ListColumnKey = 'allowedScopes' | 'editableBy';
@@ -222,9 +227,11 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   importMissingKeysDialogRows: ImportMissingKeyDialogRow[] = [];
   /** Full account payload from Unblu getCurrentAccount (kept in-memory for upcoming use cases). */
   connectedAccountResponse: Record<string, unknown> | null = null;
+  connectedAccountSessionId: string | null = null;
   connectAccountDialogVisible = false;
   connectAccountLoading = false;
   connectAccountError = '';
+  exportToAccountLoading = false;
   connectAccountBaseUrl = '';
   connectAccountUsername = '';
   connectAccountPassword = '';
@@ -740,7 +747,12 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       if (!accountRecord) {
         throw new Error('Invalid account payload received from backend.');
       }
+      const sessionId = typeof payload.sessionId === 'string' ? payload.sessionId.trim() : '';
+      if (!sessionId) {
+        throw new Error('Invalid account session received from backend.');
+      }
       this.connectedAccountResponse = accountRecord;
+      this.connectedAccountSessionId = sessionId;
       const importObject = this.buildConfigImportFromConnectedAccount(accountRecord);
       this.applyJsonConfigImport(importObject, `${baseUrl}`);
       this.connectAccountDialogVisible = false;
@@ -1219,6 +1231,76 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.safeMarkForCheck();
   }
 
+  async onExportToAccountChosen(event: MouseEvent): Promise<void> {
+    event.stopPropagation();
+    if (this.exportToAccountLoading) {
+      return;
+    }
+    if (this.selectedDatasetCount === 0) {
+      return;
+    }
+    if (!this.connectedAccountSessionId || !this.connectedAccountResponse) {
+      globalThis.alert('Connect account first, then retry Export config → To account.');
+      return;
+    }
+
+    const patchedAccount = this.clonePlainJsonObject(this.connectedAccountResponse);
+    const patchedCount = this.patchAccountPayloadFromSelection(patchedAccount);
+    if (patchedCount === 0) {
+      globalThis.alert('No selected rows could be mapped to configuration/text based on Source and Key.');
+      return;
+    }
+
+    this.exportFormatMenuOpen = false;
+    this.exportToFileSubmenuOpen = false;
+    this.exportToAccountLoading = true;
+    this.safeMarkForCheck();
+
+    try {
+      const response = await fetch('/api/account/update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          sessionId: this.connectedAccountSessionId,
+          account: patchedAccount
+        })
+      });
+      if (!response.ok) {
+        const errorPayload = await response.json().catch(() => null);
+        const backendMessage =
+          errorPayload &&
+          typeof errorPayload === 'object' &&
+          'message' in errorPayload &&
+          typeof errorPayload.message === 'string'
+            ? errorPayload.message
+            : `HTTP ${response.status}`;
+        if (response.status === 401) {
+          this.connectedAccountSessionId = null;
+        }
+        throw new Error(backendMessage);
+      }
+
+      const payload = (await response.json()) as UpdateAccountApiResponse;
+      const accountRecord = this.asRecord(payload.account);
+      if (!accountRecord) {
+        throw new Error('Invalid account payload received from backend.');
+      }
+      this.connectedAccountResponse = accountRecord;
+      this.connectAccountError = '';
+    } catch (error) {
+      globalThis.alert(
+        error instanceof Error
+          ? error.message
+          : 'Could not export selection to account. Verify account connection and retry.'
+      );
+    } finally {
+      this.exportToAccountLoading = false;
+      this.safeMarkForCheck();
+    }
+  }
+
   exportSelectedToCsv(): void {
     const cols = this.visibleColumns;
     if (cols.length === 0) {
@@ -1304,6 +1386,53 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       out[prop] = value;
     }
     return out;
+  }
+
+  /**
+   * Patch selected rows into connected account payload:
+   * - source contains "configuration" => configuration[key] = value
+   * - source contains "text" => text[key].en = value
+   */
+  private patchAccountPayloadFromSelection(accountPayload: Record<string, unknown>): number {
+    const selected = this.rows.filter((row) => this.selectedRowKeys.has(row.rowKey));
+    let patched = 0;
+
+    let configuration = this.asRecord(accountPayload['configuration']);
+    if (!configuration) {
+      configuration = {};
+      accountPayload['configuration'] = configuration;
+    }
+
+    let text = this.asRecord(accountPayload['text']);
+    if (!text) {
+      text = {};
+      accountPayload['text'] = text;
+    }
+
+    for (const row of selected) {
+      const key = (row.property ?? '').trim();
+      if (!key) {
+        continue;
+      }
+
+      let value = row.value ?? '';
+      if (this.valueColumnUsesMultiSelect(row)) {
+        value = this.parseListStyleCellToTokens(value).join(',');
+      }
+
+      const source = (row.source ?? '').toLowerCase();
+      if (source.includes('configuration')) {
+        configuration[key] = value;
+        patched += 1;
+      }
+      if (source.includes('text')) {
+        const existing = this.asRecord(text[key]);
+        text[key] = existing ? { ...existing, en: value } : { en: value };
+        patched += 1;
+      }
+    }
+
+    return patched;
   }
 
   ngOnChanges(changes: SimpleChanges): void {
