@@ -135,7 +135,15 @@ export class PropertiesScraper {
   }
 
 
+  /**
+   * Headed Chromium needs a GUI. Linux servers and Docker usually have no DISPLAY;
+   * macOS and Windows do not set DISPLAY but still support headed launch for local dev.
+   */
   private canRunHeadedLogin(): boolean {
+    const platform = process.platform;
+    if (platform === 'darwin' || platform === 'win32') {
+      return true;
+    }
     return Boolean(process.env.DISPLAY || process.env.WAYLAND_DISPLAY);
   }
 

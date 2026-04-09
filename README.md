@@ -120,11 +120,47 @@ Nginx proxies `/api/*` to backend service (`http://backend:3000`) via `nginx.con
 docker compose down
 ```
 
+### Docker without GUI: container cannot open Google login window
+
+Use this workflow once, then Docker will work with saved auth state:
+
+1. **Stop compose**
+
+```bash
+docker compose down
+```
+
+2. **Run backend locally** (non-container) so login window can open:
+
+```bash
+npm --prefix server install
+npm run start:backend
+```
+
+3. **Trigger relogin** from the UI (`http://localhost:4200` if running the frontend locally) or via API:
+
+```bash
+curl -X POST http://localhost:3000/api/auth/relogin
+```
+
+4. **Complete Google login** in the opened browser window.
+
+This creates or updates: `server/.auth/storage-state.json`
+
+5. **Stop the local backend**, then run Docker again:
+
+```bash
+docker compose up --build
+```
+
+Because compose mounts `./server/.auth:/app/.auth`, the backend container reuses that saved auth state and can scrape without interactive login.
+
+If the session expires later, repeat the same bootstrap flow.
+
 ### Notes for Playwright auth in container
 
-- Compose mounts `./server/.auth` into backend container (`/app/.auth`) to persist session state.
-- Interactive/headed login may not work in every container environment (no display server).
-- If interactive login is required and container has no GUI, use local host backend for login bootstrap, then reuse saved state.
+- Compose mounts `./server/.auth` into the backend container (`/app/.auth`) to persist session state.
+- Interactive/headed login needs a display; see **Docker without GUI** above for the host bootstrap workflow.
 
 ## Build commands (without Docker)
 
