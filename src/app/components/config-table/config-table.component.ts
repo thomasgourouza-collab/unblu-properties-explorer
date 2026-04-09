@@ -69,6 +69,10 @@ interface ImportMissingKeyDialogRow {
   value: string;
 }
 
+interface ConnectAccountApiResponse {
+  account: unknown;
+}
+
 type ListColumnKey = 'allowedScopes' | 'editableBy';
 type GlobalFilterScope = 'all' | 'visible';
 type TextMatchMode = 'expr' | 'regex';
@@ -211,6 +215,14 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   importMissingKeysDialogVisible = false;
   importMissingKeysDialogTitle = '';
   importMissingKeysDialogRows: ImportMissingKeyDialogRow[] = [];
+  /** Full account payload from Unblu getCurrentAccount (kept in-memory for upcoming use cases). */
+  connectedAccountResponse: Record<string, unknown> | null = null;
+  connectAccountDialogVisible = false;
+  connectAccountLoading = false;
+  connectAccountError = '';
+  connectAccountBaseUrl = '';
+  connectAccountUsername = '';
+  connectAccountPassword = '';
   cellDetailDialogRowKey: string | null = null;
   cellDetailDialogColumnKey: string | null = null;
   /** Row property key shown next to the dialog title (Cmd/Ctrl+click). */
@@ -666,6 +678,84 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.importConfigInputRef?.nativeElement?.click();
   }
 
+  onConnectAccountClick(): void {
+    this.connectAccountError = '';
+    this.connectAccountDialogVisible = true;
+    this.safeMarkForCheck();
+  }
+
+  closeConnectAccountDialog(): void {
+    if (this.connectAccountLoading) {
+      return;
+    }
+    this.connectAccountDialogVisible = false;
+    this.connectAccountError = '';
+    this.safeMarkForCheck();
+  }
+
+  onConnectAccountDialogPanelClick(event: MouseEvent): void {
+    event.stopPropagation();
+  }
+
+  async onConnectAccountSubmit(event: Event): Promise<void> {
+    event.preventDefault();
+
+    const baseUrl = this.connectAccountBaseUrl.trim();
+    const username = this.connectAccountUsername.trim();
+    const password = this.connectAccountPassword;
+    if (!baseUrl || !username || !password) {
+      this.connectAccountError = 'Base URL, username, and password are required.';
+      this.safeMarkForCheck();
+      return;
+    }
+
+    this.connectAccountLoading = true;
+    this.connectAccountError = '';
+    this.safeMarkForCheck();
+
+    try {
+      const response = await fetch('/api/account/connect', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ baseUrl, username, password })
+      });
+
+      if (!response.ok) {
+        const errorPayload = await response.json().catch(() => null);
+        const backendMessage =
+          errorPayload &&
+          typeof errorPayload === 'object' &&
+          'message' in errorPayload &&
+          typeof errorPayload.message === 'string'
+            ? errorPayload.message
+            : `HTTP ${response.status}`;
+        throw new Error(backendMessage);
+      }
+
+      const payload = (await response.json()) as ConnectAccountApiResponse;
+      const accountRecord = this.asRecord(payload.account);
+      if (!accountRecord) {
+        throw new Error('Invalid account payload received from backend.');
+      }
+      this.connectedAccountResponse = accountRecord;
+      const importObject = this.buildConfigImportFromConnectedAccount(accountRecord);
+      this.applyJsonConfigImport(importObject, `Connected account (${baseUrl})`);
+      this.connectAccountDialogVisible = false;
+      this.connectAccountError = '';
+      this.connectAccountPassword = '';
+    } catch (error) {
+      this.connectAccountError =
+        error instanceof Error
+          ? error.message
+          : 'Could not connect account. Verify URL, credentials, and network access.';
+    } finally {
+      this.connectAccountLoading = false;
+      this.safeMarkForCheck();
+    }
+  }
+
   /** Rows with a non-empty import error message (trimmed). */
   get configImportErrorCount(): number {
     let n = 0;
@@ -780,8 +870,45 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     return parsed as Record<string, unknown>;
   }
 
+  private buildConfigImportFromConnectedAccount(account: Record<string, unknown>): Record<string, unknown> {
+    const out: Record<string, unknown> = {};
+
+    const configuration = this.asRecord(account['configuration']);
+    if (configuration) {
+      for (const [key, value] of Object.entries(configuration)) {
+        out[key] = value;
+      }
+    }
+
+    const textConfig = this.asRecord(account['text']);
+    if (textConfig) {
+      for (const [key, value] of Object.entries(textConfig)) {
+        const langMap = this.asRecord(value);
+        if (!langMap || !('en' in langMap)) {
+          continue;
+        }
+        out[key] = langMap['en'];
+      }
+    }
+
+    if (Object.keys(out).length === 0) {
+      throw new Error(
+        'Connected account does not contain configuration/text data in expected format.'
+      );
+    }
+
+    return out;
+  }
+
   private clonePlainJsonObject(obj: Record<string, unknown>): Record<string, unknown> {
     return JSON.parse(JSON.stringify(obj)) as Record<string, unknown>;
+  }
+
+  private asRecord(value: unknown): Record<string, unknown> | null {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      return null;
+    }
+    return value as Record<string, unknown>;
   }
 
   private applyJsonConfigImport(obj: Record<string, unknown>, importedFileName: string): void {
@@ -2952,6 +3079,12 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     if (event.key === 'Escape' && this.importMissingKeysDialogVisible) {
       event.preventDefault();
       this.closeImportMissingKeysDialog();
+      return;
+    }
+
+    if (event.key === 'Escape' && this.connectAccountDialogVisible) {
+      event.preventDefault();
+      this.closeConnectAccountDialog();
       return;
     }
 

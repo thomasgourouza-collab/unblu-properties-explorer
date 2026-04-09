@@ -7,6 +7,7 @@ Angular frontend + Node backend that automatically scrapes Unblu internal docs w
 - `src/`: Angular app and table UI.
 - `server/`: Express API + Playwright scraper.
 - `GET /api/properties`: Returns cached rows; triggers scrape only when cache is empty (or after re-login).
+- `POST /api/account/connect`: Proxies Unblu `getCurrentAccount?expand=configuration,text` with Basic auth.
 - Session state is saved to `server/.auth/storage-state.json` and reused for subsequent scrapes.
 
 ## Scraped sources
@@ -20,11 +21,26 @@ Angular frontend + Node backend that automatically scrapes Unblu internal docs w
 - After successful login, storage state is persisted and reused automatically.
 - Scraped rows are cached in memory and reused across page reloads.
 - Re-scraping happens only when the cache is empty or after explicit re-login.
-- You can force a fresh login from the UI (`Re-login + reload`) or by calling:
+- You can force a fresh login from the UI (`Re-login`) or by calling:
 
 ```bash
 curl -X POST http://localhost:3000/api/auth/relogin
 ```
+
+## Connect account import
+
+- Use the `Connect account` button (next to `Import config`) to open a credential dialog.
+- The form asks for:
+  - base Unblu URL
+  - username
+  - password
+- On submit, the frontend calls `POST /api/account/connect` and the backend fetches:
+  - `<baseUrl>/app/rest/v4/accounts/getCurrentAccount?expand=configuration,text`
+  - with Basic auth from submitted credentials.
+- Import mapping:
+  - `configuration` is imported as-is.
+  - `text` is imported by taking each key's `en` value (`key: { en: value }` → `key: value`).
+- The full account response is retained in component memory for future features and the merged config is applied through the existing `Import config` pipeline.
 
 ## Local development
 
@@ -83,7 +99,7 @@ npm run build:backend
   - Your authenticated session is missing or expired.
   - Re-run a scrape and complete login in the Playwright browser window.
   - If needed, force reset session:
-    - UI: `Re-login + reload`
+    - UI: `Re-login`
     - API: `POST /api/auth/relogin`
     - Manual: delete `server/.auth/storage-state.json`
 

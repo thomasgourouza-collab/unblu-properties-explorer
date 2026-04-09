@@ -235,7 +235,8 @@ $export-bar-control-font-size: 0.875rem;
 
 .btn-export-table,
 .export-format-dropdown__toggle,
-.btn-utransfer {
+.btn-utransfer,
+.btn-connect-account {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
@@ -268,7 +269,8 @@ $export-bar-control-font-size: 0.875rem;
 
 .table-export-bar .btn.btn-sm.btn-export-table,
 .table-export-bar .btn.btn-sm.export-format-dropdown__toggle,
-.table-export-bar .btn.btn-sm.btn-utransfer {
+.table-export-bar .btn.btn-sm.btn-utransfer,
+.table-export-bar .btn.btn-sm.btn-connect-account {
   font-size: $export-bar-control-font-size;
   font-weight: 500;
   line-height: 1.25;
@@ -276,7 +278,8 @@ $export-bar-control-font-size: 0.875rem;
 
 .table-export-bar .btn.btn-sm.btn-export-table,
 .table-export-bar .btn.btn-sm.export-format-dropdown__toggle,
-.table-export-bar .btn.btn-sm.btn-utransfer {
+.table-export-bar .btn.btn-sm.btn-utransfer,
+.table-export-bar .btn.btn-sm.btn-connect-account {
   flex: 0 0 auto;
 }
 
@@ -1489,6 +1492,7 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
 }
 
 // JSON import: unknown keys — full chrome copied from app `help-modal` (styles there do not pierce this component).
+.connect-account-backdrop,
 .import-missing-keys-backdrop {
   position: fixed;
   inset: 0;
@@ -1499,6 +1503,84 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
   padding: 1.2rem;
   background: color-mix(in srgb, #05070c 72%, transparent);
   backdrop-filter: blur(4px);
+}
+
+.connect-account-dialog {
+  width: min(560px, 96vw);
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin: 0;
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--surface-border));
+  border-radius: 0.95rem;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent) 9%, var(--surface-elevated)) 0%,
+      color-mix(in srgb, var(--surface-elevated) 96%, #06080d) 100%
+    );
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+}
+
+.connect-account-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem 0.8rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 18%, var(--surface-border));
+  flex-shrink: 0;
+}
+
+.connect-account-title {
+  margin: 0;
+  font-size: 1.03rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.connect-account-close {
+  border: 1px solid var(--surface-border);
+  background: color-mix(in srgb, var(--surface-soft) 75%, transparent);
+  color: var(--text-secondary);
+  border-radius: 999px;
+  width: 1.9rem;
+  height: 1.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.connect-account-body {
+  padding: 1rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.connect-account-label {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.connect-account-input {
+  margin-bottom: 0.45rem;
+}
+
+.connect-account-error {
+  margin-top: 0.25rem;
+  font-size: 0.82rem;
+  color: color-mix(in srgb, #f87171 88%, var(--text-primary));
+}
+
+.connect-account-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem 1rem;
 }
 
 .import-missing-keys-dialog {

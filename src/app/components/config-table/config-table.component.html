@@ -234,6 +234,17 @@
       <i class="pi pi-upload" aria-hidden="true"></i>
       <span>Import config</span>
     </button>
+    <button
+      type="button"
+      class="btn btn-sm btn-connect-account"
+      (click)="onConnectAccountClick()"
+      [disabled]="connectAccountLoading"
+      title="Connect to Unblu account and import configuration"
+      aria-label="Connect account"
+    >
+      <i class="pi pi-link" aria-hidden="true"></i>
+      <span>Connect account</span>
+    </button>
   </div>
 </section>
 
@@ -1070,6 +1081,88 @@
         </div>
       </div>
     </dialog>
+
+    <div
+      class="connect-account-backdrop"
+      *ngIf="connectAccountDialogVisible"
+      (click)="closeConnectAccountDialog()"
+      tabindex="-1"
+    >
+      <form
+        class="connect-account-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="connect-account-heading"
+        (click)="onConnectAccountDialogPanelClick($event)"
+        (submit)="onConnectAccountSubmit($event)"
+      >
+        <header class="connect-account-header">
+          <h2 id="connect-account-heading" class="connect-account-title">Connect account</h2>
+          <button
+            type="button"
+            class="connect-account-close"
+            (click)="closeConnectAccountDialog()"
+            [disabled]="connectAccountLoading"
+            aria-label="Close"
+          >
+            <i class="pi pi-times" aria-hidden="true"></i>
+          </button>
+        </header>
+        <div class="connect-account-body">
+          <label class="connect-account-label" for="connect-account-base-url">Base Unblu URL</label>
+          <input
+            id="connect-account-base-url"
+            type="url"
+            class="form-control form-control-sm connect-account-input"
+            name="connectAccountBaseUrl"
+            [(ngModel)]="connectAccountBaseUrl"
+            [disabled]="connectAccountLoading"
+            required
+            placeholder="https://example.unblu.cloud"
+          />
+
+          <label class="connect-account-label" for="connect-account-username">Username</label>
+          <input
+            id="connect-account-username"
+            type="text"
+            class="form-control form-control-sm connect-account-input"
+            name="connectAccountUsername"
+            [(ngModel)]="connectAccountUsername"
+            [disabled]="connectAccountLoading"
+            required
+            autocomplete="username"
+          />
+
+          <label class="connect-account-label" for="connect-account-password">Password</label>
+          <input
+            id="connect-account-password"
+            type="password"
+            class="form-control form-control-sm connect-account-input"
+            name="connectAccountPassword"
+            [(ngModel)]="connectAccountPassword"
+            [disabled]="connectAccountLoading"
+            required
+            autocomplete="current-password"
+          />
+
+          <div class="connect-account-error" *ngIf="connectAccountError">{{ connectAccountError }}</div>
+        </div>
+        <footer class="connect-account-footer">
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-secondary"
+            (click)="closeConnectAccountDialog()"
+            [disabled]="connectAccountLoading"
+          >
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-sm btn-connect-account" [disabled]="connectAccountLoading">
+            <span class="spinner-border spinner-border-sm" *ngIf="connectAccountLoading" aria-hidden="true"></span>
+            <span>{{ connectAccountLoading ? 'Connecting...' : 'Connect and import' }}</span>
+          </button>
+        </footer>
+      </form>
+    </div>
 
     <div
       class="import-missing-keys-backdrop"
