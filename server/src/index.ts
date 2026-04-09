@@ -25,7 +25,7 @@ app.get('/api/properties', async (req, res) => {
   try {
     const response = await scraper.scrapeAll({ forceLogin });
     console.log(
-      `[api] GET /api/properties completed: rows=${response.rows.length}, authRefreshed=${response.metadata.authRefreshed}`
+      `[api] GET /api/properties completed: rows=${response.rows.length}, authRefreshed=${response.metadata.authRefreshed}, fromCache=${response.metadata.fromCache}`
     );
     res.json(response);
   } catch (error) {

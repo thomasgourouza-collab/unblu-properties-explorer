@@ -17,7 +17,7 @@ export class PropertiesScraper {
   private readonly scrapeTimeoutMs = 90_000;
 
   scrapeAll(options?: { forceLogin?: boolean }): Promise<PropertiesApiResponse> {
-    if (!options?.forceLogin && this.inFlightScrape !== null && this.lastSuccessfulResponse !== null) {
+    if (!options?.forceLogin && this.lastSuccessfulResponse !== null) {
       return Promise.resolve(this.cloneAsCachedResponse(this.lastSuccessfulResponse));
     }
 
@@ -44,16 +44,23 @@ export class PropertiesScraper {
         throw error;
       }
     }
+    this.lastSuccessfulResponse = null;
   }
 
   private async scrapeAllInternal(options?: { forceLogin?: boolean }): Promise<PropertiesApiResponse> {
     if (options?.forceLogin) {
       await this.clearAuthState();
+      await this.runInteractiveLogin();
+      const forcedAttempt = await this.runScrapeAttempt({ allowSavedAuthState: true });
+      const forcedResponse = this.buildResponse(forcedAttempt.rows, true);
+      this.lastSuccessfulResponse = forcedResponse;
+      return forcedResponse;
     }
 
     const primaryAttempt = await this.runScrapeAttempt({ allowSavedAuthState: true }).catch((error) => ({
       error
     }));
+
     if (!('error' in primaryAttempt)) {
       const response = this.buildResponse(primaryAttempt.rows, false);
       this.lastSuccessfulResponse = response;
@@ -61,17 +68,14 @@ export class PropertiesScraper {
     }
 
     if (!(primaryAttempt.error instanceof AuthRequiredError)) {
-      if (this.lastSuccessfulResponse !== null) {
-        return this.cloneAsCachedResponse(this.lastSuccessfulResponse);
-      }
       throw primaryAttempt.error;
     }
 
     await this.runInteractiveLogin();
     const retryAttempt = await this.runScrapeAttempt({ allowSavedAuthState: true });
-    const response = this.buildResponse(retryAttempt.rows, true);
-    this.lastSuccessfulResponse = response;
-    return response;
+    const refreshedResponse = this.buildResponse(retryAttempt.rows, true);
+    this.lastSuccessfulResponse = refreshedResponse;
+    return refreshedResponse;
   }
 
   private async runScrapeAttempt(options: {

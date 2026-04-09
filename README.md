@@ -1,12 +1,12 @@
 # Properties Table Explorer
 
-Angular frontend + Node backend that automatically scrapes Unblu internal docs with Playwright and loads rows into the table on every page load/reload.
+Angular frontend + Node backend that automatically scrapes Unblu internal docs with Playwright and serves cached rows to the table.
 
 ## Architecture
 
 - `src/`: Angular app and table UI.
 - `server/`: Express API + Playwright scraper.
-- `GET /api/properties`: Scrapes both docs pages and returns merged rows in table-ready JSON.
+- `GET /api/properties`: Returns cached rows; triggers scrape only when cache is empty (or after re-login).
 - Session state is saved to `server/.auth/storage-state.json` and reused for subsequent scrapes.
 
 ## Scraped sources
@@ -18,7 +18,8 @@ Angular frontend + Node backend that automatically scrapes Unblu internal docs w
 
 - First scrape (or expired session) triggers interactive Google login in a real Playwright browser window.
 - After successful login, storage state is persisted and reused automatically.
-- If session expires later, the backend opens login again and refreshes the saved state.
+- Scraped rows are cached in memory and reused across page reloads.
+- Re-scraping happens only when the cache is empty or after explicit re-login.
 - You can force a fresh login from the UI (`Re-login + reload`) or by calling:
 
 ```bash
@@ -33,19 +34,19 @@ curl -X POST http://localhost:3000/api/auth/relogin
 npm install
 ```
 
-2. Install backend dependencies:
+1. Install backend dependencies:
 
 ```bash
 npm --prefix server install
 ```
 
-3. Install Playwright Chromium (one-time per machine/user):
+1. Install Playwright Chromium (one-time per machine/user):
 
 ```bash
 npm --prefix server exec playwright install chromium
 ```
 
-4. Run frontend + backend together:
+1. Run frontend + backend together:
 
 ```bash
 npm run start:dev
