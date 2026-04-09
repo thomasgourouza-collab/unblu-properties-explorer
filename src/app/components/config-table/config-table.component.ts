@@ -149,6 +149,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   @ViewChild('importConfigInput') private readonly importConfigInputRef?: ElementRef<HTMLInputElement>;
   @ViewChild('importTableSettingsInput') private readonly importTableSettingsInputRef?: ElementRef<HTMLInputElement>;
   @ViewChild('exportFormatMenuHost') private readonly exportFormatMenuHost?: ElementRef<HTMLElement>;
+  @ViewChild('importConfigMenuHost') private readonly importConfigMenuHost?: ElementRef<HTMLElement>;
   @ViewChild('tableSettingsMenuHost') private readonly tableSettingsMenuHost?: ElementRef<HTMLElement>;
   /** Template ref on `p-table` — avoid `@ViewChild(Table)` (can trip Angular’s injector with PrimeNG 21). */
   @ViewChild('configTable') private readonly configTableRef?: Table;
@@ -178,6 +179,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   showConfigRowsOnly = false;
   /** Angular-driven export format menu (no Bootstrap JS). */
   exportFormatMenuOpen = false;
+  /** Import config: from file vs from account. */
+  importConfigMenuOpen = false;
   /** Table settings dropdown (reset / export / import persisted UI). */
   tableSettingsMenuOpen = false;
   /** Row identity for selection / CSV export (stable across duplicate property codes). */
@@ -1125,6 +1128,17 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.exportFormatMenuOpen = !this.exportFormatMenuOpen;
     if (this.exportFormatMenuOpen) {
       this.tableSettingsMenuOpen = false;
+      this.importConfigMenuOpen = false;
+    }
+    this.safeMarkForCheck();
+  }
+
+  toggleImportConfigMenu(event: MouseEvent): void {
+    event.stopPropagation();
+    this.importConfigMenuOpen = !this.importConfigMenuOpen;
+    if (this.importConfigMenuOpen) {
+      this.exportFormatMenuOpen = false;
+      this.tableSettingsMenuOpen = false;
     }
     this.safeMarkForCheck();
   }
@@ -1134,7 +1148,25 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.tableSettingsMenuOpen = !this.tableSettingsMenuOpen;
     if (this.tableSettingsMenuOpen) {
       this.exportFormatMenuOpen = false;
+      this.importConfigMenuOpen = false;
     }
+    this.safeMarkForCheck();
+  }
+
+  onImportConfigFromFileChosen(event: MouseEvent): void {
+    event.stopPropagation();
+    this.importConfigMenuOpen = false;
+    this.onUtransferClick();
+    this.safeMarkForCheck();
+  }
+
+  onImportConfigFromAccountChosen(event: MouseEvent): void {
+    event.stopPropagation();
+    if (this.connectAccountLoading) {
+      return;
+    }
+    this.importConfigMenuOpen = false;
+    this.onConnectAccountClick();
     this.safeMarkForCheck();
   }
 
@@ -3062,6 +3094,13 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
         changed = true;
       }
     }
+    if (this.importConfigMenuOpen) {
+      const host = this.importConfigMenuHost?.nativeElement;
+      if (!host || !(t instanceof Node) || !host.contains(t)) {
+        this.importConfigMenuOpen = false;
+        changed = true;
+      }
+    }
     if (this.tableSettingsMenuOpen) {
       const host = this.tableSettingsMenuHost?.nativeElement;
       if (!host || !(t instanceof Node) || !host.contains(t)) {
@@ -3076,9 +3115,10 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
   @HostListener('document:keydown', ['$event'])
   onDocumentKeydown(event: KeyboardEvent): void {
-    if (event.key === 'Escape' && (this.exportFormatMenuOpen || this.tableSettingsMenuOpen)) {
+    if (event.key === 'Escape' && (this.exportFormatMenuOpen || this.importConfigMenuOpen || this.tableSettingsMenuOpen)) {
       event.preventDefault();
       this.exportFormatMenuOpen = false;
+      this.importConfigMenuOpen = false;
       this.tableSettingsMenuOpen = false;
       this.safeMarkForCheck();
       return;

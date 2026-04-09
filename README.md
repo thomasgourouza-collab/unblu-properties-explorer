@@ -29,7 +29,7 @@ curl -X POST http://localhost:3000/api/auth/relogin
 
 ## Connect account import
 
-- Use the `Connect account` button (next to `Import config`) to open a credential dialog.
+- Use **Import config → From account** in the table toolbar to open the credential dialog.
 - The form asks for:
   - base Unblu URL
   - username

@@ -224,27 +224,48 @@
         </button>
       </div>
     </div>
-    <button
-      type="button"
-      class="btn btn-sm btn-utransfer"
-      (click)="onUtransferClick()"
-      title="Import configuration from JSON, YAML, or Java .properties (root must be a flat key/value map)"
-      aria-label="Import config from JSON, YAML, or .properties"
-    >
-      <i class="pi pi-upload" aria-hidden="true"></i>
-      <span>Import config</span>
-    </button>
-    <button
-      type="button"
-      class="btn btn-sm btn-connect-account"
-      (click)="onConnectAccountClick()"
-      [disabled]="connectAccountLoading"
-      title="Connect to Unblu account and import configuration"
-      aria-label="Connect account"
-    >
-      <i class="pi pi-link" aria-hidden="true"></i>
-      <span>Connect account</span>
-    </button>
+    <div class="export-format-dropdown align-self-center" #importConfigMenuHost>
+      <button
+        type="button"
+        class="btn btn-sm export-format-dropdown__toggle"
+        [class.export-format-dropdown__toggle--open]="importConfigMenuOpen"
+        (click)="toggleImportConfigMenu($event)"
+        [attr.aria-expanded]="importConfigMenuOpen"
+        aria-haspopup="true"
+        aria-label="Import configuration"
+        title="Import configuration from a file or from a connected Unblu account"
+      >
+        <i class="pi pi-upload" aria-hidden="true"></i>
+        <span>Import config</span>
+        <i class="pi pi-angle-down export-format-dropdown__caret" aria-hidden="true"></i>
+      </button>
+      <div
+        *ngIf="importConfigMenuOpen"
+        class="export-format-dropdown__menu"
+        role="menu"
+        aria-label="Import configuration source"
+      >
+        <button
+          type="button"
+          class="export-format-dropdown__item"
+          role="menuitem"
+          title="Import from JSON, YAML, or Java .properties (root must be a flat key/value map)"
+          (click)="onImportConfigFromFileChosen($event)"
+        >
+          From file
+        </button>
+        <button
+          type="button"
+          class="export-format-dropdown__item"
+          role="menuitem"
+          title="Connect to Unblu account and import configuration"
+          [disabled]="connectAccountLoading"
+          (click)="onImportConfigFromAccountChosen($event)"
+        >
+          From account
+        </button>
+      </div>
+    </div>
   </div>
 </section>
 
