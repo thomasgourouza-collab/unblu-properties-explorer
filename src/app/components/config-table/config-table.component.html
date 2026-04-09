@@ -334,16 +334,18 @@
     <div class="toolbar-chips-two-thirds">
       <ng-container *ngIf="hasActiveFilters; else noFiltersTemplate">
         <div class="chips-scroll-area">
-          <button
-            type="button"
-            class="filter-chip"
-            *ngFor="let chip of activeFilterChips"
-            (click)="removeFilterChip(chip)"
-            [title]="'Remove ' + chip.label"
-          >
-            <span>{{ chip.label }}</span>
-            <i class="pi pi-times" aria-hidden="true"></i>
-          </button>
+          <div class="filter-chip" *ngFor="let chip of activeFilterChips">
+            <span class="filter-chip-label">{{ chip.label }}</span>
+            <button
+              type="button"
+              class="filter-chip-remove"
+              (click)="removeFilterChip(chip)"
+              [title]="'Remove ' + chip.label"
+              [attr.aria-label]="'Remove filter: ' + chip.label"
+            >
+              <i class="pi pi-times" aria-hidden="true"></i>
+            </button>
+          </div>
         </div>
       </ng-container>
       <ng-template #noFiltersTemplate>
