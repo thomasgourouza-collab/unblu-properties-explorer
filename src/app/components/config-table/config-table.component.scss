@@ -1194,6 +1194,14 @@ $table-body-row-height: calc(
   box-sizing: border-box;
 }
 
+.value-header-diff-count {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+  line-height: 1;
+}
+
 $value-column-divergent-border: color-mix(in srgb, var(--accent) 72%, var(--surface-border));
 $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-border));
 

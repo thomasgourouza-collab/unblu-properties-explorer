@@ -522,9 +522,10 @@
                       (change)="onValueDiffsCheckboxChange($event)"
                       (click)="$event.stopPropagation()"
                       [disabled]="valueColumnChangeRowCount === 0"
-                      [title]="'Select diffs (' + valueColumnChangeRowCount + ')'"
+                      title="Select diffs"
                       [attr.aria-label]="'Select rows where Value differs from default (' + valueColumnChangeRowCount + ')'"
                     />
+                    <span class="value-header-diff-count">{{ valueColumnChangeRowCount }}</span>
                   </span>
                   <button
                     type="button"
