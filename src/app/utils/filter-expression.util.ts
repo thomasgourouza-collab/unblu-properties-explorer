@@ -36,6 +36,7 @@ type Token =
   | { kind: 'LPAREN' }
   | { kind: 'RPAREN' }
   | { kind: 'NOT' }
+  | { kind: 'ONLY' }
   | { kind: 'AND' }
   | { kind: 'OR' }
   | { kind: 'ATOM'; value: string }
@@ -83,7 +84,19 @@ function readOperandToken(
   let j = i;
   while (j < n) {
     const ch = input[j];
-    if (ch === '(' || ch === ')' || ch === '!') {
+    if (ch === '(' || ch === ')') {
+      break;
+    }
+    if (ch === '!') {
+      // Postfix "only": include ! in atom if we've read text and what follows is end/space/operator/)
+      if (j > i) {
+        const after = j + 1;
+        if (after >= n || /\s/.test(input[after]) || input[after] === ')' ||
+            (input[after] === '&' && after + 1 < n && input[after + 1] === '&') ||
+            (input[after] === '|' && after + 1 < n && input[after + 1] === '|')) {
+          j += 1; // include the !
+        }
+      }
       break;
     }
     if (ch === '&') {
@@ -185,6 +198,10 @@ function stripTrailingBooleanOperators(s: string): string {
       continue;
     }
     if (u.endsWith('!')) {
+      // Don't strip postfix "only" (! preceded by non-whitespace)
+      if (u.length >= 2 && !/\s/.test(u[u.length - 2]) && u[u.length - 2] !== ')') {
+        return u;
+      }
       t = u.slice(0, -1);
       continue;
     }
@@ -233,7 +250,9 @@ export function tokenizeFilterExpression(input: string): { ok: true; tokens: Tok
   const n = input.length;
 
   while (i < n) {
+    const beforeSkip = i;
     i = skipSpace(input, i);
+    const hadSpace = i > beforeSkip;
     if (i >= n) {
       break;
     }
@@ -250,7 +269,12 @@ export function tokenizeFilterExpression(input: string): { ok: true; tokens: Tok
       continue;
     }
     if (c === '!') {
-      tokens.push({ kind: 'NOT' });
+      const prev = tokens[tokens.length - 1];
+      if (!hadSpace && prev && prev.kind === 'RPAREN') {
+        tokens.push({ kind: 'ONLY' });
+      } else {
+        tokens.push({ kind: 'NOT' });
+      }
       i += 1;
       continue;
     }
@@ -342,7 +366,16 @@ class Parser {
       const inner = this.parseUnary();
       return { type: 'not', expr: inner };
     }
-    return this.parsePrimary();
+    return this.parsePostfix();
+  }
+
+  private parsePostfix(): FilterExprNode {
+    let node = this.parsePrimary();
+    while (this.peek().kind === 'ONLY') {
+      this.pos += 1;
+      node = Parser.markExact(node);
+    }
+    return node;
   }
 
   private parsePrimary(): FilterExprNode {
@@ -361,6 +394,22 @@ class Parser {
       return { type: 'atom', value: t.value };
     }
     throw new Error(`Unexpected token: ${t.kind}`);
+  }
+
+  /** Append '!' to every atom in a subtree so textFilterAtomMatches treats them as exact. */
+  private static markExact(node: FilterExprNode): FilterExprNode {
+    switch (node.type) {
+      case 'atom':
+        return { type: 'atom', value: node.value.endsWith('!') ? node.value : node.value + '!' };
+      case 'not':
+        return { type: 'not', expr: Parser.markExact(node.expr) };
+      case 'and':
+        return { type: 'and', left: Parser.markExact(node.left), right: Parser.markExact(node.right) };
+      case 'or':
+        return { type: 'or', left: Parser.markExact(node.left), right: Parser.markExact(node.right) };
+      default:
+        return node;
+    }
   }
 }
 
@@ -398,6 +447,11 @@ export function evaluateFilterAst(ast: FilterExprNode, atom: (operand: string) =
   }
 }
 
+/** Strip trailing '!' (exact-match marker) from an operand for display/highlighting. */
+function stripExactSuffix(operand: string): string {
+  return operand.endsWith('!') ? operand.slice(0, -1) : operand;
+}
+
 /** Operands under an even number of NOT ancestors (for positive highlights). */
 export function collectHighlightOperands(ast: FilterExprNode): string[] {
   const out: string[] = [];
@@ -406,7 +460,7 @@ export function collectHighlightOperands(ast: FilterExprNode): string[] {
     switch (node.type) {
       case 'atom':
         if (notParity % 2 === 0) {
-          out.push(node.value);
+          out.push(stripExactSuffix(node.value));
         }
         break;
       case 'not':
@@ -439,11 +493,17 @@ export function formatExpressionMatchLines(ast: FilterExprNode, atomMatches: (op
         const m = atomMatches(node.value);
         const sat = notParity % 2 === 0 ? m : !m;
         if (sat) {
-          if (isFilterExprNullOperand(node.value)) {
+          const display = stripExactSuffix(node.value);
+          const isExact = node.value.endsWith('!');
+          if (isFilterExprNullOperand(display)) {
             lines.push(notParity % 2 === 0 ? '$null (empty)' : '!$null (has value)');
+          } else if (isExact) {
+            lines.push(
+              notParity % 2 === 0 ? `${display} (exact match)` : `!${display} (not exact)`
+            );
           } else {
             lines.push(
-              notParity % 2 === 0 ? `${node.value} (matched)` : `!${node.value} (not present)`
+              notParity % 2 === 0 ? `${display} (matched)` : `!${display} (not present)`
             );
           }
         }

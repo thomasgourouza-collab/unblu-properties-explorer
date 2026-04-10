@@ -3043,22 +3043,30 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     operand: string,
     opts: { matchCase: boolean; wholeWord: boolean }
   ): boolean {
-    if (isFilterExprNullOperand(operand)) {
+    const exact = operand.endsWith('!');
+    const op = exact ? operand.slice(0, -1) : operand;
+
+    if (isFilterExprNullOperand(op)) {
       return hayRaw.trim().length === 0;
     }
     const hay = hayRaw.trim();
-    if (!operand) {
+    if (!op) {
       return false;
     }
+
+    if (exact) {
+      return opts.matchCase ? hay === op : hay.toLowerCase() === op.toLowerCase();
+    }
+
     const { matchCase, wholeWord } = opts;
     if (!wholeWord) {
       if (!matchCase) {
-        return hay.toLowerCase().includes(operand.toLowerCase());
+        return hay.toLowerCase().includes(op.toLowerCase());
       }
-      return hay.includes(operand);
+      return hay.includes(op);
     }
     try {
-      const inner = this.escapeRegExp(operand);
+      const inner = this.escapeRegExp(op);
       const flags = matchCase ? '' : 'i';
       return new RegExp(`\\b${inner}\\b`, flags).test(hay);
     } catch {
