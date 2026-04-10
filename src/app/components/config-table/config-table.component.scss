@@ -237,6 +237,10 @@ $export-bar-control-font-size: 0.875rem;
   }
 }
 
+.export-format-dropdown__submenu-caret { font-size: 0.7rem; opacity: 0.6; margin-left: auto; padding-left: 0.5rem; }
+
+.export-format-dropdown__menu--apikey-submenu { max-height: 16rem; overflow-y: auto; }
+
 .export-format-dropdown__menu--export-nested {
   min-width: 11rem;
   padding: 0.4rem;

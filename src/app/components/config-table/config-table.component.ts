@@ -196,6 +196,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   exportToFileSubmenuOpen = false;
   /** Import config: from file vs from account. */
   importConfigMenuOpen = false;
+  importFromApiKeySubmenuOpen = false;
   /** Table settings dropdown (reset / export / import persisted UI). */
   tableSettingsMenuOpen = false;
   /** Row identity for selection / CSV export (stable across duplicate property codes). */
@@ -238,6 +239,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   /** Full account payload from Unblu getCurrentAccount (kept in-memory for upcoming use cases). */
   connectedAccountResponse: Record<string, unknown> | null = null;
   connectedAccountSessionId: string | null = null;
+  connectedApiKeys: Record<string, unknown>[] = [];
   connectAccountDialogVisible = false;
   connectAccountLoading = false;
   connectAccountError = '';
@@ -684,6 +686,15 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     return typeof name === 'string' ? name : '';
   }
 
+  get apiKeyOptions(): { name: string; payload: Record<string, unknown> }[] {
+    return this.connectedApiKeys
+      .map((key) => ({
+        name: typeof key['name'] === 'string' ? key['name'] : '(unnamed)',
+        payload: key
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
   /** Opens the connect dialog in connect-only mode (no config import). Called by parent. */
   openConnectAccountDialog(): void {
     this.connectAccountMode = 'connect-only';
@@ -695,6 +706,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     const sessionId = this.connectedAccountSessionId;
     this.connectedAccountResponse = null;
     this.connectedAccountSessionId = null;
+    this.connectedApiKeys = [];
     this.safeMarkForCheck();
     // Fire-and-forget server-side cleanup
     if (sessionId) {
@@ -773,6 +785,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
         const importObject = buildConfigImportFromConnectedAccount(accountRecord);
         this.applyJsonConfigImport(importObject, `${baseUrl}`);
       }
+      // Fetch API keys in the background (non-blocking)
+      this.fetchApiKeys(sessionId);
       this.connectAccountDialogVisible = false;
       this.connectAccountError = '';
       this.connectAccountPassword = '';
@@ -785,6 +799,35 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       this.connectAccountLoading = false;
       this.safeMarkForCheck();
     }
+  }
+
+  private async fetchApiKeys(sessionId: string): Promise<void> {
+    try {
+      const response = await fetch('/api/account/apikeys', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId })
+      });
+      if (!response.ok) {
+        this.connectedApiKeys = [];
+        return;
+      }
+      const payload = (await response.json()) as { apiKeys?: unknown };
+      this.connectedApiKeys = Array.isArray(payload.apiKeys) ? payload.apiKeys : [];
+    } catch {
+      this.connectedApiKeys = [];
+    }
+    this.safeMarkForCheck();
+  }
+
+  onImportConfigFromApiKeyChosen(event: MouseEvent, apiKey: Record<string, unknown>): void {
+    event.stopPropagation();
+    this.importConfigMenuOpen = false;
+    this.importFromApiKeySubmenuOpen = false;
+    const name = typeof apiKey['name'] === 'string' ? apiKey['name'] : 'API Key';
+    const importObject = buildConfigImportFromConnectedAccount(apiKey);
+    this.applyJsonConfigImport(importObject, name);
+    this.safeMarkForCheck();
   }
 
   /** Rows with a non-empty import error message (trimmed). */
@@ -1081,9 +1124,16 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   toggleImportConfigMenu(event: MouseEvent): void {
     event.stopPropagation();
     this.importConfigMenuOpen = !this.importConfigMenuOpen;
+    this.importFromApiKeySubmenuOpen = false;
     if (this.importConfigMenuOpen) {
       this.closeToolbarMenus('import');
     }
+    this.safeMarkForCheck();
+  }
+
+  onImportFromApiKeyMenuToggle(event: MouseEvent): void {
+    event.stopPropagation();
+    this.importFromApiKeySubmenuOpen = !this.importFromApiKeySubmenuOpen;
     this.safeMarkForCheck();
   }
 
@@ -3169,6 +3219,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
   private closeImportMenu(): void {
     this.importConfigMenuOpen = false;
+    this.importFromApiKeySubmenuOpen = false;
   }
 
   private closeTableSettingsMenu(): void {

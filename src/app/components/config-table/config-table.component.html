@@ -304,6 +304,34 @@
         >
           From account
         </button>
+        <button
+          type="button"
+          class="export-format-dropdown__item"
+          role="menuitem"
+          title="Import configuration from an API Key"
+          [disabled]="!isAccountConnected || apiKeyOptions.length === 0"
+          (click)="onImportFromApiKeyMenuToggle($event)"
+        >
+          From API Key
+          <i class="pi pi-angle-right export-format-dropdown__submenu-caret" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div
+        *ngIf="importFromApiKeySubmenuOpen"
+        class="export-format-dropdown__menu export-format-dropdown__menu--apikey-submenu"
+        role="menu"
+        aria-label="Select API Key"
+      >
+        <button
+          *ngFor="let opt of apiKeyOptions"
+          type="button"
+          class="export-format-dropdown__item"
+          role="menuitem"
+          [title]="'Import configuration from API Key: ' + opt.name"
+          (click)="onImportConfigFromApiKeyChosen($event, opt.payload)"
+        >
+          {{ opt.name }}
+        </button>
       </div>
     </div>
   </div>
