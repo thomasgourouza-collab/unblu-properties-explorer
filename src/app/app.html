@@ -207,6 +207,15 @@
               around operators are optional.
             </li>
             <li>
+              <strong>Exact match</strong> (<code>!</code> suffix): appending <code>!</code> directly after a term or a
+              parenthesised group means “only” — it matches the <strong>entire</strong> cell value instead of a substring.
+              Examples: <code>enabled!</code> matches cells whose value is exactly “enabled”;
+              <code>(true || false)!</code> matches cells that are exactly “true” or exactly “false”;
+              <code>enabled! || partial</code> matches cells that are exactly “enabled” or contain “partial”.
+              The suffix <code>!</code> takes priority over the prefix <code>!</code> (NOT), so
+              <code>val!</code> is exact-match, while <code>! val</code> (with a space) is NOT.
+            </li>
+            <li>
               Without quoting, you cannot put the literal substrings <code>&amp;&amp;</code> or <code>||</code> inside a
               single operand when you are using operator mode (a future improvement could add quoting).
             </li>
@@ -222,7 +231,11 @@
               That button uses the same accent border as the Export / Import config toolbar when active (global and per text
               column).
             </li>
-            <li>List-style column filters still use comma-separated tokens with their own OR/AND row (unchanged).</li>
+            <li>
+              List-style column filters (select / multiselect) use comma-separated tokens with their own OR/AND row.
+              Click the pencil icon to switch any list column to a free text filter with full expression and regex support;
+              click the list icon to switch back.
+            </li>
             <li>
               Global scope defaults to <strong>visible columns</strong>; use the scope dropdown to search <strong>all
               columns</strong> instead. A row matches a global expression atom if <strong>any</strong> column in that scope
