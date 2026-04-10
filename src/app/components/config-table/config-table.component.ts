@@ -783,7 +783,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       this.connectedAccountSessionId = sessionId;
       if (this.connectAccountMode === 'connect-and-import') {
         const importObject = buildConfigImportFromConnectedAccount(accountRecord);
-        this.applyJsonConfigImport(importObject, `${baseUrl}`);
+        const accountName = typeof accountRecord['name'] === 'string' ? accountRecord['name'] : baseUrl;
+        this.applyJsonConfigImport(importObject, `Account: ${accountName}`);
       }
       // Fetch API keys in the background (non-blocking)
       this.fetchApiKeys(sessionId);
@@ -824,9 +825,9 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     event.stopPropagation();
     this.importConfigMenuOpen = false;
     this.importFromApiKeySubmenuOpen = false;
-    const name = typeof apiKey['name'] === 'string' ? apiKey['name'] : 'API Key';
+    const name = typeof apiKey['name'] === 'string' ? apiKey['name'] : 'unknown';
     const importObject = buildConfigImportFromConnectedAccount(apiKey);
-    this.applyJsonConfigImport(importObject, name);
+    this.applyJsonConfigImport(importObject, `API Key: ${name}`);
     this.safeMarkForCheck();
   }
 
@@ -1160,7 +1161,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     }
     this.importConfigMenuOpen = false;
     const importObject = buildConfigImportFromConnectedAccount(this.connectedAccountResponse);
-    this.applyJsonConfigImport(importObject, this.connectAccountBaseUrl || 'connected account');
+    const accountName = this.connectedAccountName || this.connectAccountBaseUrl || 'connected account';
+    this.applyJsonConfigImport(importObject, `Account: ${accountName}`);
     this.safeMarkForCheck();
   }
 
