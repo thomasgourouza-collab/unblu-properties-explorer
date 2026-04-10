@@ -21,6 +21,11 @@
         <h1 class="h3 mb-0 title-row-heading">Unblu Properties Explorer</h1>
       </div>
       <div class="title-row-actions">
+        <span
+          class="connection-indicator"
+          [class.connection-indicator--connected]="isAccountConnected"
+          aria-hidden="true"
+        ></span>
         <button
           type="button"
           class="btn btn-sm btn-outline-secondary title-row-copy-btn"
