@@ -24,6 +24,22 @@
         <button
           type="button"
           class="btn btn-sm btn-outline-secondary title-row-copy-btn"
+          (click)="onConnectDisconnectAccountClick()"
+          [disabled]="isLoading || rows.length === 0"
+          [title]="isAccountConnected ? 'Disconnect from Unblu account' : 'Connect to Unblu account'"
+          [attr.aria-label]="isAccountConnected ? 'Disconnect account' : 'Connect account'"
+        >
+          <i
+            class="pi"
+            [class.pi-link]="!isAccountConnected"
+            [class.pi-times-circle]="isAccountConnected"
+            aria-hidden="true"
+          ></i>
+          <span>{{ isAccountConnected ? 'Disconnect account' : 'Connect account' }}</span>
+        </button>
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-secondary title-row-copy-btn"
           (click)="reloadProperties(true)"
           [disabled]="isLoading"
           title="Re-login and reload properties"

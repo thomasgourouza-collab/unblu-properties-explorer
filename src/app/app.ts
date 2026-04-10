@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, HostListener, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener, OnInit, ViewChild } from '@angular/core';
 import { ToastModule } from 'primeng/toast';
 
 import { ConfigTableComponent } from './components/config-table/config-table.component';
@@ -23,6 +23,8 @@ interface PropertiesApiResponse {
   styleUrl: './app.scss'
 })
 export class App implements OnInit {
+  @ViewChild(ConfigTableComponent) private configTable?: ConfigTableComponent;
+
   rows: ConfigRow[] = [];
   parseWarnings: string[] = [];
   parseError = '';
@@ -97,6 +99,21 @@ ${backendDetail}` : backendMessage;
       globalThis.clearTimeout(timeoutId);
       this.isLoading = false;
       this.refreshView();
+    }
+  }
+
+  get isAccountConnected(): boolean {
+    return this.configTable?.isAccountConnected ?? false;
+  }
+
+  onConnectDisconnectAccountClick(): void {
+    if (!this.configTable) {
+      return;
+    }
+    if (this.configTable.isAccountConnected) {
+      this.configTable.disconnectAccount();
+    } else {
+      this.configTable.openConnectAccountDialog();
     }
   }
 

@@ -15,7 +15,8 @@ app.use((req, _res, next) => {
     req.path === '/api/properties' ||
     req.path === '/api/auth/relogin' ||
     req.path === '/api/account/connect' ||
-    req.path === '/api/account/update'
+    req.path === '/api/account/update' ||
+    req.path === '/api/account/disconnect'
   ) {
     console.log(`[api] ${req.method} ${req.path} started`);
   }
@@ -159,6 +160,14 @@ app.post('/api/account/update', async (req, res) => {
       message: 'Could not reach the Unblu endpoint. Check base URL, network access, and credentials.'
     });
   }
+});
+
+app.post('/api/account/disconnect', (req, res) => {
+  const sessionId = typeof req.body?.sessionId === 'string' ? req.body.sessionId.trim() : '';
+  if (sessionId) {
+    accountSessions.delete(sessionId);
+  }
+  res.json({ ok: true });
 });
 
 app.listen(port, () => {

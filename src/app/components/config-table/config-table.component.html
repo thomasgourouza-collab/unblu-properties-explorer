@@ -298,8 +298,8 @@
           type="button"
           class="export-format-dropdown__item"
           role="menuitem"
-          title="Connect to Unblu account and import configuration"
-          [disabled]="connectAccountLoading"
+          title="Import configuration from the connected Unblu account"
+          [disabled]="!isAccountConnected"
           (click)="onImportConfigFromAccountChosen($event)"
         >
           From account
@@ -1213,7 +1213,7 @@
           </button>
           <button type="submit" class="btn btn-sm btn-connect-account" [disabled]="connectAccountLoading">
             <span class="spinner-border spinner-border-sm" *ngIf="connectAccountLoading" aria-hidden="true"></span>
-            <span>{{ connectAccountLoading ? 'Connecting...' : 'Connect and import' }}</span>
+            <span>{{ connectAccountLoading ? 'Connecting...' : (connectAccountMode === 'connect-and-import' ? 'Connect and import' : 'Connect') }}</span>
           </button>
         </footer>
       </form>

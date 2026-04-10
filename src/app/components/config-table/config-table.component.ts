@@ -238,6 +238,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   connectAccountLoading = false;
   connectAccountError = '';
   exportToAccountLoading = false;
+  /** Controls whether the connect dialog also imports after connecting. */
+  connectAccountMode: 'connect-only' | 'connect-and-import' = 'connect-and-import';
   connectAccountBaseUrl = '';
   connectAccountUsername = '';
   connectAccountPassword = '';
@@ -661,6 +663,32 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.importConfigInputRef?.nativeElement?.click();
   }
 
+  get isAccountConnected(): boolean {
+    return this.connectedAccountSessionId !== null && this.connectedAccountResponse !== null;
+  }
+
+  /** Opens the connect dialog in connect-only mode (no config import). Called by parent. */
+  openConnectAccountDialog(): void {
+    this.connectAccountMode = 'connect-only';
+    this.onConnectAccountClick();
+  }
+
+  /** Clears account connection state. Called by parent. */
+  disconnectAccount(): void {
+    const sessionId = this.connectedAccountSessionId;
+    this.connectedAccountResponse = null;
+    this.connectedAccountSessionId = null;
+    this.safeMarkForCheck();
+    // Fire-and-forget server-side cleanup
+    if (sessionId) {
+      fetch('/api/account/disconnect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId })
+      }).catch(() => {});
+    }
+  }
+
   onConnectAccountClick(): void {
     this.connectAccountError = '';
     this.connectAccountDialogVisible = true;
@@ -724,8 +752,10 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       }
       this.connectedAccountResponse = accountRecord;
       this.connectedAccountSessionId = sessionId;
-      const importObject = buildConfigImportFromConnectedAccount(accountRecord);
-      this.applyJsonConfigImport(importObject, `${baseUrl}`);
+      if (this.connectAccountMode === 'connect-and-import') {
+        const importObject = buildConfigImportFromConnectedAccount(accountRecord);
+        this.applyJsonConfigImport(importObject, `${baseUrl}`);
+      }
       this.connectAccountDialogVisible = false;
       this.connectAccountError = '';
       this.connectAccountPassword = '';
@@ -1058,11 +1088,12 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
   onImportConfigFromAccountChosen(event: MouseEvent): void {
     event.stopPropagation();
-    if (this.connectAccountLoading) {
+    if (!this.connectedAccountSessionId || !this.connectedAccountResponse) {
       return;
     }
     this.importConfigMenuOpen = false;
-    this.onConnectAccountClick();
+    const importObject = buildConfigImportFromConnectedAccount(this.connectedAccountResponse);
+    this.applyJsonConfigImport(importObject, this.connectAccountBaseUrl || 'connected account');
     this.safeMarkForCheck();
   }
 
