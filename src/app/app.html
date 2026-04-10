@@ -182,7 +182,10 @@
             <kbd>←</kbd><kbd>→</kbd>
             <span>Previous / next table page when focus is outside text fields, dialogs, and overlay menus.</span>
           </div>
-          <div class="help-row"><kbd>Esc</kbd><span>Clear current text filter input</span></div>
+          <div class="help-row">
+            <kbd>Esc</kbd>
+            <span>Clear the focused filter field (global filter or a column's text filter when that input is focused).</span>
+          </div>
           <div class="help-row"><kbd>Cmd</kbd> / <kbd>Ctrl</kbd><span>Hold while hovering a cell to show full title tooltip</span></div>
           <div class="help-row"><kbd>Cmd</kbd> / <kbd>Ctrl</kbd> + click<span>Open the same content in a closable popup (per-value copy in Allowed values)</span></div>
           <div class="help-row"><kbd>Shift</kbd><span>Hold Shift over a row (with filters active) to show “Why matched?” — press Shift before or after pointing at the row.</span></div>
@@ -192,25 +195,24 @@
           <h3 class="help-section-title">Filter Tips</h3>
           <ul class="help-list">
             <li>
-              In expression mode, the operand <code>$null</code> matches empty or whitespace-only values (not the literal text
-              <code>$null</code>). Combine it with <code>&amp;&amp;</code>, <code>||</code>, and <code>!</code> like any other term.
-            </li>
-            <li>
-              By default (regex icon off), the global filter and text columns use <strong>expression</strong> syntax: build
-              conditions with <code>&amp;&amp;</code> (AND), <code>||</code> (OR), unary <code>!</code> (NOT), and parentheses.
-              Operands can include spaces (e.g. <code>green land &amp;&amp; blue sky</code>); only the start and end of each
-              operand are trimmed, and spaces around operators are optional. Example:
-              <code>(red || blue) &amp;&amp; orange</code>.
+              By default (regex icon off), the global filter and text columns use <strong>expression</strong> syntax.
+              Operators: <code>&amp;&amp;</code> (AND), <code>||</code> (OR), unary <code>!</code> (NOT), and parentheses.
+              Special operand <code>$null</code> matches empty or whitespace-only cell text (it is not a substring search for
+              the characters <code>$null</code>). Examples: <code>(red || blue) &amp;&amp; orange</code>,
+              <code>foo &amp;&amp; $null</code>, <code>!$null</code> (non-empty). Operands may include internal spaces (e.g.
+              <code>green land &amp;&amp; blue sky</code>); only the start and end of each operand are trimmed, and spaces
+              around operators are optional.
             </li>
             <li>
               Without quoted operands, you cannot search for the literal substrings <code>&amp;&amp;</code>, <code>||</code>,
               or parentheses inside a single term (a future improvement could add quoting).
             </li>
             <li>
-              The case-sensitive and whole-word icon toggles (same icons as in VS Code) apply whether you use expression
-              syntax or regex: expression operands respect them, and bare regex patterns use them for default flags and word
-              boundaries (explicit <code>/pattern/flags</code> keeps your flags; whole-word still wraps the pattern). Active
-              toggles use the same accent border as the regex icon button when it is on.
+              The case-sensitive and whole-word icon toggles (same icons as in VS Code) apply to expression operands and to
+              regex mode, except <code>$null</code> always means “empty / whitespace-only” and ignores those toggles. Bare
+              regex patterns use the toggles for default flags and word boundaries (explicit <code>/pattern/flags</code> keeps
+              your flags; whole-word still wraps the pattern). Active toggles use the same accent border as the regex icon
+              button when it is on.
             </li>
             <li>
               Turn on the <strong>regex</strong> icon (next to case / whole word) to treat the whole field as one pattern.
@@ -220,7 +222,8 @@
             <li>List-style column filters still use comma-separated tokens with their own OR/AND row (unchanged).</li>
             <li>
               Global scope defaults to <strong>visible columns</strong>; use the scope dropdown to search <strong>all
-              columns</strong> instead.
+              columns</strong> instead. A row matches a global expression atom if <strong>any</strong> column in that scope
+              matches; each column's text filter tests <strong>only</strong> that column.
             </li>
             <li>
               Invalid expression syntax matches no rows until you fix the filter (unbalanced parentheses, stray operators,
