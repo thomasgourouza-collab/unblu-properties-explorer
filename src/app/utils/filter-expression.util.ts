@@ -1,10 +1,16 @@
 /**
  * JavaScript-like boolean filter expressions over substring atoms:
  * && (tighter), ||, unary !, parentheses.
+ * If the input contains none of `&&`, `||`, or `!`, the whole trimmed string is a single atom (parentheses are literal).
  * Special operand {@link FILTER_EXPR_NULL_KEYWORD}: matches null/empty/whitespace-only cell text (not a substring).
  * Operands may contain internal spaces; only leading/trailing whitespace per operand is trimmed.
  * Whitespace before an operator ends the operand (e.g. `a b && c d` → two atoms). Atoms are edge-trimmed only (case preserved); callers fold case when needed.
  */
+
+/** When false, the filter is one literal search string (parentheses are not grouping). */
+function filterExpressionUsesBooleanOperators(s: string): boolean {
+  return s.includes('&&') || s.includes('||') || s.includes('!');
+}
 
 /** Exact operand that matches empty cell values (global / text column expression mode). */
 export const FILTER_EXPR_NULL_KEYWORD = '$null' as const;
@@ -359,6 +365,13 @@ class Parser {
 }
 
 export function parseFilterExpression(input: string): FilterExprParseResult {
+  const trimmed = input.trim();
+  if (!trimmed) {
+    return { ok: false, error: FILTER_EXPR_EMPTY_ERROR };
+  }
+  if (!filterExpressionUsesBooleanOperators(trimmed)) {
+    return { ok: true, ast: { type: 'atom', value: trimmed } };
+  }
   const sanitized = sanitizeFilterExpressionInput(input);
   if (!sanitized) {
     return { ok: false, error: FILTER_EXPR_EMPTY_ERROR };

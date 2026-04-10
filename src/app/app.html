@@ -195,17 +195,20 @@
           <h3 class="help-section-title">Filter Tips</h3>
           <ul class="help-list">
             <li>
-              By default (regex icon off), the global filter and text columns use <strong>expression</strong> syntax.
-              Operators: <code>&amp;&amp;</code> (AND), <code>||</code> (OR), unary <code>!</code> (NOT), and parentheses.
-              Special operand <code>$null</code> matches empty or whitespace-only cell text (it is not a substring search for
-              the characters <code>$null</code>). Examples: <code>(red || blue) &amp;&amp; orange</code>,
-              <code>foo &amp;&amp; $null</code>, <code>!$null</code> (non-empty). Operands may include internal spaces (e.g.
+              By default (regex icon off), the global filter and text columns use <strong>expression</strong> syntax when the
+              field contains at least one of <code>&amp;&amp;</code>, <code>||</code>, or <code>!</code>. Then operators are
+              <code>&amp;&amp;</code> (AND), <code>||</code> (OR), unary <code>!</code> (NOT), and parentheses for grouping.
+              If the field contains <strong>none</strong> of those, the whole text is a single search term and
+              <code>(</code> / <code>)</code> are normal characters (e.g. <code>foo(bar)</code>). Special operand
+              <code>$null</code> matches empty or whitespace-only cell text (not a substring search for the characters
+              <code>$null</code>). Examples: <code>(red || blue) &amp;&amp; orange</code>, <code>foo &amp;&amp; $null</code>,
+              <code>!$null</code> (non-empty). With operators on, operands may include internal spaces (e.g.
               <code>green land &amp;&amp; blue sky</code>); only the start and end of each operand are trimmed, and spaces
               around operators are optional.
             </li>
             <li>
-              Without quoted operands, you cannot search for the literal substrings <code>&amp;&amp;</code>, <code>||</code>,
-              or parentheses inside a single term (a future improvement could add quoting).
+              Without quoting, you cannot put the literal substrings <code>&amp;&amp;</code> or <code>||</code> inside a
+              single operand when you are using operator mode (a future improvement could add quoting).
             </li>
             <li>
               The case-sensitive and whole-word icon toggles (same icons as in VS Code) apply to expression operands and to
@@ -226,8 +229,8 @@
               matches; each column's text filter tests <strong>only</strong> that column.
             </li>
             <li>
-              Invalid expression syntax matches no rows until you fix the filter (unbalanced parentheses, stray operators,
-              etc.).
+              When <code>&amp;&amp;</code>, <code>||</code>, or <code>!</code> are present, invalid expression syntax matches
+              no rows until you fix the filter (unbalanced parentheses, stray operators, etc.).
             </li>
             <li>Global highlights are blue; column-specific highlights are green.</li>
             <li>Click chips to remove active filters quickly.</li>
