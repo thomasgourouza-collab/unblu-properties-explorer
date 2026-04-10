@@ -447,13 +447,17 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.syncMatchInspectorToDisplayedTable();
   }
 
-  /** Rows in the current filtered view where Value ≠ Default (same rules as the blue divergent border). */
+  /** Rows in the full dataset where Value ≠ Default (same rules as the blue divergent border). */
   get valueColumnChangeRowCount(): number {
-    return this.filteredRows.filter((row) => this.valueColumnDiffersFromDefault(row)).length;
+    return this.rows.filter((row) => this.valueColumnDiffersFromDefault(row)).length;
   }
 
   private get valueColumnDiffRows(): ConfigRow[] {
-    return this.filteredRows.filter((row) => this.valueColumnDiffersFromDefault(row));
+    let rows = this.filteredRows;
+    if (this.showConfigRowsOnly) {
+      rows = rows.filter((row) => this.configImportRowKeys.has(row.rowKey));
+    }
+    return rows.filter((row) => this.valueColumnDiffersFromDefault(row));
   }
 
   get valueColumnDiffsCheckboxChecked(): boolean {
