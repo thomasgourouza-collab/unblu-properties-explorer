@@ -1144,7 +1144,12 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       return;
     }
     if (!this.connectedAccountSessionId || !this.connectedAccountResponse) {
-      globalThis.alert('Connect account first, then retry Export config → To account.');
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Cannot export to account',
+        detail: 'Connect account first, then retry Export config → To account.',
+        life: 6000
+      });
       return;
     }
 
@@ -1161,7 +1166,12 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       }
     });
     if (patchedCount === 0) {
-      globalThis.alert('No selected rows could be mapped to configuration/text based on Source and Key.');
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Cannot export to account',
+        detail: 'No selected rows could be mapped to configuration/text based on Source and Key.',
+        life: 6000
+      });
       return;
     }
 
@@ -1210,11 +1220,16 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
         life: 4500
       });
     } catch (error) {
-      globalThis.alert(
+      const detail =
         error instanceof Error
           ? error.message
-          : 'Could not export selection to account. Verify account connection and retry.'
-      );
+          : 'Could not export selection to account. Verify account connection and retry.';
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Export to account failed',
+        detail,
+        life: 8000
+      });
     } finally {
       this.exportToAccountLoading = false;
       this.safeMarkForCheck();
