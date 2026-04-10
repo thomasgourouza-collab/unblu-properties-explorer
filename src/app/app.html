@@ -21,6 +21,7 @@
         <h1 class="h3 mb-0 title-row-heading">Unblu Properties Explorer</h1>
       </div>
       <div class="title-row-actions">
+        <span class="connected-account-name" *ngIf="connectedAccountName">{{ connectedAccountName }}</span>
         <span
           class="connection-indicator"
           [class.connection-indicator--connected]="isAccountConnected"

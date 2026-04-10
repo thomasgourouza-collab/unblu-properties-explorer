@@ -38,6 +38,16 @@
   flex: 0 0 auto;
 }
 
+.connected-account-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted, #adb5bd);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 10rem;
+}
+
 .connection-indicator {
   display: inline-block;
   margin-right: 0.1rem;

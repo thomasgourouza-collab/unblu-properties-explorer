@@ -106,6 +106,10 @@ ${backendDetail}` : backendMessage;
     return this.configTable?.isAccountConnected ?? false;
   }
 
+  get connectedAccountName(): string {
+    return this.configTable?.connectedAccountName ?? '';
+  }
+
   onConnectDisconnectAccountClick(): void {
     if (!this.configTable) {
       return;

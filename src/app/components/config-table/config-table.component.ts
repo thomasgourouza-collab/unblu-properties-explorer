@@ -679,6 +679,11 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     return this.connectedAccountSessionId !== null && this.connectedAccountResponse !== null;
   }
 
+  get connectedAccountName(): string {
+    const name = this.connectedAccountResponse?.['name'];
+    return typeof name === 'string' ? name : '';
+  }
+
   /** Opens the connect dialog in connect-only mode (no config import). Called by parent. */
   openConnectAccountDialog(): void {
     this.connectAccountMode = 'connect-only';
