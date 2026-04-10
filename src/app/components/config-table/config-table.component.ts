@@ -97,6 +97,7 @@ interface TableSettings {
   textFilterMatchCase?: Partial<Record<string, boolean>>;
   textFilterWholeWord?: Partial<Record<string, boolean>>;
   valueFilters: Partial<Record<string, string[]>>;
+  listFilterTextOverrides?: string[];
   listModes: Record<ListColumnKey, FilterMode>;
   visibleColumnKeys: string[];
   columnOrderKeys?: string[];
@@ -209,6 +210,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   textFilterMatchCase: Partial<Record<string, boolean>> = {};
   textFilterWholeWord: Partial<Record<string, boolean>> = {};
   valueFilters: Partial<Record<string, string[]>> = {};
+  /** Columns with native select/list filterType overridden to free text mode. */
+  listFilterTextOverrides = new Set<string>();
   listModes: Record<ListColumnKey, FilterMode> = {
     allowedScopes: 'or',
     editableBy: 'or'
@@ -1443,6 +1446,40 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.persistSettings();
   }
 
+  /** Returns the effective filter type for a column, accounting for text overrides. */
+  getEffectiveFilterType(key: string): 'text' | 'select' | 'list' {
+    const column = this.columns.find((c) => c.key === key);
+    if (!column) {
+      return 'text';
+    }
+    if ((column.filterType === 'select' || column.filterType === 'list') && this.listFilterTextOverrides.has(key)) {
+      return 'text';
+    }
+    return column.filterType;
+  }
+
+  /** Whether a column's native filterType is select or list (toggle is available). */
+  isFilterTypeToggleable(key: string): boolean {
+    const column = this.columns.find((c) => c.key === key);
+    return column?.filterType === 'select' || column?.filterType === 'list';
+  }
+
+  toggleFilterTextOverride(key: string): void {
+    if (this.listFilterTextOverrides.has(key)) {
+      // Switching back to list/select: clear text filter state
+      delete this.textFilters[key];
+      delete this.textModes[key];
+      delete this.textFilterMatchCase[key];
+      delete this.textFilterWholeWord[key];
+      this.listFilterTextOverrides.delete(key);
+    } else {
+      // Switching to text: clear value filter state
+      delete this.valueFilters[key];
+      this.listFilterTextOverrides.add(key);
+    }
+    this.onFiltersChanged();
+  }
+
   onGlobalFilterInputChange(value: string): void {
     this.globalFilter = value;
     this.onFiltersChanged();
@@ -2163,7 +2200,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     }
 
     for (const column of this.columns) {
-      if (column.filterType !== 'text') {
+      if (this.getEffectiveFilterType(column.key) !== 'text') {
         continue;
       }
       if (this.getTextMode(column.key) !== 'expr') {
@@ -2224,7 +2261,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   }
 
   private rowMatchesColumnFilter(row: ConfigRow, column: ColumnDefinition): boolean {
-    if (column.filterType === 'text') {
+    const effectiveType = this.getEffectiveFilterType(column.key);
+    if (effectiveType === 'text') {
       const textMode = this.getTextMode(column.key);
       const raw = (this.textFilters[column.key] ?? '').trim();
       if (textMode === 'regex') {
@@ -2253,7 +2291,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       return true;
     }
 
-    if (column.filterType === 'list') {
+    if (effectiveType === 'list') {
       const listKey = this.toListColumnKey(column.key);
       const selectedNormalized = selectedValues.map((value) => this.normalize(value));
       const noneN = this.normalize(COLUMN_FILTER_NONE_VALUE);
@@ -2277,7 +2315,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       });
     }
 
-    if (column.filterType === 'text') {
+    if (effectiveType === 'text') {
       return true;
     }
 
@@ -3322,6 +3360,9 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
         {} as Partial<Record<string, boolean>>
       );
       this.valueFilters = parsed.valueFilters ?? {};
+      this.listFilterTextOverrides = new Set(
+        Array.isArray(parsed.listFilterTextOverrides) ? parsed.listFilterTextOverrides : []
+      );
       this.listModes = {
         allowedScopes: parsed.listModes?.allowedScopes === 'and' ? 'and' : 'or',
         editableBy: parsed.listModes?.editableBy === 'and' ? 'and' : 'or'
@@ -3358,6 +3399,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       textFilterWholeWord:
         Object.keys(this.textFilterWholeWord).length > 0 ? this.textFilterWholeWord : undefined,
       valueFilters: this.valueFilters,
+      listFilterTextOverrides: this.listFilterTextOverrides.size > 0 ? [...this.listFilterTextOverrides] : undefined,
       listModes: this.listModes,
       visibleColumnKeys: this.visibleColumnKeys,
       columnOrderKeys: this.columnOrderKeys

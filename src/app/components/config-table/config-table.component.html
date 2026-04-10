@@ -554,7 +554,7 @@
             aria-hidden="true"
           ></th>
           <th *ngFor="let column of columns" scope="col" class="filter-header-cell" [style.width.%]="getColumnWidthPercent(column.key)">
-            <ng-container [ngSwitch]="column.filterType">
+            <ng-container [ngSwitch]="getEffectiveFilterType(column.key)">
               <ng-container *ngSwitchCase="'text'">
                 <div class="text-header-filter column-filter-stack">
                   <div
@@ -599,6 +599,17 @@
                     >
                       <span class="codicon codicon-regex" aria-hidden="true"></span>
                     </button>
+                    <button
+                      *ngIf="isFilterTypeToggleable(column.key)"
+                      type="button"
+                      class="btn btn-outline-secondary btn-xs filter-text-option-btn filter-type-toggle-btn"
+                      [class.filter-text-option-btn--active]="true"
+                      title="Switch back to list filter"
+                      aria-label="Switch to list filter"
+                      (click)="toggleFilterTextOverride(column.key)"
+                    >
+                      <i class="pi pi-list" aria-hidden="true"></i>
+                    </button>
                   </div>
                   <div class="header-text-filter-input-row">
                     <input
@@ -631,6 +642,15 @@
               </ng-container>
 
               <div *ngSwitchCase="'select'" class="select-header-filter column-filter-stack">
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary btn-xs filter-text-option-btn filter-type-toggle-btn"
+                  title="Switch to text filter"
+                  aria-label="Switch to text filter"
+                  (click)="toggleFilterTextOverride(column.key)"
+                >
+                  <i class="pi pi-pencil" aria-hidden="true"></i>
+                </button>
                 <p-multiselect
                   size="small"
                   [options]="getFilterOptions(column.key)"
@@ -673,6 +693,15 @@
                     (ngModelChange)="setListMode(column.key, $event)"
                   />
                   <label class="btn btn-outline-secondary btn-xs" [for]="column.key + '-and'">AND</label>
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary btn-xs filter-text-option-btn filter-type-toggle-btn"
+                    title="Switch to text filter"
+                    aria-label="Switch to text filter"
+                    (click)="toggleFilterTextOverride(column.key)"
+                  >
+                    <i class="pi pi-pencil" aria-hidden="true"></i>
+                  </button>
                 </div>
                 <p-multiselect
                   size="small"

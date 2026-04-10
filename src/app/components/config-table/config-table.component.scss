@@ -132,6 +132,20 @@ $toolbar-accent-border-hover: color-mix(in srgb, var(--accent) 94%, var(--surfac
   }
 }
 
+.filter-type-toggle-btn {
+  margin-left: auto;
+
+  .pi {
+    font-size: 0.7rem;
+  }
+}
+
+.select-header-filter {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
 // Allowed scopes / Editable by: OR vs AND (list column header).
 .list-header-filter .text-filter-mode-row {
   .btn-check:checked + .btn.btn-outline-secondary {
