@@ -823,13 +823,38 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.safeMarkForCheck();
   }
 
-  onImportConfigFromApiKeyChosen(event: MouseEvent, apiKey: Record<string, unknown>): void {
+  async onImportConfigFromApiKeyChosen(event: MouseEvent, apiKey: Record<string, unknown>): Promise<void> {
     event.stopPropagation();
     this.importConfigMenuOpen = false;
     this.importFromApiKeySubmenuOpen = false;
+    const apiKeyId = apiKey['id'];
     const name = typeof apiKey['name'] === 'string' ? apiKey['name'] : 'unknown';
-    const importObject = buildConfigImportFromConnectedAccount(apiKey);
-    this.applyJsonConfigImport(importObject, `API Key: ${name}`);
+    this.safeMarkForCheck();
+
+    try {
+      // Re-fetch all API keys to get fresh data
+      const response = await fetch('/api/account/apikeys', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: this.connectedAccountSessionId })
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const payload = (await response.json()) as { apiKeys?: unknown };
+      const allKeys = Array.isArray(payload.apiKeys) ? payload.apiKeys as Record<string, unknown>[] : [];
+      this.connectedApiKeys = allKeys;
+      const freshKey = allKeys.find((k) => k['id'] === apiKeyId) ?? apiKey;
+      const importObject = buildConfigImportFromConnectedAccount(freshKey);
+      this.applyJsonConfigImport(importObject, `API Key: ${name}`);
+    } catch {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Import from API Key failed',
+        detail: 'Could not fetch latest API Key data. Verify connection and retry.',
+        life: 6000
+      });
+    }
     this.safeMarkForCheck();
   }
 
@@ -1156,15 +1181,40 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.safeMarkForCheck();
   }
 
-  onImportConfigFromAccountChosen(event: MouseEvent): void {
+  async onImportConfigFromAccountChosen(event: MouseEvent): Promise<void> {
     event.stopPropagation();
-    if (!this.connectedAccountSessionId || !this.connectedAccountResponse) {
+    if (!this.connectedAccountSessionId) {
       return;
     }
     this.importConfigMenuOpen = false;
-    const importObject = buildConfigImportFromConnectedAccount(this.connectedAccountResponse);
-    const accountName = this.connectedAccountName || this.connectAccountBaseUrl || 'connected account';
-    this.applyJsonConfigImport(importObject, `Account: ${accountName}`);
+    this.safeMarkForCheck();
+
+    try {
+      const response = await fetch('/api/account/refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: this.connectedAccountSessionId })
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const payload = (await response.json()) as { account?: unknown };
+      const accountRecord = asRecord(payload.account);
+      if (!accountRecord) {
+        throw new Error('Invalid account payload.');
+      }
+      this.connectedAccountResponse = accountRecord;
+      const importObject = buildConfigImportFromConnectedAccount(accountRecord);
+      const accountName = this.connectedAccountName || this.connectAccountBaseUrl || 'connected account';
+      this.applyJsonConfigImport(importObject, `Account: ${accountName}`);
+    } catch {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Import from account failed',
+        detail: 'Could not fetch latest account data. Verify connection and retry.',
+        life: 6000
+      });
+    }
     this.safeMarkForCheck();
   }
 

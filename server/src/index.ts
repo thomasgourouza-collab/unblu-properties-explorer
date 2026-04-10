@@ -119,6 +119,36 @@ app.post('/api/account/connect', async (req, res) => {
   }
 });
 
+app.post('/api/account/refresh', async (req, res) => {
+  const sessionId = typeof req.body?.sessionId === 'string' ? req.body.sessionId.trim() : '';
+  if (!sessionId) {
+    res.status(400).json({ message: 'sessionId is required.' });
+    return;
+  }
+  const session = accountSessions.get(sessionId);
+  if (!session) {
+    res.status(401).json({ message: 'Account session not found. Connect account again and retry.' });
+    return;
+  }
+
+  const endpoint = buildGetCurrentAccountUrl(session.baseUrl);
+  try {
+    const response = await fetch(endpoint, {
+      method: 'GET',
+      headers: { Authorization: session.authHeader, Accept: 'application/json' }
+    });
+    if (!response.ok) {
+      const detail = await readResponseDetail(response);
+      res.status(response.status).json({ message: detail || `HTTP ${response.status}` });
+      return;
+    }
+    const payload = (await response.json()) as unknown;
+    res.json({ account: payload });
+  } catch {
+    res.status(502).json({ message: 'Could not reach the Unblu endpoint.' });
+  }
+});
+
 app.post('/api/account/update', async (req, res) => {
   const parsed = parseAccountUpdatePayload(req.body);
   if (!parsed.ok) {
