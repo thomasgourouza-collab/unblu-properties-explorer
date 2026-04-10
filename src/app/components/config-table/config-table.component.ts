@@ -244,6 +244,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   connectAccountLoading = false;
   connectAccountError = '';
   exportToAccountLoading = false;
+  exportToApiKeyLoading = false;
+  exportToApiKeySubmenuOpen = false;
   /** Controls whether the connect dialog also imports after connecting. */
   connectAccountMode: 'connect-only' | 'connect-and-import' = 'connect-and-import';
   connectAccountBaseUrl = '';
@@ -1301,6 +1303,108 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       });
     } finally {
       this.exportToAccountLoading = false;
+      this.safeMarkForCheck();
+    }
+  }
+
+  onExportToApiKeyMenuToggle(event: MouseEvent): void {
+    event.stopPropagation();
+    this.exportToApiKeySubmenuOpen = !this.exportToApiKeySubmenuOpen;
+    this.safeMarkForCheck();
+  }
+
+  async onExportToApiKeyChosen(event: MouseEvent, apiKey: Record<string, unknown>): Promise<void> {
+    event.stopPropagation();
+    if (this.exportToApiKeyLoading) {
+      return;
+    }
+    if (this.selectedDatasetCount === 0) {
+      return;
+    }
+    if (!this.connectedAccountSessionId) {
+      return;
+    }
+
+    const patchedApiKey = clonePlainJsonObject(apiKey);
+    const patchedCount = patchAccountPayloadFromSelection(patchedApiKey, {
+      rows: this.rows,
+      selectedRowKeys: this.selectedRowKeys,
+      valueForRow: (row) => {
+        let value = row.value ?? '';
+        if (this.valueColumnUsesMultiSelect(row)) {
+          value = this.parseListStyleCellToTokens(value).join(',');
+        }
+        return value;
+      }
+    });
+    if (patchedCount === 0) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Cannot export to API Key',
+        detail: 'No selected rows could be mapped to configuration/text based on Source and Key.',
+        life: 6000
+      });
+      return;
+    }
+
+    const apiKeyName = typeof apiKey['name'] === 'string' ? apiKey['name'] : 'API Key';
+    this.exportFormatMenuOpen = false;
+    this.exportToFileSubmenuOpen = false;
+    this.exportToApiKeySubmenuOpen = false;
+    this.exportToApiKeyLoading = true;
+    this.safeMarkForCheck();
+
+    try {
+      const response = await fetch('/api/account/apikey/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: this.connectedAccountSessionId,
+          account: patchedApiKey
+        })
+      });
+      if (!response.ok) {
+        const errorPayload = await response.json().catch(() => null);
+        const backendMessage =
+          errorPayload &&
+          typeof errorPayload === 'object' &&
+          'message' in errorPayload &&
+          typeof errorPayload.message === 'string'
+            ? errorPayload.message
+            : `HTTP ${response.status}`;
+        if (response.status === 401) {
+          this.connectedAccountSessionId = null;
+        }
+        throw new Error(backendMessage);
+      }
+
+      const payload = (await response.json()) as { apiKey?: unknown };
+      const updatedApiKey = asRecord(payload.apiKey);
+      if (updatedApiKey) {
+        const idx = this.connectedApiKeys.findIndex((k) => k['id'] === apiKey['id']);
+        if (idx >= 0) {
+          this.connectedApiKeys[idx] = updatedApiKey;
+        }
+      }
+      this.messageService.add({
+        severity: 'success',
+        summary: `Exported to API Key: ${apiKeyName}`,
+        detail: 'Selected properties were saved to the API Key.',
+        life: 4500
+      });
+    } catch (error) {
+      const detail =
+        error instanceof Error
+          ? error.message
+          : 'Could not export selection to API Key. Verify account connection and retry.';
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Export to API Key failed',
+        detail,
+        life: 8000
+      });
+    } finally {
+      this.exportToApiKeyLoading = false;
       this.safeMarkForCheck();
     }
   }
@@ -3217,6 +3321,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   private closeExportMenu(): void {
     this.exportFormatMenuOpen = false;
     this.exportToFileSubmenuOpen = false;
+    this.exportToApiKeySubmenuOpen = false;
   }
 
   private closeImportMenu(): void {

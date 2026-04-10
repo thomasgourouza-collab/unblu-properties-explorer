@@ -17,7 +17,8 @@ app.use((req, _res, next) => {
     req.path === '/api/account/connect' ||
     req.path === '/api/account/update' ||
     req.path === '/api/account/disconnect' ||
-    req.path === '/api/account/apikeys'
+    req.path === '/api/account/apikeys' ||
+    req.path === '/api/account/apikey/update'
   ) {
     console.log(`[api] ${req.method} ${req.path} started`);
   }
@@ -198,6 +199,51 @@ app.post('/api/account/apikeys', async (req, res) => {
     const payload = (await response.json()) as Record<string, unknown>;
     const items = Array.isArray(payload) ? payload : Array.isArray(payload.items) ? payload.items : [];
     res.json({ apiKeys: items });
+  } catch {
+    res.status(502).json({
+      message: 'Could not reach the Unblu endpoint. Check base URL, network access, and credentials.'
+    });
+  }
+});
+
+app.post('/api/account/apikey/update', async (req, res) => {
+  const parsed = parseAccountUpdatePayload(req.body);
+  if (!parsed.ok) {
+    res.status(400).json({ message: parsed.message });
+    return;
+  }
+
+  const { sessionId, account: apiKey } = parsed.value;
+  const session = accountSessions.get(sessionId);
+  if (!session) {
+    res.status(401).json({
+      message: 'Account session not found. Connect account again and retry.'
+    });
+    return;
+  }
+
+  const endpoint = `${session.baseUrl}/app/rest/v4/apikeys/update?expand=configuration,text`;
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        Authorization: session.authHeader,
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(apiKey)
+    });
+
+    if (!response.ok) {
+      const detail = await readResponseDetail(response);
+      res.status(response.status).json({
+        message: detail || `Unblu request failed with HTTP ${response.status}.`
+      });
+      return;
+    }
+
+    const payload = (await response.json()) as unknown;
+    res.json({ apiKey: payload });
   } catch {
     res.status(502).json({
       message: 'Could not reach the Unblu endpoint. Check base URL, network access, and credentials.'

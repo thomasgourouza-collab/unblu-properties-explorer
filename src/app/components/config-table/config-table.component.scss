@@ -239,7 +239,8 @@ $export-bar-control-font-size: 0.875rem;
 
 .export-format-dropdown__submenu-caret { font-size: 0.7rem; opacity: 0.6; margin-left: auto; padding-left: 0.5rem; }
 
-.import-config-menus-wrap {
+.import-config-menus-wrap,
+.export-config-menus-wrap {
   position: absolute;
   top: 100%;
   left: 0;
