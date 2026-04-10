@@ -1421,6 +1421,7 @@ $value-import-invalid-border: color-mix(in srgb, #ef4444 70%, var(--surface-bord
   white-space: nowrap;
   line-height: 1.25;
   font-size: $value-cell-font-size;
+  padding-top: 6px;
 }
 
 /* Native <select>: avoid overflow/ellipsis hacks — they add scrollbars or odd chrome in WebKit/Firefox */
