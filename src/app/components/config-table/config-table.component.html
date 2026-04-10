@@ -279,59 +279,60 @@
         <span>Import config</span>
         <i class="pi pi-angle-down export-format-dropdown__caret" aria-hidden="true"></i>
       </button>
-      <div
-        *ngIf="importConfigMenuOpen"
-        class="export-format-dropdown__menu"
-        role="menu"
-        aria-label="Import configuration source"
-      >
-        <button
-          type="button"
-          class="export-format-dropdown__item"
-          role="menuitem"
-          title="Import from JSON, YAML, or Java .properties (root must be a flat key/value map)"
-          (click)="onImportConfigFromFileChosen($event)"
+      <div *ngIf="importConfigMenuOpen" class="import-config-menus-wrap">
+        <div
+          class="export-format-dropdown__menu export-format-dropdown__menu--static"
+          role="menu"
+          aria-label="Import configuration source"
         >
-          From file
-        </button>
-        <button
-          type="button"
-          class="export-format-dropdown__item"
-          role="menuitem"
-          title="Import configuration from the connected Unblu account"
-          [disabled]="!isAccountConnected"
-          (click)="onImportConfigFromAccountChosen($event)"
+          <button
+            type="button"
+            class="export-format-dropdown__item"
+            role="menuitem"
+            title="Import from JSON, YAML, or Java .properties (root must be a flat key/value map)"
+            (click)="onImportConfigFromFileChosen($event)"
+          >
+            From file
+          </button>
+          <button
+            type="button"
+            class="export-format-dropdown__item"
+            role="menuitem"
+            title="Import configuration from the connected Unblu account"
+            [disabled]="!isAccountConnected"
+            (click)="onImportConfigFromAccountChosen($event)"
+          >
+            From account
+          </button>
+          <button
+            type="button"
+            class="export-format-dropdown__item"
+            role="menuitem"
+            title="Import configuration from an API Key"
+            [disabled]="!isAccountConnected || apiKeyOptions.length === 0"
+            (click)="onImportFromApiKeyMenuToggle($event)"
+          >
+            From API Key
+            <i class="pi pi-angle-down export-format-dropdown__submenu-caret" [class.export-format-dropdown__submenu-caret--open]="importFromApiKeySubmenuOpen" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div
+          *ngIf="importFromApiKeySubmenuOpen"
+          class="export-format-dropdown__menu export-format-dropdown__menu--static export-format-dropdown__menu--apikey-submenu"
+          role="menu"
+          aria-label="Select API Key"
         >
-          From account
-        </button>
-        <button
-          type="button"
-          class="export-format-dropdown__item"
-          role="menuitem"
-          title="Import configuration from an API Key"
-          [disabled]="!isAccountConnected || apiKeyOptions.length === 0"
-          (click)="onImportFromApiKeyMenuToggle($event)"
-        >
-          From API Key
-          <i class="pi pi-angle-right export-format-dropdown__submenu-caret" aria-hidden="true"></i>
-        </button>
-      </div>
-      <div
-        *ngIf="importFromApiKeySubmenuOpen"
-        class="export-format-dropdown__menu export-format-dropdown__menu--apikey-submenu"
-        role="menu"
-        aria-label="Select API Key"
-      >
-        <button
-          *ngFor="let opt of apiKeyOptions"
-          type="button"
-          class="export-format-dropdown__item"
-          role="menuitem"
-          [title]="'Import configuration from API Key: ' + opt.name"
-          (click)="onImportConfigFromApiKeyChosen($event, opt.payload)"
-        >
-          {{ opt.name }}
-        </button>
+          <button
+            *ngFor="let opt of apiKeyOptions"
+            type="button"
+            class="export-format-dropdown__item"
+            role="menuitem"
+            [title]="'Import configuration from API Key: ' + opt.name"
+            (click)="onImportConfigFromApiKeyChosen($event, opt.payload)"
+          >
+            {{ opt.name }}
+          </button>
+        </div>
       </div>
     </div>
   </div>
