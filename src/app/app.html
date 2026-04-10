@@ -192,6 +192,10 @@
           <h3 class="help-section-title">Filter Tips</h3>
           <ul class="help-list">
             <li>
+              In expression mode, the operand <code>$null</code> matches empty or whitespace-only values (not the literal text
+              <code>$null</code>). Combine it with <code>&amp;&amp;</code>, <code>||</code>, and <code>!</code> like any other term.
+            </li>
+            <li>
               By default (regex icon off), the global filter and text columns use <strong>expression</strong> syntax: build
               conditions with <code>&amp;&amp;</code> (AND), <code>||</code> (OR), unary <code>!</code> (NOT), and parentheses.
               Operands can include spaces (e.g. <code>green land &amp;&amp; blue sky</code>); only the start and end of each

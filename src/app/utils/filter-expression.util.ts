@@ -1,9 +1,17 @@
 /**
  * JavaScript-like boolean filter expressions over substring atoms:
  * && (tighter), ||, unary !, parentheses.
+ * Special operand {@link FILTER_EXPR_NULL_KEYWORD}: matches null/empty/whitespace-only cell text (not a substring).
  * Operands may contain internal spaces; only leading/trailing whitespace per operand is trimmed.
  * Whitespace before an operator ends the operand (e.g. `a b && c d` → two atoms). Atoms are edge-trimmed only (case preserved); callers fold case when needed.
  */
+
+/** Exact operand that matches empty cell values (global / text column expression mode). */
+export const FILTER_EXPR_NULL_KEYWORD = '$null' as const;
+
+export function isFilterExprNullOperand(operand: string): boolean {
+  return operand === FILTER_EXPR_NULL_KEYWORD;
+}
 
 export type FilterExprNode =
   | { type: 'atom'; value: string }
@@ -418,9 +426,13 @@ export function formatExpressionMatchLines(ast: FilterExprNode, atomMatches: (op
         const m = atomMatches(node.value);
         const sat = notParity % 2 === 0 ? m : !m;
         if (sat) {
-          lines.push(
-            notParity % 2 === 0 ? `${node.value} (matched)` : `!${node.value} (not present)`
-          );
+          if (isFilterExprNullOperand(node.value)) {
+            lines.push(notParity % 2 === 0 ? '$null (empty)' : '!$null (has value)');
+          } else {
+            lines.push(
+              notParity % 2 === 0 ? `${node.value} (matched)` : `!${node.value} (not present)`
+            );
+          }
         }
         break;
       }

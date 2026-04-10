@@ -38,6 +38,7 @@ import {
   evaluateFilterAst,
   FILTER_EXPR_EMPTY_ERROR,
   formatExpressionMatchLines,
+  isFilterExprNullOperand,
   parseFilterExpression
 } from '../../utils/filter-expression.util';
 import { stringifyJavaPropertiesFile } from '../../utils/java-properties-config.util';
@@ -2849,6 +2850,9 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       if (!token) {
         continue;
       }
+      if (isFilterExprNullOperand(token)) {
+        continue;
+      }
       if (!opts.wholeWord && !opts.matchCase) {
         const tl = token.toLowerCase();
         let cursor = 0;
@@ -2993,6 +2997,9 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     operand: string,
     opts: { matchCase: boolean; wholeWord: boolean }
   ): boolean {
+    if (isFilterExprNullOperand(operand)) {
+      return hayRaw.trim().length === 0;
+    }
     const hay = hayRaw.trim();
     if (!operand) {
       return false;
