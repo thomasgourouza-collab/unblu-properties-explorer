@@ -473,6 +473,10 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     return n > 0 && n < diffRows.length;
   }
 
+  get selectedDiffCount(): number {
+    return this.valueColumnDiffRows.filter((row) => this.selectedRowKeys.has(row.rowKey)).length;
+  }
+
   onValueDiffsCheckboxChange(event: Event): void {
     event.stopPropagation();
     const input = event.target as HTMLInputElement | null;

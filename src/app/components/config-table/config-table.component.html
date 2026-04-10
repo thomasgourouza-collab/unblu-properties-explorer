@@ -525,7 +525,7 @@
                       title="Select diffs"
                       [attr.aria-label]="'Select rows where Value differs from default (' + valueColumnChangeRowCount + ')'"
                     />
-                    <span class="value-header-diff-count">{{ valueColumnChangeRowCount }}</span>
+                    <span class="value-header-diff-count">{{ selectedDiffCount }}/{{ valueColumnChangeRowCount }}</span>
                   </span>
                   <button
                     type="button"

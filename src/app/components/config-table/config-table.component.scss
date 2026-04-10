@@ -1195,6 +1195,7 @@ $table-body-row-height: calc(
 }
 
 .value-header-diff-count {
+  margin-left: 0.25rem;
   font-size: 0.7rem;
   font-weight: 600;
   color: var(--text-muted);
