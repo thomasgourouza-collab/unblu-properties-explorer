@@ -635,10 +635,10 @@ $export-bar-control-font-size: 0.875rem;
   line-height: inherit;
   font: inherit;
   font-weight: inherit;
-  background: color-mix(in srgb, var(--accent) 72%, transparent);
-  color: var(--text-primary);
+  background: color-mix(in srgb, #2ecc71 42%, transparent);
+  color: inherit;
   border-radius: 0.12rem;
-  box-shadow: 0 0 0 1px color-mix(in srgb, #93c5fd 85%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, #58d68d 70%, transparent);
 }
 
 .column-filter-highlight {
@@ -649,10 +649,10 @@ $export-bar-control-font-size: 0.875rem;
   line-height: inherit;
   font: inherit;
   font-weight: inherit;
-  background: color-mix(in srgb, #2ecc71 42%, transparent);
-  color: inherit;
+  background: color-mix(in srgb, var(--accent) 72%, transparent);
+  color: var(--text-primary);
   border-radius: 0.12rem;
-  box-shadow: 0 0 0 1px color-mix(in srgb, #58d68d 70%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, #93c5fd 85%, transparent);
 }
 
 .property-code-cell,
