@@ -40,12 +40,16 @@ const SHARED_EXTRACTOR_HELPERS = `
   };
   const collectDependsOn = (propertyBlock, ownKey) => {
     const seen = new Set();
+    const KEY_REGEX = /[a-z][a-zA-Z0-9_-]*(?:\\.[a-zA-Z0-9_-]+){2,}/g;
     const candidates = propertyBlock.querySelectorAll(':scope .paragraph code.code__key, :scope .paragraph code, :scope .ulist.none code.code__key, :scope .ulist.none code');
     candidates.forEach((node) => {
       const text = (node.textContent || '').replace(/\\s+/g, ' ').trim();
-      if (!text || text === ownKey) return;
-      if (!/^[a-z][a-zA-Z0-9_.-]*\\.[a-zA-Z0-9_.-]+$/.test(text)) return;
-      seen.add(text);
+      if (!text) return;
+      const matches = text.match(KEY_REGEX);
+      if (!matches) return;
+      matches.forEach((match) => {
+        if (match && match !== ownKey) seen.add(match);
+      });
     });
     return Array.from(seen);
   };
