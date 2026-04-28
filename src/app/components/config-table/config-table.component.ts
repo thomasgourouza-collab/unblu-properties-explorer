@@ -106,6 +106,39 @@ interface TableSettings {
 
 const UNBLU_SCOPE_EDITORS: Record<string, string[]> = unbluScopeEditorsJson as Record<string, string[]>;
 
+const ALLOWED_SCOPES_DISPLAY_ORDER = [
+  'USER',
+  'TEAM',
+  'CONVERSATION',
+  'CONVERSATION_TEMPLATE',
+  'AREA',
+  'APIKEY',
+  'ACCOUNT',
+  'GLOBAL',
+  'IMMUTABLE',
+  'INGRESS',
+  'LICENCE'
+];
+const EDITABLE_BY_DISPLAY_ORDER = [
+  'REGISTERED_USER',
+  'SUPERVISOR',
+  'ADMIN',
+  'TECHNICAL_ADMIN',
+  'SUPER_ADMIN'
+];
+const buildRankMap = (order: string[]): Record<string, number> =>
+  order.reduce((acc, value, index) => ({ ...acc, [value]: index }), {});
+const ALLOWED_SCOPES_RANK: Record<string, number> = buildRankMap(ALLOWED_SCOPES_DISPLAY_ORDER);
+const EDITABLE_BY_RANK: Record<string, number> = buildRankMap(EDITABLE_BY_DISPLAY_ORDER);
+const allowedScopeRank = (scope: string): number =>
+  ALLOWED_SCOPES_RANK[scope.toUpperCase()] ?? ALLOWED_SCOPES_DISPLAY_ORDER.length;
+const editableByRank = (role: string): number =>
+  EDITABLE_BY_RANK[role.toUpperCase()] ?? EDITABLE_BY_DISPLAY_ORDER.length;
+const sortAllowedScopes = (scopes: string[]): string[] =>
+  [...scopes].sort((a, b) => allowedScopeRank(a) - allowedScopeRank(b));
+const sortEditableBy = (roles: string[]): string[] =>
+  [...roles].sort((a, b) => editableByRank(a) - editableByRank(b));
+
 const BASE_COLUMN_DEFINITIONS: ColumnDefinition[] = [
   { key: 'source', label: 'Source', filterType: 'select' },
   { key: 'category', label: 'Group title', filterType: 'select' },
@@ -2703,8 +2736,16 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
         }
       }
 
+      let sortFn: (left: string, right: string) => number;
+      if (column.key === 'allowedScopes') {
+        sortFn = (left, right) => allowedScopeRank(left) - allowedScopeRank(right);
+      } else if (column.key === 'editableBy') {
+        sortFn = (left, right) => editableByRank(left) - editableByRank(right);
+      } else {
+        sortFn = (left, right) => left.localeCompare(right);
+      }
       const sorted = [...values]
-        .sort((left, right) => left.localeCompare(right))
+        .sort(sortFn)
         .map((value) => ({ label: value, value }));
 
       const hasEmptySource =
@@ -2728,6 +2769,12 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     }
     if (key === 'dependsOn') {
       return (row.dependsOn ?? []).join(', ');
+    }
+    if (key === 'allowedScopes') {
+      return sortAllowedScopes(row.allowedScopesTokens ?? []).join(', ');
+    }
+    if (key === 'editableBy') {
+      return sortEditableBy(row.editableByTokens ?? []).join(', ');
     }
     if (key.startsWith(EXTRA_COLUMN_PREFIX)) {
       return row.extra[key] ?? '';
