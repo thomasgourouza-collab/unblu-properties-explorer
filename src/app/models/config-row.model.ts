@@ -10,7 +10,13 @@ export type ConfigColumnKey =
   | 'allowedScopes'
   | 'visibility'
   | 'editableBy'
-  | 'description';
+  | 'description'
+  | 'status'
+  | 'dependsOn';
+
+export type PropertyStatus = 'Preview' | 'Stable' | 'Deprecated';
+
+export const PROPERTY_STATUS_OPTIONS: PropertyStatus[] = ['Preview', 'Stable', 'Deprecated'];
 
 /** Prefix for dynamic CSV columns that do not map to ConfigColumnKey. */
 export const EXTRA_COLUMN_PREFIX = 'extra:' as const;
@@ -38,6 +44,8 @@ export interface ConfigRow {
   visibility: string;
   editableBy: string;
   description: string;
+  status: PropertyStatus;
+  dependsOn: string[];
   allowedScopesTokens: string[];
   editableByTokens: string[];
   hasAllowedValuesColumn: boolean;

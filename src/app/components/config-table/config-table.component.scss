@@ -723,6 +723,16 @@ $export-bar-control-font-size: 0.875rem;
   font-size: 0.7rem;
 }
 
+.depends-on-ellipsis {
+  user-select: none;
+}
+
+.status-tag {
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
 .header-cell {
   white-space: nowrap;
   background: var(--surface-raised);

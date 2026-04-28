@@ -19,9 +19,10 @@ import { MessageService, SortMeta } from 'primeng/api';
 import { MultiSelect, MultiSelectModule } from 'primeng/multiselect';
 import type { Table } from 'primeng/table';
 import { TableColumnReorderEvent, TableModule } from 'primeng/table';
+import { TagModule } from 'primeng/tag';
 import { stringify as stringifyYaml } from 'yaml';
 
-import { ColumnDefinition, ConfigRow, EXTRA_COLUMN_PREFIX, FilterMode } from '../../models/config-row.model';
+import { ColumnDefinition, ConfigRow, EXTRA_COLUMN_PREFIX, FilterMode, PROPERTY_STATUS_OPTIONS } from '../../models/config-row.model';
 import { buildSelectionExportFilename, escapeCsvField } from './lib/config-export.util';
 import {
   buildConfigImportFromConnectedAccount,
@@ -110,6 +111,8 @@ const BASE_COLUMN_DEFINITIONS: ColumnDefinition[] = [
   { key: 'category', label: 'Group title', filterType: 'select' },
   { key: 'propertyTitle', label: 'Label', filterType: 'text' },
   { key: 'property', label: 'Key', filterType: 'text' },
+  { key: 'status', label: 'Status', filterType: 'select' },
+  { key: 'dependsOn', label: 'Depends on', filterType: 'text' },
   { key: 'value', label: 'Value', filterType: 'text' },
   { key: 'defaultValue', label: 'Default value', filterType: 'text' },
   { key: 'allowedValues', label: 'Allowed values', filterType: 'text' },
@@ -147,7 +150,7 @@ export class BindIndeterminateDirective implements AfterViewChecked {
 @Component({
   selector: 'app-config-table',
   standalone: true,
-  imports: [CommonModule, FormsModule, TableModule, MultiSelectModule, BindIndeterminateDirective],
+  imports: [CommonModule, FormsModule, TableModule, MultiSelectModule, TagModule, BindIndeterminateDirective],
   templateUrl: './config-table.component.html',
   styleUrl: './config-table.component.scss'
 })
@@ -329,13 +332,13 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
   /** Relative width units; redistributed so the table stays 100% wide. */
   private getColumnWidthWeight(columnKey: string): number {
-    if (columnKey === 'property') {
+    if (columnKey === 'property' || columnKey === 'dependsOn') {
       return 2;
     }
     if (columnKey === 'value') {
       return 1.5;
     }
-    if (columnKey === 'visibility') {
+    if (columnKey === 'visibility' || columnKey === 'status') {
       return 0.65;
     }
     if (columnKey === 'source') {
@@ -1905,6 +1908,10 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       this.cellDetailDialogAllowedScopeRows = null;
       this.cellDetailDialogAllowedLines = this.parseCommaSeparatedCellList(raw ?? '');
       this.cellDetailDialogPlainText = '';
+    } else if (column.key === 'dependsOn') {
+      this.cellDetailDialogAllowedScopeRows = null;
+      this.cellDetailDialogAllowedLines = [...(row.dependsOn ?? [])];
+      this.cellDetailDialogPlainText = '';
     } else {
       this.cellDetailDialogAllowedLines = null;
       this.cellDetailDialogAllowedScopeRows = null;
@@ -1985,7 +1992,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       return this.cellDetailDialogAllowedScopeRows !== null;
     }
     return (
-      (key === 'allowedValues' || key === 'editableBy') &&
+      (key === 'allowedValues' || key === 'editableBy' || key === 'dependsOn') &&
       this.cellDetailDialogAllowedLines !== null
     );
   }
@@ -2673,6 +2680,11 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
         continue;
       }
 
+      if (column.key === 'status') {
+        optionsMap['status'] = PROPERTY_STATUS_OPTIONS.map((value: string) => ({ label: value, value }));
+        continue;
+      }
+
       const values = new Set<string>();
 
       for (const row of rows) {
@@ -2713,6 +2725,9 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   getCellValue(row: ConfigRow, key: string): string {
     if (key === 'source') {
       return row.source ?? '';
+    }
+    if (key === 'dependsOn') {
+      return (row.dependsOn ?? []).join(', ');
     }
     if (key.startsWith(EXTRA_COLUMN_PREFIX)) {
       return row.extra[key] ?? '';

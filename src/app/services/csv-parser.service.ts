@@ -5,7 +5,9 @@ import {
   ConfigRow,
   CsvParseFileResult,
   CsvParseResult,
-  EXTRA_COLUMN_PREFIX
+  EXTRA_COLUMN_PREFIX,
+  PROPERTY_STATUS_OPTIONS,
+  PropertyStatus
 } from '../models/config-row.model';
 
 type RawCsvRow = Record<string, string | undefined>;
@@ -18,6 +20,10 @@ type CsvMappedKey = keyof Omit<
   | 'rowKey'
   | 'extra'
   | 'value'
+  | 'configImportError'
+  | 'valueImportResolvedHighlight'
+  | 'dependsOn'
+  | 'status'
 >;
 
 export interface ParseFileSource {
@@ -43,6 +49,9 @@ export class CsvParserService {
     editableby: 'editableBy',
     description: 'description'
   };
+
+  private readonly statusHeaderAliases = ['status', 'stability'];
+  private readonly dependsOnHeaderAliases = ['dependson', 'dependencies', 'depends'];
 
   /** Maps internal required-header keys to the CSV column names shown in error messages. */
   private readonly headerDisplayNames: Partial<Record<string, string>> = {
@@ -77,7 +86,7 @@ export class CsvParserService {
         transformHeader: (header) => header.trim(),
         complete: ({ data, errors, meta }) => {
           const warnings = errors.map((error) => `Line ${error.row}: ${error.message}`);
-          const { headerMap, extraHeadersOrdered } = this.classifyHeaders(meta.fields ?? []);
+          const { headerMap, extraHeadersOrdered, statusHeader, dependsOnHeader } = this.classifyHeaders(meta.fields ?? []);
           const missingHeaders = this.getMissingHeaders(headerMap);
 
           if (missingHeaders.length > 0) {
@@ -97,8 +106,7 @@ export class CsvParserService {
           for (const row of data) {
             const mapped = this.mapRow(
               row,
-              headerMap,
-              extraHeadersOrdered,
+              { headerMap, extraHeadersOrdered, statusHeader, dependsOnHeader },
               source.displayLabel,
               source.rowKeyPrefix,
               rowIndex
@@ -175,10 +183,14 @@ export class CsvParserService {
   private classifyHeaders(headers: string[]): {
     headerMap: Map<CsvMappedKey, string>;
     extraHeadersOrdered: string[];
+    statusHeader: string | null;
+    dependsOnHeader: string | null;
   } {
     const headerMap = new Map<CsvMappedKey, string>();
     const extraHeadersOrdered: string[] = [];
     const seenExtra = new Set<string>();
+    let statusHeader: string | null = null;
+    let dependsOnHeader: string | null = null;
 
     for (const header of headers) {
       const normalizedHeader = this.normalizeHeader(header);
@@ -186,15 +198,23 @@ export class CsvParserService {
 
       if (mappedKey && !headerMap.has(mappedKey)) {
         headerMap.set(mappedKey, header);
-      } else if (!mappedKey && header.length > 0) {
-        if (!seenExtra.has(header)) {
-          seenExtra.add(header);
-          extraHeadersOrdered.push(header);
-        }
+        continue;
+      }
+      if (!statusHeader && this.statusHeaderAliases.includes(normalizedHeader)) {
+        statusHeader = header;
+        continue;
+      }
+      if (!dependsOnHeader && this.dependsOnHeaderAliases.includes(normalizedHeader)) {
+        dependsOnHeader = header;
+        continue;
+      }
+      if (header.length > 0 && !seenExtra.has(header)) {
+        seenExtra.add(header);
+        extraHeadersOrdered.push(header);
       }
     }
 
-    return { headerMap, extraHeadersOrdered };
+    return { headerMap, extraHeadersOrdered, statusHeader, dependsOnHeader };
   }
 
   private getMissingHeaders(headerMap: Map<CsvMappedKey, string>): string[] {
@@ -215,12 +235,17 @@ export class CsvParserService {
 
   private mapRow(
     row: RawCsvRow,
-    headerMap: Map<CsvMappedKey, string>,
-    extraHeadersOrdered: string[],
+    classification: {
+      headerMap: Map<CsvMappedKey, string>;
+      extraHeadersOrdered: string[];
+      statusHeader: string | null;
+      dependsOnHeader: string | null;
+    },
     sourceLabel: string,
     rowKeyPrefix: string,
     rowIndex: number
   ): ConfigRow {
+    const { headerMap, extraHeadersOrdered, statusHeader, dependsOnHeader } = classification;
     const getValue = (key: CsvMappedKey): string => {
       const header = headerMap.get(key);
       if (!header) {
@@ -241,6 +266,8 @@ export class CsvParserService {
     }
 
     const defaultValue = getValue('defaultValue');
+    const statusRaw = statusHeader ? (row[statusHeader] ?? '').trim() : '';
+    const dependsOnRaw = dependsOnHeader ? (row[dependsOnHeader] ?? '').trim() : '';
 
     return {
       category: getValue('category'),
@@ -258,11 +285,19 @@ export class CsvParserService {
       visibility: getValue('visibility'),
       editableBy,
       description: getValue('description'),
+      status: this.normalizeStatus(statusRaw),
+      dependsOn: this.tokenizeCommaSeparatedValues(dependsOnRaw),
       allowedScopesTokens: this.tokenizeCommaSeparatedValues(allowedScopes),
       editableByTokens: this.tokenizeCommaSeparatedValues(editableBy),
       hasAllowedValuesColumn,
       extra
     };
+  }
+
+  private normalizeStatus(raw: string): PropertyStatus {
+    const normalized = raw.trim().toLowerCase();
+    const match = PROPERTY_STATUS_OPTIONS.find((option) => option.toLowerCase() === normalized);
+    return match ?? 'Stable';
   }
 
   private tokenizeCommaSeparatedValues(input: string): string[] {

@@ -196,6 +196,8 @@ export class PropertiesScraper {
         visibility: row.visibility,
         editableBy: row.editableBy,
         description: row.description,
+        status: row.status,
+        dependsOn: row.dependsOn ?? [],
         allowedScopesTokens: tokenizeCommaSeparatedValues(row.allowedScopes),
         editableByTokens: tokenizeCommaSeparatedValues(row.editableBy),
         hasAllowedValuesColumn: row.hasAllowedValuesColumn,

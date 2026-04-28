@@ -980,6 +980,36 @@
               </div>
             </ng-container>
             <ng-template #tplNotValueColumn>
+            <ng-container *ngIf="column.key === 'status'; else tplAfterStatus">
+              <p-tag
+                [value]="row.status || 'Stable'"
+                [severity]="row.status === 'Deprecated' ? 'danger' : row.status === 'Preview' ? 'warn' : 'success'"
+                styleClass="status-tag">
+              </p-tag>
+            </ng-container>
+            <ng-template #tplAfterStatus>
+            <ng-container *ngIf="column.key === 'dependsOn'; else tplAfterDependsOn">
+              <ng-container *ngIf="row.dependsOn?.length === 1">
+                <span class="property-code-wrap">
+                  <span class="property-code-scroll">
+                    <code class="property-code-cell">{{ row.dependsOn[0] }}</code>
+                  </span>
+                  <button
+                    type="button"
+                    class="property-copy-btn"
+                    (click)="$event.stopPropagation(); copyFullCell('dependsOn:' + row.rowKey, row.dependsOn[0])"
+                    [title]="isFullCellCopied('dependsOn:' + row.rowKey, row.dependsOn[0]) ? 'Copied' : 'Copy key'"
+                    [attr.aria-label]="isFullCellCopied('dependsOn:' + row.rowKey, row.dependsOn[0]) ? 'Copied' : 'Copy dependency key'"
+                  >
+                    <i class="pi" [ngClass]="isFullCellCopied('dependsOn:' + row.rowKey, row.dependsOn[0]) ? 'pi-check' : 'pi-copy'"></i>
+                  </button>
+                </span>
+              </ng-container>
+              <ng-container *ngIf="(row.dependsOn?.length ?? 0) > 1">
+                <code class="property-code-cell depends-on-ellipsis">…</code>
+              </ng-container>
+            </ng-container>
+            <ng-template #tplAfterDependsOn>
             <ng-container *ngIf="column.key === 'defaultValue'; else tplAllowedOrRest">
               <div *ngIf="isDefaultValueCellVisible(getCellValue(row, column.key))" class="cell-x-scroll cell-chips-row">
                 <code class="cell-code-chip"
@@ -1048,6 +1078,8 @@
                   ></div>
               </ng-template>
               </ng-template>
+            </ng-template>
+            </ng-template>
             </ng-template>
             </ng-template>
           </td>
@@ -1147,7 +1179,7 @@
             </ng-container>
             <ng-template #cellPreviewOtherItemLists>
               <ng-container *ngIf="cellDetailDialogAllowedLinesForDisplay.length > 0">
-                <ng-container *ngIf="cellDetailDialogColumnKey === 'allowedValues'; else cellPreviewListPlainLines">
+                <ng-container *ngIf="cellDetailDialogColumnKey === 'allowedValues' || cellDetailDialogColumnKey === 'dependsOn'; else cellPreviewListPlainLines">
                   <ul class="cell-detail-dialog-value-list">
                     <li
                       *ngFor="let line of cellDetailDialogAllowedLinesForDisplay; let i = index; trackBy: trackByDialogLine"
@@ -1263,7 +1295,7 @@
             </ng-container>
             <ng-template #cellDetailOtherItemLists>
               <ng-container *ngIf="cellDetailDialogAllowedLinesForDisplay.length > 0">
-                <ng-container *ngIf="cellDetailDialogColumnKey === 'allowedValues'; else cellDetailListPlainLines">
+                <ng-container *ngIf="cellDetailDialogColumnKey === 'allowedValues' || cellDetailDialogColumnKey === 'dependsOn'; else cellDetailListPlainLines">
                   <ul class="cell-detail-dialog-value-list">
                     <li
                       *ngFor="let line of cellDetailDialogAllowedLinesForDisplay; let i = index; trackBy: trackByDialogLine"

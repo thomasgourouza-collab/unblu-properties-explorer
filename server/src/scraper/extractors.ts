@@ -29,7 +29,30 @@ export async function scrapeTextProperties(page: Page): Promise<ScrapedPropertyR
   return page.evaluate(TEXT_EXTRACTOR_SCRIPT) as Promise<ScrapedPropertyRow[]>;
 }
 
+const SHARED_EXTRACTOR_HELPERS = `
+  const detectStatus = (propertyBlock) => {
+    if (propertyBlock.querySelector('.admonitionblock.warning, .admonitionblock.caution, [class*="deprecated" i]')) return 'Deprecated';
+    if (propertyBlock.querySelector('.admonitionblock.note, .admonitionblock.tip, [class*="preview" i]')) return 'Preview';
+    const blockText = (propertyBlock.textContent || '').replace(/\\s+/g, ' ').trim();
+    if (/\\bdeprecated\\b/i.test(blockText)) return 'Deprecated';
+    if (/\\b(preview feature|in preview|tech preview|technology preview)\\b/i.test(blockText)) return 'Preview';
+    return 'Stable';
+  };
+  const collectDependsOn = (propertyBlock, ownKey) => {
+    const seen = new Set();
+    const candidates = propertyBlock.querySelectorAll(':scope .paragraph code.code__key, :scope .paragraph code, :scope .ulist.none code.code__key, :scope .ulist.none code');
+    candidates.forEach((node) => {
+      const text = (node.textContent || '').replace(/\\s+/g, ' ').trim();
+      if (!text || text === ownKey) return;
+      if (!/^[a-z][a-zA-Z0-9_.-]*\\.[a-zA-Z0-9_.-]+$/.test(text)) return;
+      seen.add(text);
+    });
+    return Array.from(seen);
+  };
+`;
+
 const CONFIG_EXTRACTOR_SCRIPT = `(() => {
+  ${SHARED_EXTRACTOR_HELPERS}
   const TYPE_ALLOWED_VALUES_SEPARATOR = /\\s+with allowed values:\\s+/i;
   const cleanText = (value) => (value || '').replace(/\\s+/g, ' ').trim();
   const normalizeTypeLabel = (typeValue) => (typeValue === 'List of string' ? 'List of strings' : typeValue);
@@ -99,6 +122,8 @@ const CONFIG_EXTRACTOR_SCRIPT = `(() => {
         visibility: fields.visibility,
         editableBy: fields.editableBy,
         description: getDescription(propertyBlock),
+        status: detectStatus(propertyBlock),
+        dependsOn: collectDependsOn(propertyBlock, key),
         source: 'configuration-properties',
         hasAllowedValuesColumn: true
       });
@@ -108,6 +133,7 @@ const CONFIG_EXTRACTOR_SCRIPT = `(() => {
 })()`;
 
 const TEXT_EXTRACTOR_SCRIPT = `(() => {
+  ${SHARED_EXTRACTOR_HELPERS}
   const cleanText = (value) => (value || '').replace(/\\s+/g, ' ').trim();
   const cleanPreText = (value) => String(value ?? '').replace(/\\r\\n/g, '\\n').trim();
   const getDirectSect2Blocks = (categoryBlock) => {
@@ -179,6 +205,8 @@ const TEXT_EXTRACTOR_SCRIPT = `(() => {
         visibility: fields.visibility,
         editableBy: fields.editableBy,
         description: getDescription(propertyBlock),
+        status: detectStatus(propertyBlock),
+        dependsOn: collectDependsOn(propertyBlock, key),
         source: 'text-properties',
         hasAllowedValuesColumn: false
       });

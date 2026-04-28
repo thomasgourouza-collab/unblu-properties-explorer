@@ -1,3 +1,5 @@
+export type PropertyStatus = 'Preview' | 'Stable' | 'Deprecated';
+
 export interface ScrapedPropertyRow {
   groupTitle: string;
   label: string;
@@ -9,6 +11,8 @@ export interface ScrapedPropertyRow {
   visibility: string;
   editableBy: string;
   description: string;
+  status: PropertyStatus;
+  dependsOn: string[];
   source: 'configuration-properties' | 'text-properties';
   hasAllowedValuesColumn: boolean;
 }
@@ -29,6 +33,8 @@ export interface ConfigRowApi {
   visibility: string;
   editableBy: string;
   description: string;
+  status: PropertyStatus;
+  dependsOn: string[];
   allowedScopesTokens: string[];
   editableByTokens: string[];
   hasAllowedValuesColumn: boolean;
