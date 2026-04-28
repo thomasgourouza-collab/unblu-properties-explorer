@@ -266,9 +266,14 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   matchInspectorReasons: MatchReason[] = [];
   private matchInspectorRow: ConfigRow | null = null;
 
+  /** Cmd/Ctrl+hover: same floating panel as the match inspector, body matches the cell detail dialog. */
+  cellCmdPreviewOpen = false;
+
   /** Shift+hover: some hosts omit `shiftKey` on mouse events; track Shift from keyboard too. */
   private matchInspectorShiftFromKeyboard = false;
   private pointerContextRow: ConfigRow | null = null;
+  /** Data column under the pointer (checkbox column clears this). */
+  private pointerContextColumn: ColumnDefinition | null = null;
   private pointerContextClientX = 0;
   private pointerContextClientY = 0;
 
@@ -1846,7 +1851,34 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     }
     event.preventDefault();
     event.stopPropagation();
+    this.closeCellCmdPreview();
     this.openCellDetailDialog(row, column);
+  }
+
+  /** Data body cells: Shift = match inspector; Cmd/Ctrl = cell content preview (same shell as match inspector). */
+  onBodyDataCellPointerMove(event: MouseEvent, row: ConfigRow, column: ColumnDefinition): void {
+    this.pointerContextRow = row;
+    this.pointerContextColumn = column;
+    this.pointerContextClientX = event.clientX;
+    this.pointerContextClientY = event.clientY;
+
+    if (this.isShiftHeldForMatchInspector(event)) {
+      this.closeCellCmdPreview();
+      this.openMatchInspector(event, row);
+      return;
+    }
+    if (event.metaKey || event.ctrlKey) {
+      this.closeMatchInspector();
+      const t = event.target as HTMLElement | null;
+      if (t && this.isInteractiveCellTarget(t)) {
+        this.closeCellCmdPreview();
+      } else {
+        this.openCellCmdPreview(event, row, column);
+      }
+      return;
+    }
+    this.closeMatchInspector();
+    this.closeCellCmdPreview();
   }
 
   private isInteractiveCellTarget(el: HTMLElement): boolean {
@@ -1856,7 +1888,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     return Boolean(node);
   }
 
-  private openCellDetailDialog(row: ConfigRow, column: ColumnDefinition): void {
+  private applyCellDetailDialogState(row: ConfigRow, column: ColumnDefinition): void {
     this.cellDetailDialogRowKey = row.rowKey;
     this.cellDetailDialogColumnKey = column.key;
     this.cellDetailDialogPropertyCode = this.getCellValue(row, 'property')?.trim() ?? '';
@@ -1878,6 +1910,11 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       this.cellDetailDialogAllowedScopeRows = null;
       this.cellDetailDialogPlainText = raw?.trim() ?? '';
     }
+  }
+
+  private openCellDetailDialog(row: ConfigRow, column: ColumnDefinition): void {
+    this.cellCmdPreviewOpen = false;
+    this.applyCellDetailDialogState(row, column);
     this.safeMarkForCheck();
     queueMicrotask(() => {
       const dialog = this.cellDetailDialogEl?.nativeElement;
@@ -1885,6 +1922,45 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
         dialog.showModal();
       }
     });
+  }
+
+  private openCellCmdPreview(event: MouseEvent, row: ConfigRow, column: ColumnDefinition): void {
+    if (this.cellDetailDialogEl?.nativeElement.open) {
+      return;
+    }
+    if (
+      this.cellCmdPreviewOpen &&
+      this.cellDetailDialogRowKey === row.rowKey &&
+      this.cellDetailDialogColumnKey === column.key
+    ) {
+      this.positionMatchInspector(event);
+      return;
+    }
+    this.applyCellDetailDialogState(row, column);
+    this.cellCmdPreviewOpen = true;
+    this.positionMatchInspector(event);
+    this.safeMarkForCheck();
+  }
+
+  private closeCellCmdPreview(): void {
+    if (!this.cellCmdPreviewOpen) {
+      return;
+    }
+    this.cellCmdPreviewOpen = false;
+    const dialogEl = this.cellDetailDialogEl?.nativeElement;
+    if (!dialogEl?.open) {
+      this.clearCellDetailDialogState();
+    }
+    this.safeMarkForCheck();
+  }
+
+  private clearCellDetailDialogState(): void {
+    this.cellDetailDialogRowKey = null;
+    this.cellDetailDialogColumnKey = null;
+    this.cellDetailDialogPropertyCode = '';
+    this.cellDetailDialogPlainText = '';
+    this.cellDetailDialogAllowedLines = null;
+    this.cellDetailDialogAllowedScopeRows = null;
   }
 
   closeCellDetailDialog(): void {
@@ -1898,12 +1974,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   }
 
   onCellDetailDialogCleanup(): void {
-    this.cellDetailDialogRowKey = null;
-    this.cellDetailDialogColumnKey = null;
-    this.cellDetailDialogPropertyCode = '';
-    this.cellDetailDialogPlainText = '';
-    this.cellDetailDialogAllowedLines = null;
-    this.cellDetailDialogAllowedScopeRows = null;
+    this.cellCmdPreviewOpen = false;
+    this.clearCellDetailDialogState();
     this.safeMarkForCheck();
   }
 
@@ -1935,13 +2007,16 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   /** Bound on each body cell so PrimeNG scrollable tables still receive Shift+hover reliably. */
   onRowMatchInspectorHover(event: MouseEvent, row: ConfigRow): void {
     this.pointerContextRow = row;
+    this.pointerContextColumn = null;
     this.pointerContextClientX = event.clientX;
     this.pointerContextClientY = event.clientY;
 
     if (!this.isShiftHeldForMatchInspector(event)) {
       this.closeMatchInspector();
+      this.closeCellCmdPreview();
       return;
     }
+    this.closeCellCmdPreview();
     this.openMatchInspector(event, row);
   }
 
@@ -1956,6 +2031,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   }
 
   private tryOpenMatchInspectorFromPointerContext(): void {
+    this.closeCellCmdPreview();
     if (!this.pointerContextRow) {
       return;
     }
@@ -1966,12 +2042,41 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.openMatchInspector(synthetic, this.pointerContextRow);
   }
 
+  private tryOpenCellCmdPreviewFromKeyboard(event: KeyboardEvent): void {
+    if (!event.metaKey && !event.ctrlKey) {
+      return;
+    }
+    if (event.shiftKey || this.matchInspectorShiftFromKeyboard) {
+      return;
+    }
+    if (!this.pointerContextRow || !this.pointerContextColumn) {
+      return;
+    }
+    if (this.cellDetailDialogEl?.nativeElement.open) {
+      return;
+    }
+    if (typeof document !== 'undefined' && document.elementFromPoint) {
+      const hit = document.elementFromPoint(this.pointerContextClientX, this.pointerContextClientY);
+      if (hit instanceof HTMLElement && this.isInteractiveCellTarget(hit)) {
+        return;
+      }
+    }
+    const synthetic = {
+      clientX: this.pointerContextClientX,
+      clientY: this.pointerContextClientY
+    } as MouseEvent;
+    this.openCellCmdPreview(synthetic, this.pointerContextRow, this.pointerContextColumn);
+  }
+
   onRowHoverLeave(): void {
     this.closeMatchInspector();
+    this.closeCellCmdPreview();
     this.pointerContextRow = null;
+    this.pointerContextColumn = null;
   }
 
   private openMatchInspector(event: MouseEvent, row: ConfigRow): void {
+    this.closeCellCmdPreview();
     if (!this.hasActiveFilters) {
       this.closeMatchInspector();
       return;
@@ -2636,11 +2741,16 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   }
 
   private syncMatchInspectorToDisplayedTable(): void {
-    if (!this.isMatchInspectorOpen || !this.matchInspectorRow) {
-      return;
+    if (this.isMatchInspectorOpen && this.matchInspectorRow) {
+      if (!this.tableDisplayedRows.includes(this.matchInspectorRow)) {
+        this.closeMatchInspector();
+      }
     }
-    if (!this.tableDisplayedRows.includes(this.matchInspectorRow)) {
-      this.closeMatchInspector();
+    if (this.cellCmdPreviewOpen && this.cellDetailDialogRowKey) {
+      const previewRow = this.rows.find((r) => r.rowKey === this.cellDetailDialogRowKey) ?? null;
+      if (!previewRow || !this.tableDisplayedRows.includes(previewRow)) {
+        this.closeCellCmdPreview();
+      }
     }
   }
 
@@ -3444,6 +3554,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       return;
     }
 
+    this.tryOpenCellCmdPreviewFromKeyboard(event);
+
     if (event.key === 'Shift' || event.code === 'ShiftLeft' || event.code === 'ShiftRight') {
       this.matchInspectorShiftFromKeyboard = true;
       this.tryOpenMatchInspectorFromPointerContext();
@@ -3481,11 +3593,15 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     if (event.key === 'Shift' || event.code === 'ShiftLeft' || event.code === 'ShiftRight') {
       this.matchInspectorShiftFromKeyboard = false;
     }
+    if (!event.metaKey && !event.ctrlKey && this.cellCmdPreviewOpen) {
+      this.closeCellCmdPreview();
+    }
   }
 
   @HostListener('window:blur')
   onWindowBlurClearShiftTrack(): void {
     this.matchInspectorShiftFromKeyboard = false;
+    this.closeCellCmdPreview();
     if (this.isMatchInspectorOpen) {
       this.closeMatchInspector();
     }
