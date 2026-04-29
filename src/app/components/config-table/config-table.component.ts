@@ -75,8 +75,12 @@ interface ImportMissingKeyDialogRow {
 }
 
 interface ConnectAccountApiResponse {
-  account: unknown;
+  account?: unknown;
   sessionId: unknown;
+  kind?: unknown;
+  accounts?: unknown;
+  apiKeysByAccountId?: unknown;
+  global?: unknown;
 }
 
 interface UpdateAccountApiResponse {
@@ -282,6 +286,27 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   exportToAccountLoading = false;
   exportToApiKeyLoading = false;
   exportToApiKeySubmenuOpen = false;
+  /** Account ('account' = single Unblu account / admin auth) vs Global ('global' = superadmin, multi-account). */
+  connectionKind: 'account' | 'global' = 'account';
+  /** Form-bound copy used by the connect dialog before the connect call resolves. */
+  connectAccountKind: 'account' | 'global' = 'account';
+  /** Populated in global mode after connect (or /api/account/list refresh). */
+  availableAccounts: { id: string; name: string }[] = [];
+  /** Full account payload by id (global mode); used when patching for export. */
+  accountPayloadById: Map<string, Record<string, unknown>> = new Map();
+  /** Per-account API keys cache for global mode (id → keys). */
+  apiKeysByAccountId: Record<string, Record<string, unknown>[]> = {};
+  /** Global-level configuration payload (global mode only). */
+  globalConfigPayload: Record<string, unknown> | null = null;
+  /** Loading state for the To Global export button. */
+  exportToGlobalLoading = false;
+  /** Submenu expansions in global mode: which account's API-keys submenu is open. */
+  expandedAccountForImport: string | null = null;
+  expandedAccountForApiKeyImport: string | null = null;
+  expandedAccountForExport: string | null = null;
+  expandedAccountForApiKeyExport: string | null = null;
+  /** True while the export-to-account submenu is open (global mode only). */
+  exportToAccountSubmenuOpen = false;
   /** Controls whether the connect dialog also imports after connecting. */
   connectAccountMode: 'connect-only' | 'connect-and-import' = 'connect-and-import';
   connectAccountBaseUrl = '';
@@ -721,10 +746,19 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   }
 
   get isAccountConnected(): boolean {
-    return this.connectedAccountSessionId !== null && this.connectedAccountResponse !== null;
+    if (this.connectedAccountSessionId === null) {
+      return false;
+    }
+    return this.connectionKind === 'global'
+      ? this.availableAccounts.length > 0
+      : this.connectedAccountResponse !== null;
   }
 
   get connectedAccountName(): string {
+    if (this.connectionKind === 'global') {
+      const count = this.availableAccounts.length;
+      return count > 0 ? `Global (${count} accounts)` : 'Global';
+    }
     const name = this.connectedAccountResponse?.['name'];
     return typeof name === 'string' ? name : '';
   }
@@ -736,6 +770,29 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
         payload: key
       }))
       .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  /** Sorted accounts for the From/To Account dropdowns in global mode. */
+  get accountOptions(): { id: string; name: string }[] {
+    return [...this.availableAccounts].sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  /** API keys for a specific account (global mode), shaped like apiKeyOptions. */
+  apiKeyOptionsFor(accountId: string | null): { name: string; payload: Record<string, unknown> }[] {
+    if (!accountId) {
+      return [];
+    }
+    const keys = this.apiKeysByAccountId[accountId] ?? [];
+    return keys
+      .map((key) => ({
+        name: typeof key['name'] === 'string' ? key['name'] : '(unnamed)',
+        payload: key
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  hasApiKeysFor(accountId: string): boolean {
+    return (this.apiKeysByAccountId[accountId]?.length ?? 0) > 0;
   }
 
   /** Opens the connect dialog in connect-only mode (no config import). Called by parent. */
@@ -750,6 +807,15 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.connectedAccountResponse = null;
     this.connectedAccountSessionId = null;
     this.connectedApiKeys = [];
+    this.connectionKind = 'account';
+    this.availableAccounts = [];
+    this.apiKeysByAccountId = {};
+    this.accountPayloadById = new Map();
+    this.globalConfigPayload = null;
+    this.expandedAccountForImport = null;
+    this.expandedAccountForApiKeyImport = null;
+    this.expandedAccountForExport = null;
+    this.expandedAccountForApiKeyExport = null;
     this.safeMarkForCheck();
     // Fire-and-forget server-side cleanup
     if (sessionId) {
@@ -763,6 +829,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
   onConnectAccountClick(): void {
     this.connectAccountError = '';
+    this.connectAccountKind = this.connectionKind;
     this.connectAccountDialogVisible = true;
     this.safeMarkForCheck();
   }
@@ -792,13 +859,15 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.connectAccountError = '';
     this.safeMarkForCheck();
 
+    const kind = this.connectAccountKind;
+
     try {
       const response = await fetch('/api/account/connect', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ baseUrl, username, password })
+        body: JSON.stringify({ baseUrl, username, password, kind })
       });
 
       if (!response.ok) {
@@ -814,23 +883,60 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       }
 
       const payload = (await response.json()) as ConnectAccountApiResponse;
-      const accountRecord = asRecord(payload.account);
-      if (!accountRecord) {
-        throw new Error('Invalid account payload received from backend.');
-      }
       const sessionId = typeof payload.sessionId === 'string' ? payload.sessionId.trim() : '';
       if (!sessionId) {
         throw new Error('Invalid account session received from backend.');
       }
-      this.connectedAccountResponse = accountRecord;
+
+      const responseKind: 'account' | 'global' = payload.kind === 'global' ? 'global' : 'account';
+      this.connectionKind = responseKind;
       this.connectedAccountSessionId = sessionId;
-      if (this.connectAccountMode === 'connect-and-import') {
-        const importObject = buildConfigImportFromConnectedAccount(accountRecord);
-        const accountName = typeof accountRecord['name'] === 'string' ? accountRecord['name'] : baseUrl;
-        this.applyJsonConfigImport(importObject, `Account: ${accountName}`);
+
+      if (responseKind === 'global') {
+        const rawAccounts = Array.isArray(payload.accounts) ? payload.accounts : [];
+        const accountRecords = rawAccounts
+          .map((entry) => asRecord(entry))
+          .filter((entry): entry is Record<string, unknown> => entry !== null)
+          .filter((entry) => typeof entry['id'] === 'string');
+        this.availableAccounts = accountRecords.map((entry) => ({
+          id: entry['id'] as string,
+          name: typeof entry['name'] === 'string' ? entry['name'] : '(unnamed)'
+        }));
+        this.accountPayloadById = new Map(
+          accountRecords.map((entry) => [entry['id'] as string, entry])
+        );
+        const apiKeysByAccount = asRecord(payload.apiKeysByAccountId) ?? {};
+        const built: Record<string, Record<string, unknown>[]> = {};
+        for (const [accId, keys] of Object.entries(apiKeysByAccount)) {
+          if (Array.isArray(keys)) {
+            built[accId] = keys
+              .map((k) => asRecord(k))
+              .filter((k): k is Record<string, unknown> => k !== null);
+          }
+        }
+        this.apiKeysByAccountId = built;
+        this.globalConfigPayload = asRecord(payload.global);
+        this.connectedAccountResponse = null;
+        this.connectedApiKeys = [];
+      } else {
+        const accountRecord = asRecord(payload.account);
+        if (!accountRecord) {
+          throw new Error('Invalid account payload received from backend.');
+        }
+        this.connectedAccountResponse = accountRecord;
+        this.availableAccounts = [];
+        this.apiKeysByAccountId = {};
+        this.accountPayloadById = new Map();
+        this.globalConfigPayload = null;
+        if (this.connectAccountMode === 'connect-and-import') {
+          const importObject = buildConfigImportFromConnectedAccount(accountRecord);
+          const accountName = typeof accountRecord['name'] === 'string' ? accountRecord['name'] : baseUrl;
+          this.applyJsonConfigImport(importObject, `Account: ${accountName}`);
+        }
+        // Fetch API keys in the background (non-blocking)
+        this.fetchApiKeys(sessionId);
       }
-      // Fetch API keys in the background (non-blocking)
-      this.fetchApiKeys(sessionId);
+
       this.connectAccountDialogVisible = false;
       this.connectAccountError = '';
       this.connectAccountPassword = '';
@@ -864,27 +970,41 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.safeMarkForCheck();
   }
 
-  async onImportConfigFromApiKeyChosen(event: MouseEvent, apiKey: Record<string, unknown>): Promise<void> {
+  async onImportConfigFromApiKeyChosen(
+    event: MouseEvent,
+    apiKey: Record<string, unknown>,
+    accountId?: string
+  ): Promise<void> {
     event.stopPropagation();
     this.importConfigMenuOpen = false;
     this.importFromApiKeySubmenuOpen = false;
+    this.expandedAccountForApiKeyImport = null;
     const apiKeyId = apiKey['id'];
     const name = typeof apiKey['name'] === 'string' ? apiKey['name'] : 'unknown';
     this.safeMarkForCheck();
 
+    const requestBody: Record<string, unknown> = { sessionId: this.connectedAccountSessionId };
+    if (this.connectionKind === 'global' && accountId) {
+      requestBody['accountId'] = accountId;
+    }
+
     try {
-      // Re-fetch all API keys to get fresh data
+      // Re-fetch the relevant API keys (account-scoped in global mode) to get fresh data
       const response = await fetch('/api/account/apikeys', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId: this.connectedAccountSessionId })
+        body: JSON.stringify(requestBody)
       });
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
       const payload = (await response.json()) as { apiKeys?: unknown };
       const allKeys = Array.isArray(payload.apiKeys) ? payload.apiKeys as Record<string, unknown>[] : [];
-      this.connectedApiKeys = allKeys;
+      if (this.connectionKind === 'global' && accountId) {
+        this.apiKeysByAccountId = { ...this.apiKeysByAccountId, [accountId]: allKeys };
+      } else {
+        this.connectedApiKeys = allKeys;
+      }
       const freshKey = allKeys.find((k) => k['id'] === apiKeyId) ?? apiKey;
       const importObject = buildConfigImportFromConnectedAccount(freshKey);
       this.applyJsonConfigImport(importObject, `API Key: ${name}`);
@@ -1203,6 +1323,42 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   onImportFromApiKeyMenuToggle(event: MouseEvent): void {
     event.stopPropagation();
     this.importFromApiKeySubmenuOpen = !this.importFromApiKeySubmenuOpen;
+    if (!this.importFromApiKeySubmenuOpen) {
+      this.expandedAccountForApiKeyImport = null;
+    }
+    this.safeMarkForCheck();
+  }
+
+  /** Global mode: toggles the "From Account" submenu (account picker). */
+  onImportFromAccountMenuToggle(event: MouseEvent): void {
+    event.stopPropagation();
+    this.expandedAccountForImport = this.expandedAccountForImport === '__open__' ? null : '__open__';
+    this.safeMarkForCheck();
+  }
+
+  /** Global mode: in the From API Key submenu, expand a specific account to reveal its keys. */
+  onImportApiKeyAccountToggle(event: MouseEvent, accountId: string): void {
+    event.stopPropagation();
+    this.expandedAccountForApiKeyImport =
+      this.expandedAccountForApiKeyImport === accountId ? null : accountId;
+    this.safeMarkForCheck();
+  }
+
+  /** Global mode: toggles the "To Account" submenu (account picker). */
+  onExportToAccountMenuToggle(event: MouseEvent): void {
+    event.stopPropagation();
+    this.exportToAccountSubmenuOpen = !this.exportToAccountSubmenuOpen;
+    if (!this.exportToAccountSubmenuOpen) {
+      this.expandedAccountForExport = null;
+    }
+    this.safeMarkForCheck();
+  }
+
+  /** Global mode: in the To API Key submenu, expand a specific account to reveal its keys. */
+  onExportApiKeyAccountToggle(event: MouseEvent, accountId: string): void {
+    event.stopPropagation();
+    this.expandedAccountForApiKeyExport =
+      this.expandedAccountForApiKeyExport === accountId ? null : accountId;
     this.safeMarkForCheck();
   }
 
@@ -1222,19 +1378,28 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.safeMarkForCheck();
   }
 
-  async onImportConfigFromAccountChosen(event: MouseEvent): Promise<void> {
+  async onImportConfigFromAccountChosen(event: MouseEvent, accountId?: string): Promise<void> {
     event.stopPropagation();
     if (!this.connectedAccountSessionId) {
       return;
     }
+    if (this.connectionKind === 'global' && !accountId) {
+      return;
+    }
     this.importConfigMenuOpen = false;
+    this.expandedAccountForImport = null;
     this.safeMarkForCheck();
+
+    const requestBody: Record<string, unknown> = { sessionId: this.connectedAccountSessionId };
+    if (this.connectionKind === 'global' && accountId) {
+      requestBody['accountId'] = accountId;
+    }
 
     try {
       const response = await fetch('/api/account/refresh', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId: this.connectedAccountSessionId })
+        body: JSON.stringify(requestBody)
       });
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
@@ -1244,9 +1409,16 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       if (!accountRecord) {
         throw new Error('Invalid account payload.');
       }
-      this.connectedAccountResponse = accountRecord;
+      if (this.connectionKind === 'global' && accountId) {
+        this.accountPayloadById.set(accountId, accountRecord);
+      } else {
+        this.connectedAccountResponse = accountRecord;
+      }
       const importObject = buildConfigImportFromConnectedAccount(accountRecord);
-      const accountName = this.connectedAccountName || this.connectAccountBaseUrl || 'connected account';
+      const accountName =
+        typeof accountRecord['name'] === 'string'
+          ? accountRecord['name']
+          : this.connectedAccountName || this.connectAccountBaseUrl || 'connected account';
       this.applyJsonConfigImport(importObject, `Account: ${accountName}`);
     } catch {
       this.messageService.add({
@@ -1257,6 +1429,147 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       });
     }
     this.safeMarkForCheck();
+  }
+
+  async onImportConfigFromGlobalChosen(event: MouseEvent): Promise<void> {
+    event.stopPropagation();
+    if (this.connectionKind !== 'global' || !this.connectedAccountSessionId) {
+      return;
+    }
+    this.importConfigMenuOpen = false;
+    this.safeMarkForCheck();
+
+    try {
+      const response = await fetch('/api/global/get', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: this.connectedAccountSessionId })
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const payload = (await response.json()) as { global?: unknown };
+      const globalRecord = asRecord(payload.global);
+      if (!globalRecord) {
+        throw new Error('Invalid global payload.');
+      }
+      this.globalConfigPayload = globalRecord;
+      const importObject = buildConfigImportFromConnectedAccount(globalRecord);
+      this.applyJsonConfigImport(importObject, 'Global');
+    } catch {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Import from Global failed',
+        detail: 'Could not fetch latest global configuration. Verify connection and retry.',
+        life: 6000
+      });
+    }
+    this.safeMarkForCheck();
+  }
+
+  async onExportToGlobalChosen(event: MouseEvent): Promise<void> {
+    event.stopPropagation();
+    if (this.exportToGlobalLoading) {
+      return;
+    }
+    if (this.selectedDatasetCount === 0) {
+      return;
+    }
+    if (this.connectionKind !== 'global' || !this.connectedAccountSessionId) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Cannot export to Global',
+        detail: 'Connect in Global mode first, then retry Export config → To Global.',
+        life: 6000
+      });
+      return;
+    }
+    if (!this.globalConfigPayload) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Cannot export to Global',
+        detail: 'Global configuration is not loaded yet. Reconnect and retry.',
+        life: 6000
+      });
+      return;
+    }
+
+    const patchedGlobal = clonePlainJsonObject(this.globalConfigPayload);
+    const patchedCount = patchAccountPayloadFromSelection(patchedGlobal, {
+      rows: this.rows,
+      selectedRowKeys: this.selectedRowKeys,
+      valueForRow: (row) => {
+        let value = row.value ?? '';
+        if (this.valueColumnUsesMultiSelect(row)) {
+          value = this.parseListStyleCellToTokens(value).join(',');
+        }
+        return value;
+      }
+    });
+    if (patchedCount === 0) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Cannot export to Global',
+        detail: 'No selected rows could be mapped to configuration/text based on Source and Key.',
+        life: 6000
+      });
+      return;
+    }
+
+    this.exportFormatMenuOpen = false;
+    this.exportToFileSubmenuOpen = false;
+    this.exportToGlobalLoading = true;
+    this.safeMarkForCheck();
+
+    try {
+      const response = await fetch('/api/global/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: this.connectedAccountSessionId,
+          global: patchedGlobal
+        })
+      });
+      if (!response.ok) {
+        const errorPayload = await response.json().catch(() => null);
+        const backendMessage =
+          errorPayload &&
+          typeof errorPayload === 'object' &&
+          'message' in errorPayload &&
+          typeof errorPayload.message === 'string'
+            ? errorPayload.message
+            : `HTTP ${response.status}`;
+        if (response.status === 401) {
+          this.connectedAccountSessionId = null;
+        }
+        throw new Error(backendMessage);
+      }
+      const payload = (await response.json()) as { global?: unknown };
+      const updated = asRecord(payload.global);
+      if (updated) {
+        this.globalConfigPayload = updated;
+      }
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Exported to Global',
+        detail: 'Selected properties were saved to the Global configuration.',
+        life: 4500
+      });
+    } catch (error) {
+      const detail =
+        error instanceof Error
+          ? error.message
+          : 'Could not export selection to Global. Verify connection and retry.';
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Export to Global failed',
+        detail,
+        life: 8000
+      });
+    } finally {
+      this.exportToGlobalLoading = false;
+      this.safeMarkForCheck();
+    }
   }
 
   onTableSettingsResetChosen(event: MouseEvent): void {
@@ -1297,7 +1610,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.safeMarkForCheck();
   }
 
-  async onExportToAccountChosen(event: MouseEvent): Promise<void> {
+  async onExportToAccountChosen(event: MouseEvent, accountId?: string): Promise<void> {
     event.stopPropagation();
     if (this.exportToAccountLoading) {
       return;
@@ -1305,7 +1618,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     if (this.selectedDatasetCount === 0) {
       return;
     }
-    if (!this.connectedAccountSessionId || !this.connectedAccountResponse) {
+    if (!this.connectedAccountSessionId) {
       this.messageService.add({
         severity: 'error',
         summary: 'Cannot export to account',
@@ -1315,7 +1628,24 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       return;
     }
 
-    const patchedAccount = clonePlainJsonObject(this.connectedAccountResponse);
+    const isGlobal = this.connectionKind === 'global';
+    if (isGlobal && !accountId) {
+      return;
+    }
+    const sourceAccount = isGlobal
+      ? (accountId ? this.accountPayloadById.get(accountId) ?? null : null)
+      : this.connectedAccountResponse;
+    if (!sourceAccount) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Cannot export to account',
+        detail: 'Connect account first, then retry Export config → To account.',
+        life: 6000
+      });
+      return;
+    }
+
+    const patchedAccount = clonePlainJsonObject(sourceAccount);
     const patchedCount = patchAccountPayloadFromSelection(patchedAccount, {
       rows: this.rows,
       selectedRowKeys: this.selectedRowKeys,
@@ -1339,8 +1669,18 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
     this.exportFormatMenuOpen = false;
     this.exportToFileSubmenuOpen = false;
+    this.exportToAccountSubmenuOpen = false;
+    this.expandedAccountForExport = null;
     this.exportToAccountLoading = true;
     this.safeMarkForCheck();
+
+    const updateBody: Record<string, unknown> = {
+      sessionId: this.connectedAccountSessionId,
+      account: patchedAccount
+    };
+    if (isGlobal && accountId) {
+      updateBody['accountId'] = accountId;
+    }
 
     try {
       const response = await fetch('/api/account/update', {
@@ -1348,10 +1688,7 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          sessionId: this.connectedAccountSessionId,
-          account: patchedAccount
-        })
+        body: JSON.stringify(updateBody)
       });
       if (!response.ok) {
         const errorPayload = await response.json().catch(() => null);
@@ -1373,7 +1710,11 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       if (!accountRecord) {
         throw new Error('Invalid account payload received from backend.');
       }
-      this.connectedAccountResponse = accountRecord;
+      if (isGlobal && accountId) {
+        this.accountPayloadById.set(accountId, accountRecord);
+      } else {
+        this.connectedAccountResponse = accountRecord;
+      }
       this.connectAccountError = '';
       this.messageService.add({
         severity: 'success',
@@ -1404,7 +1745,11 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.safeMarkForCheck();
   }
 
-  async onExportToApiKeyChosen(event: MouseEvent, apiKey: Record<string, unknown>): Promise<void> {
+  async onExportToApiKeyChosen(
+    event: MouseEvent,
+    apiKey: Record<string, unknown>,
+    accountId?: string
+  ): Promise<void> {
     event.stopPropagation();
     if (this.exportToApiKeyLoading) {
       return;
@@ -1413,6 +1758,10 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       return;
     }
     if (!this.connectedAccountSessionId) {
+      return;
+    }
+    const isGlobal = this.connectionKind === 'global';
+    if (isGlobal && !accountId) {
       return;
     }
 
@@ -1442,17 +1791,23 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.exportFormatMenuOpen = false;
     this.exportToFileSubmenuOpen = false;
     this.exportToApiKeySubmenuOpen = false;
+    this.expandedAccountForApiKeyExport = null;
     this.exportToApiKeyLoading = true;
     this.safeMarkForCheck();
+
+    const updateBody: Record<string, unknown> = {
+      sessionId: this.connectedAccountSessionId,
+      account: patchedApiKey
+    };
+    if (isGlobal && accountId) {
+      updateBody['accountId'] = accountId;
+    }
 
     try {
       const response = await fetch('/api/account/apikey/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sessionId: this.connectedAccountSessionId,
-          account: patchedApiKey
-        })
+        body: JSON.stringify(updateBody)
       });
       if (!response.ok) {
         const errorPayload = await response.json().catch(() => null);
@@ -1472,9 +1827,19 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       const payload = (await response.json()) as { apiKey?: unknown };
       const updatedApiKey = asRecord(payload.apiKey);
       if (updatedApiKey) {
-        const idx = this.connectedApiKeys.findIndex((k) => k['id'] === apiKey['id']);
-        if (idx >= 0) {
-          this.connectedApiKeys[idx] = updatedApiKey;
+        if (isGlobal && accountId) {
+          const list = this.apiKeysByAccountId[accountId] ?? [];
+          const idx = list.findIndex((k) => k['id'] === apiKey['id']);
+          if (idx >= 0) {
+            const next = list.slice();
+            next[idx] = updatedApiKey;
+            this.apiKeysByAccountId = { ...this.apiKeysByAccountId, [accountId]: next };
+          }
+        } else {
+          const idx = this.connectedApiKeys.findIndex((k) => k['id'] === apiKey['id']);
+          if (idx >= 0) {
+            this.connectedApiKeys[idx] = updatedApiKey;
+          }
         }
       }
       this.messageService.add({
@@ -3544,11 +3909,16 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     this.exportFormatMenuOpen = false;
     this.exportToFileSubmenuOpen = false;
     this.exportToApiKeySubmenuOpen = false;
+    this.exportToAccountSubmenuOpen = false;
+    this.expandedAccountForExport = null;
+    this.expandedAccountForApiKeyExport = null;
   }
 
   private closeImportMenu(): void {
     this.importConfigMenuOpen = false;
     this.importFromApiKeySubmenuOpen = false;
+    this.expandedAccountForImport = null;
+    this.expandedAccountForApiKeyImport = null;
   }
 
   private closeTableSettingsMenu(): void {

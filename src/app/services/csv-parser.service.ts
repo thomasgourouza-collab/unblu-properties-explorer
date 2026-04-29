@@ -286,7 +286,7 @@ export class CsvParserService {
       editableBy,
       description: getValue('description'),
       status: this.normalizeStatus(statusRaw),
-      dependsOn: this.tokenizeCommaSeparatedValues(dependsOnRaw),
+      dependsOn: this.tokenizeCommaSeparatedValues(dependsOnRaw).filter((k) => k.startsWith('com.unblu.')),
       allowedScopesTokens: this.tokenizeCommaSeparatedValues(allowedScopes),
       editableByTokens: this.tokenizeCommaSeparatedValues(editableBy),
       hasAllowedValuesColumn,

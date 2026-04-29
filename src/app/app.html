@@ -32,8 +32,8 @@
           class="btn btn-sm btn-outline-secondary title-row-copy-btn"
           (click)="onConnectDisconnectAccountClick()"
           [disabled]="isLoading || rows.length === 0"
-          [title]="isAccountConnected ? 'Disconnect from Unblu account' : 'Connect to Unblu account'"
-          [attr.aria-label]="isAccountConnected ? 'Disconnect account' : 'Connect account'"
+          [title]="isAccountConnected ? 'Disconnect from Unblu' : 'Connect to Unblu'"
+          [attr.aria-label]="isAccountConnected ? 'Disconnect' : 'Connect'"
         >
           <i
             class="pi"
@@ -41,7 +41,7 @@
             [class.pi-times-circle]="isAccountConnected"
             aria-hidden="true"
           ></i>
-          <span>{{ isAccountConnected ? 'Disconnect account' : 'Connect account' }}</span>
+          <span>{{ isAccountConnected ? 'Disconnect' : 'Connect' }}</span>
         </button>
         <button
           type="button"

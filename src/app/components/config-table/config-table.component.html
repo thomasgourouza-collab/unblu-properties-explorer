@@ -251,31 +251,67 @@
                 </button>
               </div>
             </div>
-            <button
-              type="button"
-              class="export-format-dropdown__item"
-              role="menuitem"
-              title="Patch selected rows to the connected Unblu account (configuration/text.en by Source)"
-              [disabled]="exportToAccountLoading || !connectedAccountSessionId || !connectedAccountResponse"
-              (click)="onExportToAccountChosen($event)"
-            >
-              <span>{{ exportToAccountLoading ? 'To account (updating...)' : 'To account' }}</span>
-            </button>
-            <button
-              type="button"
-              class="export-format-dropdown__item"
-              role="menuitem"
-              title="Patch selected rows to an API Key (configuration/text.en by Source)"
-              [disabled]="exportToApiKeyLoading || !connectedAccountSessionId || apiKeyOptions.length === 0"
-              (click)="onExportToApiKeyMenuToggle($event)"
-            >
-              <span>{{ exportToApiKeyLoading ? 'To API Key (updating...)' : 'To API Key' }}</span>
-              <i class="pi pi-angle-down export-format-dropdown__submenu-caret" aria-hidden="true"></i>
-            </button>
+            <ng-container *ngIf="connectionKind !== 'global'">
+              <button
+                type="button"
+                class="export-format-dropdown__item"
+                role="menuitem"
+                title="Patch selected rows to the connected Unblu account (configuration/text.en by Source)"
+                [disabled]="exportToAccountLoading || !connectedAccountSessionId || !connectedAccountResponse"
+                (click)="onExportToAccountChosen($event)"
+              >
+                <span>{{ exportToAccountLoading ? 'To account (updating...)' : 'To account' }}</span>
+              </button>
+              <button
+                type="button"
+                class="export-format-dropdown__item"
+                role="menuitem"
+                title="Patch selected rows to an API Key (configuration/text.en by Source)"
+                [disabled]="exportToApiKeyLoading || !connectedAccountSessionId || apiKeyOptions.length === 0"
+                (click)="onExportToApiKeyMenuToggle($event)"
+              >
+                <span>{{ exportToApiKeyLoading ? 'To API Key (updating...)' : 'To API Key' }}</span>
+                <i class="pi pi-angle-down export-format-dropdown__submenu-caret" aria-hidden="true"></i>
+              </button>
+            </ng-container>
+            <ng-container *ngIf="connectionKind === 'global'">
+              <button
+                type="button"
+                class="export-format-dropdown__item"
+                role="menuitem"
+                title="Patch selected rows into the global-level configuration"
+                [disabled]="exportToGlobalLoading || !connectedAccountSessionId"
+                (click)="onExportToGlobalChosen($event)"
+              >
+                <span>{{ exportToGlobalLoading ? 'To Global (updating...)' : 'To Global' }}</span>
+              </button>
+              <button
+                type="button"
+                class="export-format-dropdown__item"
+                role="menuitem"
+                title="Pick an account, then patch selected rows into it"
+                [disabled]="exportToAccountLoading || !connectedAccountSessionId || accountOptions.length === 0"
+                (click)="onExportToAccountMenuToggle($event)"
+              >
+                <span>{{ exportToAccountLoading ? 'To account (updating...)' : 'To account' }}</span>
+                <i class="pi pi-angle-down export-format-dropdown__submenu-caret" [class.export-format-dropdown__submenu-caret--open]="exportToAccountSubmenuOpen" aria-hidden="true"></i>
+              </button>
+              <button
+                type="button"
+                class="export-format-dropdown__item"
+                role="menuitem"
+                title="Pick an account, then pick one of its API Keys"
+                [disabled]="exportToApiKeyLoading || !connectedAccountSessionId || accountOptions.length === 0"
+                (click)="onExportToApiKeyMenuToggle($event)"
+              >
+                <span>{{ exportToApiKeyLoading ? 'To API Key (updating...)' : 'To API Key' }}</span>
+                <i class="pi pi-angle-down export-format-dropdown__submenu-caret" [class.export-format-dropdown__submenu-caret--open]="exportToApiKeySubmenuOpen" aria-hidden="true"></i>
+              </button>
+            </ng-container>
           </div>
         </div>
         <div
-          *ngIf="exportToApiKeySubmenuOpen"
+          *ngIf="exportToApiKeySubmenuOpen && connectionKind !== 'global'"
           class="export-format-dropdown__menu export-format-dropdown__menu--static export-format-dropdown__menu--apikey-submenu"
           role="menu"
           aria-label="Select API Key to export to"
@@ -290,6 +326,60 @@
           >
             {{ opt.name }}
           </button>
+        </div>
+        <div
+          *ngIf="connectionKind === 'global' && exportToAccountSubmenuOpen"
+          class="export-format-dropdown__menu export-format-dropdown__menu--static export-format-dropdown__menu--apikey-submenu"
+          role="menu"
+          aria-label="Select account to export to"
+        >
+          <button
+            *ngFor="let acc of accountOptions"
+            type="button"
+            class="export-format-dropdown__item"
+            role="menuitem"
+            [title]="'Export selected rows to account: ' + acc.name"
+            (click)="onExportToAccountChosen($event, acc.id)"
+          >
+            {{ acc.name }}
+          </button>
+        </div>
+        <div
+          *ngIf="connectionKind === 'global' && exportToApiKeySubmenuOpen"
+          class="export-format-dropdown__menu export-format-dropdown__menu--static export-format-dropdown__menu--apikey-submenu"
+          role="menu"
+          aria-label="Select account, then API Key to export to"
+        >
+          <ng-container *ngFor="let acc of accountOptions">
+            <button
+              type="button"
+              class="export-format-dropdown__item"
+              role="menuitem"
+              [title]="'Show API Keys for account: ' + acc.name"
+              [disabled]="!hasApiKeysFor(acc.id)"
+              (click)="onExportApiKeyAccountToggle($event, acc.id)"
+            >
+              {{ acc.name }}
+              <i class="pi pi-angle-down export-format-dropdown__submenu-caret" [class.export-format-dropdown__submenu-caret--open]="expandedAccountForApiKeyExport === acc.id" aria-hidden="true"></i>
+            </button>
+            <div
+              *ngIf="expandedAccountForApiKeyExport === acc.id"
+              class="export-format-dropdown__menu export-format-dropdown__menu--static export-format-dropdown__menu--apikey-submenu export-format-dropdown__menu--apikey-submenu-nested"
+              role="menu"
+              [attr.aria-label]="'API Keys for ' + acc.name"
+            >
+              <button
+                *ngFor="let opt of apiKeyOptionsFor(acc.id)"
+                type="button"
+                class="export-format-dropdown__item"
+                role="menuitem"
+                [title]="'Export selected rows to API Key: ' + opt.name"
+                (click)="onExportToApiKeyChosen($event, opt.payload, acc.id)"
+              >
+                {{ opt.name }}
+              </button>
+            </div>
+          </ng-container>
         </div>
       </div>
     </div>
@@ -323,30 +413,66 @@
           >
             From file
           </button>
-          <button
-            type="button"
-            class="export-format-dropdown__item"
-            role="menuitem"
-            title="Import configuration from the connected Unblu account"
-            [disabled]="!isAccountConnected"
-            (click)="onImportConfigFromAccountChosen($event)"
-          >
-            From account
-          </button>
-          <button
-            type="button"
-            class="export-format-dropdown__item"
-            role="menuitem"
-            title="Import configuration from an API Key"
-            [disabled]="!isAccountConnected || apiKeyOptions.length === 0"
-            (click)="onImportFromApiKeyMenuToggle($event)"
-          >
-            From API Key
-            <i class="pi pi-angle-down export-format-dropdown__submenu-caret" [class.export-format-dropdown__submenu-caret--open]="importFromApiKeySubmenuOpen" aria-hidden="true"></i>
-          </button>
+          <ng-container *ngIf="connectionKind !== 'global'">
+            <button
+              type="button"
+              class="export-format-dropdown__item"
+              role="menuitem"
+              title="Import configuration from the connected Unblu account"
+              [disabled]="!isAccountConnected"
+              (click)="onImportConfigFromAccountChosen($event)"
+            >
+              From account
+            </button>
+            <button
+              type="button"
+              class="export-format-dropdown__item"
+              role="menuitem"
+              title="Import configuration from an API Key"
+              [disabled]="!isAccountConnected || apiKeyOptions.length === 0"
+              (click)="onImportFromApiKeyMenuToggle($event)"
+            >
+              From API Key
+              <i class="pi pi-angle-down export-format-dropdown__submenu-caret" [class.export-format-dropdown__submenu-caret--open]="importFromApiKeySubmenuOpen" aria-hidden="true"></i>
+            </button>
+          </ng-container>
+          <ng-container *ngIf="connectionKind === 'global'">
+            <button
+              type="button"
+              class="export-format-dropdown__item"
+              role="menuitem"
+              title="Import the global-level configuration of the Unblu instance"
+              [disabled]="!isAccountConnected"
+              (click)="onImportConfigFromGlobalChosen($event)"
+            >
+              From Global
+            </button>
+            <button
+              type="button"
+              class="export-format-dropdown__item"
+              role="menuitem"
+              title="Pick an account, then import its configuration"
+              [disabled]="!isAccountConnected || accountOptions.length === 0"
+              (click)="onImportFromAccountMenuToggle($event)"
+            >
+              From account
+              <i class="pi pi-angle-down export-format-dropdown__submenu-caret" [class.export-format-dropdown__submenu-caret--open]="expandedAccountForImport === '__open__'" aria-hidden="true"></i>
+            </button>
+            <button
+              type="button"
+              class="export-format-dropdown__item"
+              role="menuitem"
+              title="Pick an account, then pick one of its API Keys"
+              [disabled]="!isAccountConnected || accountOptions.length === 0"
+              (click)="onImportFromApiKeyMenuToggle($event)"
+            >
+              From API Key
+              <i class="pi pi-angle-down export-format-dropdown__submenu-caret" [class.export-format-dropdown__submenu-caret--open]="importFromApiKeySubmenuOpen" aria-hidden="true"></i>
+            </button>
+          </ng-container>
         </div>
         <div
-          *ngIf="importFromApiKeySubmenuOpen"
+          *ngIf="importFromApiKeySubmenuOpen && connectionKind !== 'global'"
           class="export-format-dropdown__menu export-format-dropdown__menu--static export-format-dropdown__menu--apikey-submenu"
           role="menu"
           aria-label="Select API Key"
@@ -361,6 +487,60 @@
           >
             {{ opt.name }}
           </button>
+        </div>
+        <div
+          *ngIf="connectionKind === 'global' && expandedAccountForImport === '__open__'"
+          class="export-format-dropdown__menu export-format-dropdown__menu--static export-format-dropdown__menu--apikey-submenu"
+          role="menu"
+          aria-label="Select account to import from"
+        >
+          <button
+            *ngFor="let acc of accountOptions"
+            type="button"
+            class="export-format-dropdown__item"
+            role="menuitem"
+            [title]="'Import configuration from account: ' + acc.name"
+            (click)="onImportConfigFromAccountChosen($event, acc.id)"
+          >
+            {{ acc.name }}
+          </button>
+        </div>
+        <div
+          *ngIf="connectionKind === 'global' && importFromApiKeySubmenuOpen"
+          class="export-format-dropdown__menu export-format-dropdown__menu--static export-format-dropdown__menu--apikey-submenu"
+          role="menu"
+          aria-label="Select account, then API Key"
+        >
+          <ng-container *ngFor="let acc of accountOptions">
+            <button
+              type="button"
+              class="export-format-dropdown__item"
+              role="menuitem"
+              [title]="'Show API Keys for account: ' + acc.name"
+              [disabled]="!hasApiKeysFor(acc.id)"
+              (click)="onImportApiKeyAccountToggle($event, acc.id)"
+            >
+              {{ acc.name }}
+              <i class="pi pi-angle-down export-format-dropdown__submenu-caret" [class.export-format-dropdown__submenu-caret--open]="expandedAccountForApiKeyImport === acc.id" aria-hidden="true"></i>
+            </button>
+            <div
+              *ngIf="expandedAccountForApiKeyImport === acc.id"
+              class="export-format-dropdown__menu export-format-dropdown__menu--static export-format-dropdown__menu--apikey-submenu export-format-dropdown__menu--apikey-submenu-nested"
+              role="menu"
+              [attr.aria-label]="'API Keys for ' + acc.name"
+            >
+              <button
+                *ngFor="let opt of apiKeyOptionsFor(acc.id)"
+                type="button"
+                class="export-format-dropdown__item"
+                role="menuitem"
+                [title]="'Import configuration from API Key: ' + opt.name"
+                (click)="onImportConfigFromApiKeyChosen($event, opt.payload, acc.id)"
+              >
+                {{ opt.name }}
+              </button>
+            </div>
+          </ng-container>
         </div>
       </div>
     </div>
@@ -1385,6 +1565,35 @@
           </button>
         </header>
         <div class="connect-account-body">
+          <span class="connect-account-label">Connection type</span>
+          <div class="connect-account-kind-row" role="radiogroup" aria-label="Connection type">
+            <label class="connect-account-kind-option">
+              <input
+                type="radio"
+                name="connectAccountKind"
+                value="account"
+                [checked]="connectAccountKind === 'account'"
+                (change)="connectAccountKind = 'account'"
+                [disabled]="connectAccountLoading"
+              />
+              <span>Account (admin)</span>
+            </label>
+            <label class="connect-account-kind-option">
+              <input
+                type="radio"
+                name="connectAccountKind"
+                value="global"
+                [checked]="connectAccountKind === 'global'"
+                (change)="connectAccountKind = 'global'"
+                [disabled]="connectAccountLoading"
+              />
+              <span>Global (superadmin)</span>
+            </label>
+          </div>
+          <p class="connect-account-help">
+            Global mode lists every account on the instance. Requires superadmin credentials.
+          </p>
+
           <label class="connect-account-label" for="connect-account-base-url">Base Unblu URL</label>
           <input
             id="connect-account-base-url"

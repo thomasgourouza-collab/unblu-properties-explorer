@@ -40,7 +40,7 @@ const SHARED_EXTRACTOR_HELPERS = `
   };
   const collectDependsOn = (propertyBlock, ownKey) => {
     const seen = new Set();
-    const KEY_REGEX = /[a-z][a-zA-Z0-9_-]*(?:\\.[a-zA-Z0-9_-]+){2,}/g;
+    const KEY_REGEX = /com\\.unblu\\.[a-zA-Z0-9_-]+(?:\\.[a-zA-Z0-9_-]+)*/g;
     const candidates = propertyBlock.querySelectorAll(':scope .paragraph code.code__key, :scope .paragraph code, :scope .ulist.none code.code__key, :scope .ulist.none code');
     candidates.forEach((node) => {
       const text = (node.textContent || '').replace(/\\s+/g, ' ').trim();
