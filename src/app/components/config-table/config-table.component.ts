@@ -1322,8 +1322,12 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
   onImportFromApiKeyMenuToggle(event: MouseEvent): void {
     event.stopPropagation();
-    this.importFromApiKeySubmenuOpen = !this.importFromApiKeySubmenuOpen;
-    if (!this.importFromApiKeySubmenuOpen) {
+    const opening = !this.importFromApiKeySubmenuOpen;
+    this.importFromApiKeySubmenuOpen = opening;
+    if (opening) {
+      // Mutually exclusive with the "From Account" submenu.
+      this.expandedAccountForImport = null;
+    } else {
       this.expandedAccountForApiKeyImport = null;
     }
     this.safeMarkForCheck();
@@ -1332,7 +1336,13 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   /** Global mode: toggles the "From Account" submenu (account picker). */
   onImportFromAccountMenuToggle(event: MouseEvent): void {
     event.stopPropagation();
-    this.expandedAccountForImport = this.expandedAccountForImport === '__open__' ? null : '__open__';
+    const opening = this.expandedAccountForImport !== '__open__';
+    this.expandedAccountForImport = opening ? '__open__' : null;
+    if (opening) {
+      // Mutually exclusive with the "From API Key" submenu.
+      this.importFromApiKeySubmenuOpen = false;
+      this.expandedAccountForApiKeyImport = null;
+    }
     this.safeMarkForCheck();
   }
 
@@ -1347,8 +1357,13 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   /** Global mode: toggles the "To Account" submenu (account picker). */
   onExportToAccountMenuToggle(event: MouseEvent): void {
     event.stopPropagation();
-    this.exportToAccountSubmenuOpen = !this.exportToAccountSubmenuOpen;
-    if (!this.exportToAccountSubmenuOpen) {
+    const opening = !this.exportToAccountSubmenuOpen;
+    this.exportToAccountSubmenuOpen = opening;
+    if (opening) {
+      // Mutually exclusive with the "To API Key" submenu.
+      this.exportToApiKeySubmenuOpen = false;
+      this.expandedAccountForApiKeyExport = null;
+    } else {
       this.expandedAccountForExport = null;
     }
     this.safeMarkForCheck();
@@ -1741,7 +1756,15 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
 
   onExportToApiKeyMenuToggle(event: MouseEvent): void {
     event.stopPropagation();
-    this.exportToApiKeySubmenuOpen = !this.exportToApiKeySubmenuOpen;
+    const opening = !this.exportToApiKeySubmenuOpen;
+    this.exportToApiKeySubmenuOpen = opening;
+    if (opening) {
+      // Mutually exclusive with the "To Account" submenu (global mode only).
+      this.exportToAccountSubmenuOpen = false;
+      this.expandedAccountForExport = null;
+    } else {
+      this.expandedAccountForApiKeyExport = null;
+    }
     this.safeMarkForCheck();
   }
 

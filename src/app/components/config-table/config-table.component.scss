@@ -256,9 +256,8 @@ $export-bar-control-font-size: 0.875rem;
 
 .export-format-dropdown__menu--apikey-submenu { max-height: 16rem; overflow-y: auto; }
 
-.export-format-dropdown__menu--apikey-submenu-nested {
-  margin-left: 0.6rem;
-  border-left: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+.export-format-dropdown__item--active {
+  background: color-mix(in srgb, var(--accent, #6366f1) 14%, transparent);
 }
 
 .export-format-dropdown__menu--export-nested {

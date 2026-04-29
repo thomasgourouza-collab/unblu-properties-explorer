@@ -348,38 +348,38 @@
           *ngIf="connectionKind === 'global' && exportToApiKeySubmenuOpen"
           class="export-format-dropdown__menu export-format-dropdown__menu--static export-format-dropdown__menu--apikey-submenu"
           role="menu"
-          aria-label="Select account, then API Key to export to"
+          aria-label="Select account"
         >
-          <ng-container *ngFor="let acc of accountOptions">
-            <button
-              type="button"
-              class="export-format-dropdown__item"
-              role="menuitem"
-              [title]="'Show API Keys for account: ' + acc.name"
-              [disabled]="!hasApiKeysFor(acc.id)"
-              (click)="onExportApiKeyAccountToggle($event, acc.id)"
-            >
-              {{ acc.name }}
-              <i class="pi pi-angle-down export-format-dropdown__submenu-caret" [class.export-format-dropdown__submenu-caret--open]="expandedAccountForApiKeyExport === acc.id" aria-hidden="true"></i>
-            </button>
-            <div
-              *ngIf="expandedAccountForApiKeyExport === acc.id"
-              class="export-format-dropdown__menu export-format-dropdown__menu--static export-format-dropdown__menu--apikey-submenu export-format-dropdown__menu--apikey-submenu-nested"
-              role="menu"
-              [attr.aria-label]="'API Keys for ' + acc.name"
-            >
-              <button
-                *ngFor="let opt of apiKeyOptionsFor(acc.id)"
-                type="button"
-                class="export-format-dropdown__item"
-                role="menuitem"
-                [title]="'Export selected rows to API Key: ' + opt.name"
-                (click)="onExportToApiKeyChosen($event, opt.payload, acc.id)"
-              >
-                {{ opt.name }}
-              </button>
-            </div>
-          </ng-container>
+          <button
+            *ngFor="let acc of accountOptions"
+            type="button"
+            class="export-format-dropdown__item"
+            role="menuitem"
+            [title]="'Show API Keys for account: ' + acc.name"
+            [disabled]="!hasApiKeysFor(acc.id)"
+            [class.export-format-dropdown__item--active]="expandedAccountForApiKeyExport === acc.id"
+            (click)="onExportApiKeyAccountToggle($event, acc.id)"
+          >
+            {{ acc.name }}
+            <i class="pi pi-angle-down export-format-dropdown__submenu-caret" [class.export-format-dropdown__submenu-caret--open]="expandedAccountForApiKeyExport === acc.id" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div
+          *ngIf="connectionKind === 'global' && exportToApiKeySubmenuOpen && expandedAccountForApiKeyExport"
+          class="export-format-dropdown__menu export-format-dropdown__menu--static export-format-dropdown__menu--apikey-submenu"
+          role="menu"
+          [attr.aria-label]="'API Keys for the selected account'"
+        >
+          <button
+            *ngFor="let opt of apiKeyOptionsFor(expandedAccountForApiKeyExport)"
+            type="button"
+            class="export-format-dropdown__item"
+            role="menuitem"
+            [title]="'Export selected rows to API Key: ' + opt.name"
+            (click)="onExportToApiKeyChosen($event, opt.payload, expandedAccountForApiKeyExport)"
+          >
+            {{ opt.name }}
+          </button>
         </div>
       </div>
     </div>
@@ -509,38 +509,38 @@
           *ngIf="connectionKind === 'global' && importFromApiKeySubmenuOpen"
           class="export-format-dropdown__menu export-format-dropdown__menu--static export-format-dropdown__menu--apikey-submenu"
           role="menu"
-          aria-label="Select account, then API Key"
+          aria-label="Select account"
         >
-          <ng-container *ngFor="let acc of accountOptions">
-            <button
-              type="button"
-              class="export-format-dropdown__item"
-              role="menuitem"
-              [title]="'Show API Keys for account: ' + acc.name"
-              [disabled]="!hasApiKeysFor(acc.id)"
-              (click)="onImportApiKeyAccountToggle($event, acc.id)"
-            >
-              {{ acc.name }}
-              <i class="pi pi-angle-down export-format-dropdown__submenu-caret" [class.export-format-dropdown__submenu-caret--open]="expandedAccountForApiKeyImport === acc.id" aria-hidden="true"></i>
-            </button>
-            <div
-              *ngIf="expandedAccountForApiKeyImport === acc.id"
-              class="export-format-dropdown__menu export-format-dropdown__menu--static export-format-dropdown__menu--apikey-submenu export-format-dropdown__menu--apikey-submenu-nested"
-              role="menu"
-              [attr.aria-label]="'API Keys for ' + acc.name"
-            >
-              <button
-                *ngFor="let opt of apiKeyOptionsFor(acc.id)"
-                type="button"
-                class="export-format-dropdown__item"
-                role="menuitem"
-                [title]="'Import configuration from API Key: ' + opt.name"
-                (click)="onImportConfigFromApiKeyChosen($event, opt.payload, acc.id)"
-              >
-                {{ opt.name }}
-              </button>
-            </div>
-          </ng-container>
+          <button
+            *ngFor="let acc of accountOptions"
+            type="button"
+            class="export-format-dropdown__item"
+            role="menuitem"
+            [title]="'Show API Keys for account: ' + acc.name"
+            [disabled]="!hasApiKeysFor(acc.id)"
+            [class.export-format-dropdown__item--active]="expandedAccountForApiKeyImport === acc.id"
+            (click)="onImportApiKeyAccountToggle($event, acc.id)"
+          >
+            {{ acc.name }}
+            <i class="pi pi-angle-down export-format-dropdown__submenu-caret" [class.export-format-dropdown__submenu-caret--open]="expandedAccountForApiKeyImport === acc.id" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div
+          *ngIf="connectionKind === 'global' && importFromApiKeySubmenuOpen && expandedAccountForApiKeyImport"
+          class="export-format-dropdown__menu export-format-dropdown__menu--static export-format-dropdown__menu--apikey-submenu"
+          role="menu"
+          [attr.aria-label]="'API Keys for the selected account'"
+        >
+          <button
+            *ngFor="let opt of apiKeyOptionsFor(expandedAccountForApiKeyImport)"
+            type="button"
+            class="export-format-dropdown__item"
+            role="menuitem"
+            [title]="'Import configuration from API Key: ' + opt.name"
+            (click)="onImportConfigFromApiKeyChosen($event, opt.payload, expandedAccountForApiKeyImport)"
+          >
+            {{ opt.name }}
+          </button>
         </div>
       </div>
     </div>
