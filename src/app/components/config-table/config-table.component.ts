@@ -508,14 +508,19 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       return;
     }
     const displayed = this.tableDisplayedRows;
-    if (input.checked) {
-      for (const row of displayed) {
-        this.selectedRowKeys.add(row.rowKey);
-      }
-    } else {
+    // None selected → select all displayed. Some or all selected → deselect all displayed.
+    // (Overrides the native toggle so clicks on the indeterminate state clear instead of selecting.)
+    const anySelected = displayed.some((row) => this.selectedRowKeys.has(row.rowKey));
+    if (anySelected) {
       for (const row of displayed) {
         this.selectedRowKeys.delete(row.rowKey);
       }
+      input.checked = false;
+    } else {
+      for (const row of displayed) {
+        this.selectedRowKeys.add(row.rowKey);
+      }
+      input.checked = true;
     }
     this.syncMatchInspectorToDisplayedTable();
   }
