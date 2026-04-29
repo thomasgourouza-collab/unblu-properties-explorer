@@ -795,6 +795,11 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     return (this.apiKeysByAccountId[accountId]?.length ?? 0) > 0;
   }
 
+  /** Lookup the display name of an account by id; falls back to the id if missing. */
+  accountNameById(accountId: string): string {
+    return this.availableAccounts.find((acc) => acc.id === accountId)?.name ?? accountId;
+  }
+
   /** Opens the connect dialog in connect-only mode (no config import). Called by parent. */
   openConnectAccountDialog(): void {
     this.connectAccountMode = 'connect-only';
@@ -1007,7 +1012,11 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
       }
       const freshKey = allKeys.find((k) => k['id'] === apiKeyId) ?? apiKey;
       const importObject = buildConfigImportFromConnectedAccount(freshKey);
-      this.applyJsonConfigImport(importObject, `API Key: ${name}`);
+      const label =
+        this.connectionKind === 'global' && accountId
+          ? `API Key: ${name} (Account: ${this.accountNameById(accountId)})`
+          : `API Key: ${name}`;
+      this.applyJsonConfigImport(importObject, label);
     } catch {
       this.messageService.add({
         severity: 'error',
