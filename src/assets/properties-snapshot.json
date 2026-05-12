@@ -1,0 +1,9 @@
+{
+  "rows": [],
+  "warnings": [
+    "This is a placeholder snapshot. Run `npm run scrape:snapshot` to populate it with real Unblu properties data."
+  ],
+  "metadata": {
+    "scrapedAt": ""
+  }
+}

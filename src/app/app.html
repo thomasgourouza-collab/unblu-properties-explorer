@@ -16,44 +16,9 @@
           title="Shortcuts and tips"
           aria-label="Open shortcuts and tips"
         >
-          <img src="/images/search.png" alt="Search logo" class="title-logo" />
+          <img src="images/search.png" alt="Search logo" class="title-logo" />
         </button>
         <h1 class="h3 mb-0 title-row-heading">Unblu Properties Explorer</h1>
-      </div>
-      <div class="title-row-actions">
-        <span class="connected-account-name" *ngIf="connectedAccountName">{{ connectedAccountName }}</span>
-        <span
-          class="connection-indicator"
-          [class.connection-indicator--connected]="isAccountConnected"
-          aria-hidden="true"
-        ></span>
-        <button
-          type="button"
-          class="btn btn-sm btn-outline-secondary title-row-copy-btn"
-          (click)="onConnectDisconnectAccountClick()"
-          [disabled]="isLoading || rows.length === 0"
-          [title]="isAccountConnected ? 'Disconnect from Unblu' : 'Connect to Unblu'"
-          [attr.aria-label]="isAccountConnected ? 'Disconnect' : 'Connect'"
-        >
-          <i
-            class="pi"
-            [class.pi-link]="!isAccountConnected"
-            [class.pi-times-circle]="isAccountConnected"
-            aria-hidden="true"
-          ></i>
-          <span>{{ isAccountConnected ? 'Disconnect' : 'Connect' }}</span>
-        </button>
-        <button
-          type="button"
-          class="btn btn-sm btn-outline-secondary title-row-copy-btn"
-          (click)="reloadProperties(true)"
-          [disabled]="isLoading"
-          title="Re-login and reload properties"
-          aria-label="Re-login and reload properties"
-        >
-          <i class="pi pi-user-edit" aria-hidden="true"></i>
-          <span>Re-login</span>
-        </button>
       </div>
     </div>
   </section>
@@ -76,25 +41,23 @@
       <div class="load-status-row">
         <div class="load-status-main" *ngIf="isLoading">
           <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
-          <span>Scraping properties from authenticated docs...</span>
+          <span>Loading bundled properties snapshot...</span>
         </div>
         <div class="load-status-main" *ngIf="!isLoading">
           <i class="pi pi-check-circle load-status-icon" aria-hidden="true"></i>
-          <span>Loaded {{ rows.length }} rows automatically.</span>
+          <span>Loaded {{ rows.length }} rows from bundled snapshot.</span>
           <span
             class="text-muted small"
             *ngIf="lastScrapedAt"
             [attr.title]="'UTC: ' + lastScrapedAt"
           >
-            Last scrape: {{ lastScrapedAt | date : 'yyyy-MM-dd HH:mm' }}
+            Snapshot date: {{ lastScrapedAt | date : 'yyyy-MM-dd HH:mm' }}
           </span>
-          <span class="badge text-bg-info" *ngIf="authRefreshed">Session refreshed</span>
-          <span class="badge text-bg-secondary" *ngIf="loadedFromCache">Showing cached snapshot</span>
         </div>
       </div>
 
       <div class="alert alert-warning mt-2 mb-0 py-2 px-3" *ngIf="parseWarnings.length > 0">
-        <strong>Scraping warnings:</strong>
+        <strong>Warnings:</strong>
         <ul class="mb-0 mt-2">
           <li *ngFor="let warning of parseWarnings">{{ warning }}</li>
         </ul>
@@ -104,7 +67,7 @@
 
   <app-config-table *ngIf="rows.length > 0" [rows]="rows" />
   <section class="alert alert-secondary" *ngIf="!isLoading && !parseError && rows.length === 0">
-    No rows returned from the scraper.
+    No rows in bundled snapshot.
   </section>
 
   <div
@@ -143,7 +106,7 @@
       (click)="onCsvImportDialogPanelClick($event)"
     >
       <header class="help-modal-header">
-        <h2 id="csv-parse-error-title" class="help-modal-title">CSV import failed</h2>
+        <h2 id="csv-parse-error-title" class="help-modal-title">Snapshot load failed</h2>
         <button
           type="button"
           class="help-close-btn"
@@ -158,9 +121,6 @@
         <div class="csv-import-dialog-actions">
           <button type="button" class="btn btn-sm btn-outline-secondary" (click)="reloadProperties()">
             Retry
-          </button>
-          <button type="button" class="btn btn-sm btn-outline-secondary" (click)="reloadProperties(true)">
-            Re-login + retry
           </button>
         </div>
       </div>

@@ -58,6 +58,11 @@
                 "glob": "search.png",
                 "input": "src/app/images",
                 "output": "/"
+              },
+              {
+                "glob": "**/*",
+                "input": "src/assets",
+                "output": "assets"
               }
             ],
             "styles": [
@@ -90,9 +95,6 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
-          "options": {
-            "proxyConfig": "proxy.conf.json"
-          },
           "configurations": {
             "production": {
               "buildTarget": "csv-table-app:build:production"

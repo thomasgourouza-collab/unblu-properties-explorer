@@ -4,14 +4,12 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "start:backend": "npm --prefix server run dev",
-    "start:dev": "concurrently \"npm run start:backend\" \"npm run start\"",
     "build": "ng build",
-    "build:backend": "npm --prefix server run build",
-    "build:all": "npm run build && npm run build:backend",
+    "build:gh-pages": "ng build --base-href=/unblu-properties-explorer/",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "backend:start": "npm --prefix server run start"
+    "scrape:snapshot": "tsx scripts/scrape-snapshot.ts",
+    "scrape:snapshot:force": "tsx scripts/scrape-snapshot.ts --force-login"
   },
   "private": true,
   "packageManager": "npm@11.9.0",
@@ -27,7 +25,6 @@
     "@types/papaparse": "^5.5.2",
     "@vscode/codicons": "^0.0.45",
     "bootstrap": "^5.3.8",
-    "concurrently": "^9.2.1",
     "papaparse": "^5.5.3",
     "primeicons": "^7.0.0",
     "primeng": "^21.1.5",
@@ -39,7 +36,10 @@
     "@angular/build": "^21.2.6",
     "@angular/cli": "^21.2.6",
     "@angular/compiler-cli": "^21.2.0",
+    "@types/node": "^24.6.1",
+    "playwright": "1.59.1",
     "prettier": "^3.8.1",
+    "tsx": "^4.20.5",
     "typescript": "~5.9.2"
   }
 }

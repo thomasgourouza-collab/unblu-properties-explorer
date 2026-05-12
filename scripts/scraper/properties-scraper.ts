@@ -4,36 +4,22 @@ import { fileURLToPath } from 'node:url';
 
 import { chromium, type Page } from 'playwright';
 
-import type { ConfigRowApi, PropertiesApiResponse, ScrapedPropertyRow } from '../types.js';
+import type { ConfigRowApi, PropertiesSnapshot, ScrapedPropertyRow } from '../types.js';
 import { AuthRequiredError, scrapeConfigurationProperties, scrapeTextProperties } from './extractors.js';
 
 const SCRAPER_DIR = path.dirname(fileURLToPath(import.meta.url));
-const AUTH_STATE_FILE = path.resolve(SCRAPER_DIR, '../../.auth/storage-state.json');
+const AUTH_STATE_FILE = path.resolve(SCRAPER_DIR, '../.auth/storage-state.json');
 const AUTH_WAIT_TIMEOUT_MS = 2 * 60 * 1000;
 
 export class PropertiesScraper {
-  private inFlightScrape: Promise<PropertiesApiResponse> | null = null;
-  private lastSuccessfulResponse: PropertiesApiResponse | null = null;
-  private readonly scrapeTimeoutMs = 90_000;
+  private readonly scrapeTimeoutMs = 120_000;
 
-  scrapeAll(options?: { forceLogin?: boolean }): Promise<PropertiesApiResponse> {
-    if (!options?.forceLogin && this.lastSuccessfulResponse !== null) {
-      return Promise.resolve(this.cloneAsCachedResponse(this.lastSuccessfulResponse));
-    }
-
-    if (this.inFlightScrape !== null) {
-      return this.inFlightScrape;
-    }
-
-    this.inFlightScrape = withTimeout(
+  scrapeAll(options?: { forceLogin?: boolean }): Promise<PropertiesSnapshot> {
+    return withTimeout(
       this.scrapeAllInternal(options),
       this.scrapeTimeoutMs,
       `Scrape timed out after ${Math.round(this.scrapeTimeoutMs / 1000)} seconds.`
-    ).finally(() => {
-      this.inFlightScrape = null;
-    });
-
-    return this.inFlightScrape;
+    );
   }
 
   async clearAuthState(): Promise<void> {
@@ -44,17 +30,14 @@ export class PropertiesScraper {
         throw error;
       }
     }
-    this.lastSuccessfulResponse = null;
   }
 
-  private async scrapeAllInternal(options?: { forceLogin?: boolean }): Promise<PropertiesApiResponse> {
+  private async scrapeAllInternal(options?: { forceLogin?: boolean }): Promise<PropertiesSnapshot> {
     if (options?.forceLogin) {
       await this.clearAuthState();
       await this.runInteractiveLogin();
       const forcedAttempt = await this.runScrapeAttempt({ allowSavedAuthState: true });
-      const forcedResponse = this.buildResponse(forcedAttempt.rows, true);
-      this.lastSuccessfulResponse = forcedResponse;
-      return forcedResponse;
+      return this.buildSnapshot(forcedAttempt.rows);
     }
 
     const primaryAttempt = await this.runScrapeAttempt({ allowSavedAuthState: true }).catch((error) => ({
@@ -62,9 +45,7 @@ export class PropertiesScraper {
     }));
 
     if (!('error' in primaryAttempt)) {
-      const response = this.buildResponse(primaryAttempt.rows, false);
-      this.lastSuccessfulResponse = response;
-      return response;
+      return this.buildSnapshot(primaryAttempt.rows);
     }
 
     if (!(primaryAttempt.error instanceof AuthRequiredError)) {
@@ -73,9 +54,7 @@ export class PropertiesScraper {
 
     await this.runInteractiveLogin();
     const retryAttempt = await this.runScrapeAttempt({ allowSavedAuthState: true });
-    const refreshedResponse = this.buildResponse(retryAttempt.rows, true);
-    this.lastSuccessfulResponse = refreshedResponse;
-    return refreshedResponse;
+    return this.buildSnapshot(retryAttempt.rows);
   }
 
   private async runScrapeAttempt(options: {
@@ -105,7 +84,7 @@ export class PropertiesScraper {
   private async runInteractiveLogin(): Promise<void> {
     if (!this.canRunHeadedLogin()) {
       throw new AuthRequiredError(
-        'Interactive login requires a display server (X11/Wayland). In Docker, bootstrap auth on a local non-container backend or run with a virtual display (xvfb).'
+        'Interactive login requires a display server (X11/Wayland). Run this script on a machine with a desktop.'
       );
     }
 
@@ -134,10 +113,8 @@ export class PropertiesScraper {
     }
   }
 
-
   /**
-   * Headed Chromium needs a GUI. Linux servers and Docker usually have no DISPLAY;
-   * macOS and Windows do not set DISPLAY but still support headed launch for local dev.
+   * Headed Chromium needs a GUI. macOS and Windows always allow it; Linux needs DISPLAY/WAYLAND_DISPLAY.
    */
   private canRunHeadedLogin(): boolean {
     const platform = process.platform;
@@ -175,7 +152,7 @@ export class PropertiesScraper {
     }
   }
 
-  private buildResponse(rows: ScrapedPropertyRow[], authRefreshed: boolean): PropertiesApiResponse {
+  private buildSnapshot(rows: ScrapedPropertyRow[]): PropertiesSnapshot {
     const mappedRows: ConfigRowApi[] = rows.map((row, index) => {
       const source = row.source;
       const rowKey = `${source}::${index}`;
@@ -209,21 +186,7 @@ export class PropertiesScraper {
       rows: mappedRows,
       warnings: [],
       metadata: {
-        scrapedAt: new Date().toISOString(),
-        authRefreshed,
-        fromCache: false
-      }
-    };
-  }
-
-  private cloneAsCachedResponse(response: PropertiesApiResponse): PropertiesApiResponse {
-    return {
-      rows: response.rows,
-      warnings: response.warnings,
-      metadata: {
-        scrapedAt: response.metadata.scrapedAt,
-        authRefreshed: response.metadata.authRefreshed,
-        fromCache: true
+        scrapedAt: new Date().toISOString()
       }
     };
   }

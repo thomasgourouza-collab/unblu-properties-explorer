@@ -1,7 +1,6 @@
 import { parse as parseYaml } from 'yaml';
 
 import { parseJavaPropertiesFile } from '../../../utils/java-properties-config.util';
-import { asRecord } from './json-record.util';
 
 export type ParsedConfigFileResult = Record<string, unknown> | null | 'not-object';
 
@@ -42,34 +41,6 @@ export function parseImportedConfigFileText(text: string): ParsedConfigFileResul
     return 'not-object';
   }
   return parsed as Record<string, unknown>;
-}
-
-export function buildConfigImportFromConnectedAccount(account: Record<string, unknown>): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
-
-  const configuration = asRecord(account['configuration']);
-  if (configuration) {
-    for (const [key, value] of Object.entries(configuration)) {
-      out[key] = value;
-    }
-  }
-
-  const textConfig = asRecord(account['text']);
-  if (textConfig) {
-    for (const [key, value] of Object.entries(textConfig)) {
-      const langMap = asRecord(value);
-      if (!langMap || !('en' in langMap)) {
-        continue;
-      }
-      out[key] = langMap['en'];
-    }
-  }
-
-  if (Object.keys(out).length === 0) {
-    throw new Error('Connected account does not contain configuration/text data in expected format.');
-  }
-
-  return out;
 }
 
 export function filterIgnoredImportKeys(obj: Record<string, unknown>): Record<string, unknown> {

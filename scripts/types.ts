@@ -41,12 +41,10 @@ export interface ConfigRowApi {
   extra: Record<string, string>;
 }
 
-export interface PropertiesApiResponse {
+export interface PropertiesSnapshot {
   rows: ConfigRowApi[];
   warnings: string[];
   metadata: {
     scrapedAt: string;
-    authRefreshed: boolean;
-    fromCache: boolean;
   };
 }
