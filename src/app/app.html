@@ -20,7 +20,27 @@
         </button>
         <h1 class="h3 mb-0 title-row-heading">Unblu Properties Explorer</h1>
       </div>
+      <div class="title-row-actions">
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-secondary title-row-copy-btn"
+          (click)="triggerSchemaUpload()"
+          [disabled]="isLoading"
+          title="Upload a mergedConfigurationSchema JSON file"
+          aria-label="Upload schema file"
+        >
+          <i class="pi pi-upload" aria-hidden="true"></i>
+          <span>Upload schema</span>
+        </button>
+      </div>
     </div>
+    <input
+      #schemaFileInput
+      type="file"
+      accept="application/json,.json"
+      class="d-none"
+      (change)="onSchemaFileSelected($event)"
+    />
   </section>
 
   <section
@@ -41,18 +61,13 @@
       <div class="load-status-row">
         <div class="load-status-main" *ngIf="isLoading">
           <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
-          <span>Loading bundled properties snapshot...</span>
+          <span>Loading schema...</span>
         </div>
-        <div class="load-status-main" *ngIf="!isLoading">
+        <div class="load-status-main" *ngIf="!isLoading && rows.length > 0">
           <i class="pi pi-check-circle load-status-icon" aria-hidden="true"></i>
-          <span>Loaded {{ rows.length }} rows from bundled snapshot.</span>
-          <span
-            class="text-muted small"
-            *ngIf="lastScrapedAt"
-            [attr.title]="'UTC: ' + lastScrapedAt"
-          >
-            Snapshot date: {{ lastScrapedAt | date : 'yyyy-MM-dd HH:mm' }}
-          </span>
+          <span *ngIf="lastLoadedFrom === 'bundled'">Loaded {{ rows.length }} rows from bundled schema.</span>
+          <span *ngIf="lastLoadedFrom === 'upload'">Loaded {{ rows.length }} rows from uploaded file: {{ uploadedFileName }}.</span>
+          <span class="text-muted small" *ngIf="productVersion">v{{ productVersion }}</span>
         </div>
       </div>
 
@@ -66,9 +81,21 @@
   </section>
 
   <app-config-table *ngIf="rows.length > 0" [rows]="rows" />
-  <section class="alert alert-secondary" *ngIf="!isLoading && !parseError && rows.length === 0">
-    No rows in bundled snapshot.
-  </section>
+  <button
+    *ngIf="!isLoading && !parseError && rows.length === 0"
+    type="button"
+    class="schema-drop-zone"
+    [class.schema-drop-zone--active]="isDropZoneActive"
+    aria-label="Click or drop a schema JSON file to load it"
+    (click)="triggerSchemaUpload()"
+    (dragover)="onDropZoneDragOver($event)"
+    (dragleave)="onDropZoneDragLeave($event)"
+    (drop)="onDropZoneDrop($event)"
+  >
+    <i class="pi pi-cloud-upload schema-drop-zone-icon" aria-hidden="true"></i>
+    <span class="schema-drop-zone-title">No schema loaded</span>
+    <span class="schema-drop-zone-hint">Drop a <code>mergedConfigurationSchema_en.json</code> file here, or click to choose one.</span>
+  </button>
 
   <div
     class="help-modal-backdrop csv-parse-modal-backdrop"
@@ -106,7 +133,7 @@
       (click)="onCsvImportDialogPanelClick($event)"
     >
       <header class="help-modal-header">
-        <h2 id="csv-parse-error-title" class="help-modal-title">Snapshot load failed</h2>
+        <h2 id="csv-parse-error-title" class="help-modal-title">Schema load failed</h2>
         <button
           type="button"
           class="help-close-btn"
@@ -119,8 +146,11 @@
       <div class="csv-import-dialog-body csv-import-dialog-body--error">
         <p id="csv-parse-error-desc" class="csv-import-dialog-error-text">{{ parseError }}</p>
         <div class="csv-import-dialog-actions">
-          <button type="button" class="btn btn-sm btn-outline-secondary" (click)="reloadProperties()">
-            Retry
+          <button type="button" class="btn btn-sm btn-outline-secondary" (click)="closeCsvParseErrorDialog()">
+            Close
+          </button>
+          <button type="button" class="btn btn-sm btn-outline-secondary" (click)="closeCsvParseErrorDialog(); triggerSchemaUpload()">
+            Upload another file
           </button>
         </div>
       </div>

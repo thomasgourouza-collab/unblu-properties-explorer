@@ -7,9 +7,7 @@
     "build": "ng build",
     "build:gh-pages": "ng build --base-href=/unblu-properties-explorer/",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test",
-    "scrape:snapshot": "tsx scripts/scrape-snapshot.ts",
-    "scrape:snapshot:force": "tsx scripts/scrape-snapshot.ts --force-login"
+    "test": "ng test"
   },
   "private": true,
   "packageManager": "npm@11.9.0",
@@ -36,10 +34,7 @@
     "@angular/build": "^21.2.6",
     "@angular/cli": "^21.2.6",
     "@angular/compiler-cli": "^21.2.0",
-    "@types/node": "^24.6.1",
-    "playwright": "1.59.1",
     "prettier": "^3.8.1",
-    "tsx": "^4.20.5",
     "typescript": "~5.9.2"
   }
 }
