@@ -104,7 +104,7 @@ function mapPropertyNode(
   const type = isList && rawType ? `List of ${rawType}` : rawType;
 
   const allowedValuesArr = Array.isArray(node['enumArguments']) ? node['enumArguments'] : [];
-  const allowedValues = allowedValuesArr.map((value) => String(value).toUpperCase()).join(', ');
+  const allowedValues = allowedValuesArr.map((value) => String(value).toUpperCase()).join(' ');
 
   const allowedScopesTokens = Array.isArray(node['allowedScopes'])
     ? node['allowedScopes'].filter(isString)
