@@ -1,0 +1,302 @@
+<div *ngIf="visible" class="iiw__backdrop" (click)="onBackdropClick($event)" role="presentation">
+  <div class="iiw__dialog" role="dialog" aria-modal="true" aria-labelledby="iiw-title">
+    <header class="iiw__header">
+      <h2 id="iiw-title" class="iiw__title">
+        <i class="pi pi-cloud-download" aria-hidden="true"></i>
+        Import config from installation
+      </h2>
+      <button
+        type="button"
+        class="iiw__close-btn"
+        (click)="closeDialog()"
+        aria-label="Close"
+        title="Close"
+      >
+        <i class="pi pi-times" aria-hidden="true"></i>
+      </button>
+    </header>
+
+    <ol class="iiw__steps">
+      <li class="iiw__step" [class.iiw__step--active]="step === 'connect'" [class.iiw__step--done]="!!connection">
+        1. Connect
+      </li>
+      <li
+        class="iiw__step"
+        [class.iiw__step--active]="step === 'global-or-account'"
+        [class.iiw__step--done]="step === 'sub-scope' || step === 'conversation-under-template'"
+      >
+        2. Scope
+      </li>
+      <li
+        class="iiw__step"
+        [class.iiw__step--active]="step === 'sub-scope'"
+        [class.iiw__step--done]="step === 'conversation-under-template'"
+        *ngIf="step === 'sub-scope' || step === 'conversation-under-template'"
+      >
+        3. Entity
+      </li>
+      <li
+        class="iiw__step iiw__step--active"
+        *ngIf="step === 'conversation-under-template'"
+      >
+        4. Conversation
+      </li>
+    </ol>
+
+    <div class="iiw__body">
+      <!-- Step 1: Connect -->
+      <ng-container *ngIf="step === 'connect'">
+        <form class="iiw__form" (ngSubmit)="connect()">
+          <label class="iiw__field">
+            <span class="iiw__label">Unblu server URL</span>
+            <input
+              type="url"
+              class="form-control form-control-sm"
+              placeholder="https://your-server.unblu.cloud"
+              [(ngModel)]="serverUrl"
+              name="serverUrl"
+              required
+              autocomplete="url"
+              [disabled]="loading"
+            />
+            <small class="iiw__hint">Just the domain, without <code>/app</code>.</small>
+          </label>
+          <label class="iiw__field">
+            <span class="iiw__label">Username</span>
+            <input
+              type="text"
+              class="form-control form-control-sm"
+              [(ngModel)]="username"
+              name="username"
+              required
+              autocomplete="username"
+              [disabled]="loading"
+            />
+          </label>
+          <label class="iiw__field">
+            <span class="iiw__label">Password</span>
+            <input
+              type="password"
+              class="form-control form-control-sm"
+              [(ngModel)]="password"
+              name="password"
+              required
+              autocomplete="current-password"
+              [disabled]="loading"
+            />
+          </label>
+          <label class="iiw__field">
+            <span class="iiw__label">Locale for text properties</span>
+            <select
+              class="form-select form-select-sm"
+              [(ngModel)]="locale"
+              name="locale"
+              [disabled]="loading"
+            >
+              <option *ngFor="let opt of localeOptions" [value]="opt.value">{{ opt.label }}</option>
+            </select>
+            <small class="iiw__hint">Text values are per-locale; we'll import this locale (falling back to any available).</small>
+          </label>
+
+          <div class="iiw__error" *ngIf="error" role="alert">{{ error }}</div>
+
+          <div class="iiw__actions">
+            <button type="button" class="btn btn-sm btn-outline-secondary" (click)="closeDialog()" [disabled]="loading">
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-sm btn-primary" [disabled]="loading || !serverUrl || !username || !password">
+              <span *ngIf="loading" class="iiw__spinner" aria-hidden="true"></span>
+              Connect
+            </button>
+          </div>
+        </form>
+      </ng-container>
+
+      <!-- Step 2: Global or Account -->
+      <ng-container *ngIf="step === 'global-or-account' && connection">
+        <p class="iiw__role">
+          Connected as <strong>{{ connection.displayName }}</strong>
+          — role: <strong>{{ roleDescription }}</strong>
+        </p>
+
+        <div class="iiw__group" *ngIf="canImportGlobal">
+          <button
+            type="button"
+            class="btn btn-sm btn-primary iiw__primary-action"
+            (click)="importGlobal()"
+            [disabled]="loading"
+          >
+            <i class="pi pi-globe" aria-hidden="true"></i>
+            Import global config
+          </button>
+          <small class="iiw__hint">Reads the system-wide configuration and text (super admin only).</small>
+        </div>
+
+        <div class="iiw__group">
+          <label class="iiw__field">
+            <span class="iiw__label">Account</span>
+            <select
+              class="form-select form-select-sm"
+              [(ngModel)]="selectedAccount"
+              [compareWith]="compareById"
+              name="account"
+              [disabled]="loading || accounts.length === 0"
+            >
+              <option [ngValue]="null" disabled>— Select an account —</option>
+              <option *ngFor="let a of accounts; trackBy: trackById" [ngValue]="a">{{ a.label }}</option>
+            </select>
+            <small class="iiw__hint" *ngIf="accounts.length === 0 && !loading">No accounts found.</small>
+          </label>
+        </div>
+
+        <div class="iiw__error" *ngIf="error" role="alert">{{ error }}</div>
+
+        <div class="iiw__actions">
+          <button type="button" class="btn btn-sm btn-outline-secondary" (click)="goBack()" [disabled]="loading">
+            Back
+          </button>
+          <button type="button" class="btn btn-sm btn-outline-secondary" (click)="closeDialog()" [disabled]="loading">
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="btn btn-sm btn-primary"
+            (click)="goToSubScope()"
+            [disabled]="loading || !selectedAccount"
+          >
+            <span *ngIf="loading" class="iiw__spinner" aria-hidden="true"></span>
+            Next
+          </button>
+        </div>
+      </ng-container>
+
+      <!-- Step 3: Sub-scope under account -->
+      <ng-container *ngIf="step === 'sub-scope' && connection && selectedAccount">
+        <p class="iiw__role">
+          Account: <strong>{{ selectedAccount.label }}</strong>
+        </p>
+
+        <div class="iiw__group" *ngIf="canImportAccount">
+          <button
+            type="button"
+            class="btn btn-sm btn-primary iiw__primary-action"
+            (click)="importAccount()"
+            [disabled]="loading"
+          >
+            <i class="pi pi-briefcase" aria-hidden="true"></i>
+            Import account config
+          </button>
+          <small class="iiw__hint">Reads the account's configuration and text.</small>
+        </div>
+
+        <div class="iiw__group">
+          <span class="iiw__label">Or pick a sub-scope</span>
+          <div class="iiw__radios">
+            <label *ngFor="let opt of availableSubScopes" class="iiw__radio">
+              <input
+                type="radio"
+                name="subScope"
+                [value]="opt.value"
+                [(ngModel)]="subScope"
+                (change)="onSubScopeChanged()"
+                [disabled]="loading"
+              />
+              {{ opt.label }}
+            </label>
+          </div>
+
+          <label class="iiw__field">
+            <span class="iiw__label">{{ entityLabel(subScope) }}</span>
+            <select
+              class="form-select form-select-sm"
+              [(ngModel)]="selectedEntityId"
+              name="entity"
+              [disabled]="loading || subScopeEntities.length === 0"
+            >
+              <option value="" disabled>— Select —</option>
+              <option *ngFor="let e of subScopeEntities; trackBy: trackById" [value]="e.id">{{ e.label }}</option>
+            </select>
+            <small class="iiw__hint" *ngIf="subScopeEntities.length === 0 && !loading">None available.</small>
+          </label>
+        </div>
+
+        <div class="iiw__error" *ngIf="error" role="alert">{{ error }}</div>
+
+        <div class="iiw__actions">
+          <button type="button" class="btn btn-sm btn-outline-secondary" (click)="goBack()" [disabled]="loading">
+            Back
+          </button>
+          <button type="button" class="btn btn-sm btn-outline-secondary" (click)="closeDialog()" [disabled]="loading">
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="btn btn-sm btn-primary"
+            (click)="importSubScope()"
+            [disabled]="loading || !selectedEntityId"
+          >
+            <span *ngIf="loading" class="iiw__spinner" aria-hidden="true"></span>
+            {{ subScope === 'CONVERSATION_TEMPLATE' ? 'Next' : 'Import' }}
+          </button>
+        </div>
+      </ng-container>
+
+      <!-- Step 4: Conversation under conversation template -->
+      <ng-container *ngIf="step === 'conversation-under-template' && conversationTemplate">
+        <p class="iiw__role">
+          Account: <strong>{{ selectedAccount?.label }}</strong>
+          &middot; Template: <strong>{{ conversationTemplate.label }}</strong>
+        </p>
+
+        <div class="iiw__group">
+          <button
+            type="button"
+            class="btn btn-sm btn-primary iiw__primary-action"
+            (click)="importTemplate()"
+            [disabled]="loading"
+          >
+            <i class="pi pi-file" aria-hidden="true"></i>
+            Import template config
+          </button>
+          <small class="iiw__hint">Reads the conversation template's configuration and text.</small>
+        </div>
+
+        <div class="iiw__group" *ngIf="canImportConversation">
+          <label class="iiw__field">
+            <span class="iiw__label">Or pick a conversation</span>
+            <select
+              class="form-select form-select-sm"
+              [(ngModel)]="selectedConversationId"
+              name="conversation"
+              [disabled]="loading || conversations.length === 0"
+            >
+              <option value="" disabled>— Select a conversation —</option>
+              <option *ngFor="let c of conversations; trackBy: trackById" [value]="c.id">{{ c.label }}</option>
+            </select>
+            <small class="iiw__hint" *ngIf="conversations.length === 0 && !loading">No conversations under this template.</small>
+          </label>
+        </div>
+
+        <div class="iiw__error" *ngIf="error" role="alert">{{ error }}</div>
+
+        <div class="iiw__actions">
+          <button type="button" class="btn btn-sm btn-outline-secondary" (click)="goBack()" [disabled]="loading">
+            Back
+          </button>
+          <button type="button" class="btn btn-sm btn-outline-secondary" (click)="closeDialog()" [disabled]="loading">
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="btn btn-sm btn-primary"
+            (click)="importConversation()"
+            [disabled]="loading || !selectedConversationId || !canImportConversation"
+          >
+            <span *ngIf="loading" class="iiw__spinner" aria-hidden="true"></span>
+            Import conversation
+          </button>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+</div>

@@ -42,6 +42,7 @@ import {
 } from '../../utils/filter-expression.util';
 import { stringifyJavaPropertiesFile } from '../../utils/java-properties-config.util';
 import unbluScopeEditorsJson from '../../data/unblu-scope-editors.json';
+import { InstallationImportWizardComponent } from '../installation-import-wizard/installation-import-wizard.component';
 
 interface SelectOption {
   label: string;
@@ -172,7 +173,15 @@ export class BindIndeterminateDirective implements AfterViewChecked {
 @Component({
   selector: 'app-config-table',
   standalone: true,
-  imports: [CommonModule, FormsModule, TableModule, MultiSelectModule, TagModule, BindIndeterminateDirective],
+  imports: [
+    CommonModule,
+    FormsModule,
+    TableModule,
+    MultiSelectModule,
+    TagModule,
+    BindIndeterminateDirective,
+    InstallationImportWizardComponent
+  ],
   templateUrl: './config-table.component.html',
   styleUrl: './config-table.component.scss'
 })
@@ -218,6 +227,8 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
   exportToFileSubmenuOpen = false;
   /** Import config menu (file import only). */
   importConfigMenuOpen = false;
+  /** Installation-import wizard visibility (From installation submenu). */
+  installationImportWizardVisible = false;
   /** Table settings dropdown (reset / export / import persisted UI). */
   tableSettingsMenuOpen = false;
   /** Row identity for selection / CSV export (stable across duplicate property codes). */
@@ -1008,6 +1019,24 @@ export class ConfigTableComponent implements OnChanges, OnDestroy {
     event.stopPropagation();
     this.importConfigMenuOpen = false;
     this.onUtransferClick();
+    this.safeMarkForCheck();
+  }
+
+  onImportConfigFromInstallationChosen(event: MouseEvent): void {
+    event.stopPropagation();
+    this.importConfigMenuOpen = false;
+    this.installationImportWizardVisible = true;
+    this.safeMarkForCheck();
+  }
+
+  onInstallationImportApplied(payload: { source: string; merged: Record<string, string> }): void {
+    this.installationImportWizardVisible = false;
+    this.applyJsonConfigImport(payload.merged, payload.source);
+    this.safeMarkForCheck();
+  }
+
+  onInstallationImportClosed(): void {
+    this.installationImportWizardVisible = false;
     this.safeMarkForCheck();
   }
 

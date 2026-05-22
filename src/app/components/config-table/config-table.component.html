@@ -285,6 +285,15 @@
           >
             From file
           </button>
+          <button
+            type="button"
+            class="export-format-dropdown__item"
+            role="menuitem"
+            title="Connect to an Unblu installation and import a scope's configuration and text"
+            (click)="onImportConfigFromInstallationChosen($event)"
+          >
+            From installation
+          </button>
         </div>
       </div>
     </div>
@@ -1369,4 +1378,10 @@
       </div>
     </div>
   </div>
+
+  <app-installation-import-wizard
+    [visible]="installationImportWizardVisible"
+    (configImport)="onInstallationImportApplied($event)"
+    (closed)="onInstallationImportClosed()"
+  ></app-installation-import-wizard>
 </section>
